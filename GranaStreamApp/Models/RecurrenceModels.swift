@@ -47,6 +47,4 @@ struct RecurrenceResponseDto: Codable, Identifiable {
     let dayOfWeek: Int
     let isPaused: Bool
     let nextOccurrence: Date?
-    let createdAt: Date
-    let updatedAt: Date?
 }

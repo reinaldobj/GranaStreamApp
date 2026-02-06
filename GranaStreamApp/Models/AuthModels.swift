@@ -37,3 +37,8 @@ struct RefreshTokenRequestDto: Codable {
 struct LogoutRequestDto: Codable {
     let refreshToken: String
 }
+
+struct ChangePasswordRequestDto: Codable {
+    let currentPassword: String
+    let newPassword: String
+}

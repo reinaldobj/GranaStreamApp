@@ -65,7 +65,6 @@ struct TransactionResponseDto: Codable {
     let categoryId: String?
     let categoryName: String?
     let entries: [TransactionEntryDto]?
-    let createdAt: Date
 }
 
 struct ListTransactionsResponseDto: Codable {

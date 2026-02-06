@@ -5,6 +5,7 @@ import Combine
 final class TransactionsViewModel: ObservableObject {
     @Published var transactions: [TransactionSummaryDto] = []
     @Published var isLoading = false
+    @Published var isLoadingMore = false
     @Published var errorMessage: String?
     @Published var filters: TransactionFilters
 
@@ -28,7 +29,6 @@ final class TransactionsViewModel: ObservableObject {
         if reset {
             page = 1
             total = 0
-            transactions = []
         }
         isLoading = true
         defer { isLoading = false }
@@ -69,9 +69,40 @@ final class TransactionsViewModel: ObservableObject {
     }
 
     func loadMore() async {
-        guard canLoadMore else { return }
+        guard canLoadMore, !isLoadingMore else { return }
+        isLoadingMore = true
         page += 1
-        await load()
+        defer { isLoadingMore = false }
+
+        do {
+            var items: [URLQueryItem] = [
+                URLQueryItem(name: "page", value: String(page)),
+                URLQueryItem(name: "size", value: String(size)),
+                URLQueryItem(name: "startDate", value: DateCoder.string(from: filters.startDate)),
+                URLQueryItem(name: "endDate", value: DateCoder.string(from: filters.endDate))
+            ]
+            if let type = filters.type {
+                items.append(URLQueryItem(name: "type", value: String(type.rawValue)))
+            }
+            if let accountId = filters.accountId {
+                items.append(URLQueryItem(name: "accountId", value: accountId))
+            }
+            if let categoryId = filters.categoryId {
+                items.append(URLQueryItem(name: "categoryId", value: categoryId))
+            }
+            if !filters.searchText.isEmpty {
+                items.append(URLQueryItem(name: "searchText", value: filters.searchText))
+            }
+
+            let response: ListTransactionsResponseDto = try await APIClient.shared.request(
+                "/api/v1/transactions",
+                queryItems: items
+            )
+            total = response.total
+            transactions.append(contentsOf: response.items ?? [])
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     func delete(transaction: TransactionSummaryDto) async {

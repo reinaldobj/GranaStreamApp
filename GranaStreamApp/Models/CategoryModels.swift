@@ -4,20 +4,15 @@ struct CategoryResponseDto: Codable, Identifiable {
     let id: String
     let name: String?
     let description: String?
-    let categoryType: String?
+    let categoryType: CategoryType?
     let parentCategoryId: String?
     let parentCategoryName: String?
     let sortOrder: Int
     let isActive: Bool
-    let createdAt: Date
-    let updatedAt: Date?
     let subCategories: [CategoryResponseDto]?
 
     var categoryTypeLabel: String {
-        if let categoryType, let mapped = CategoryType.fromServerString(categoryType) {
-            return mapped.label
-        }
-        return categoryType ?? "-"
+        categoryType?.label ?? "-"
     }
 }
 
@@ -41,11 +36,10 @@ struct CreateCategoryResponseDto: Codable {
     let id: String
     let name: String?
     let description: String?
-    let categoryType: String?
+    let categoryType: CategoryType?
     let parentCategoryId: String?
     let parentCategoryName: String?
     let sortOrder: Int
-    let createdAt: Date
 }
 
 struct SeedCategoriesResponseDto: Codable {

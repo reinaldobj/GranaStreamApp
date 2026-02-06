@@ -3,9 +3,16 @@ import Combine
 
 @MainActor
 final class AccountsViewModel: ObservableObject {
+    struct InactiveAccountInfo: Identifiable {
+        let id: String
+        let title: String
+        let detail: String
+    }
+
     @Published var accounts: [AccountResponseDto] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var inactiveAccount: InactiveAccountInfo?
 
     func load() async {
         isLoading = true
@@ -21,6 +28,7 @@ final class AccountsViewModel: ObservableObject {
 
     func create(name: String, type: AccountType, initialBalance: Double) async -> Bool {
         do {
+            inactiveAccount = nil
             let request = CreateAccountRequestDto(name: name, accountType: type, initialBalance: initialBalance)
             let _: CreateAccountResponseDto = try await APIClient.shared.request(
                 "/api/v1/accounts",
@@ -30,6 +38,13 @@ final class AccountsViewModel: ObservableObject {
             await load()
             return true
         } catch {
+            if case APIError.server(_, let problem) = error,
+               problem?.title == "Conta inativa",
+               let accountId = problem?.accountId {
+                let detail = problem?.detail ?? "Essa conta está desativada."
+                inactiveAccount = InactiveAccountInfo(id: accountId, title: "Conta inativa", detail: detail)
+                return false
+            }
             errorMessage = error.localizedDescription
             return false
         }
@@ -57,6 +72,21 @@ final class AccountsViewModel: ObservableObject {
             await load()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    func reactivate(accountId: String) async -> Bool {
+        do {
+            try await APIClient.shared.requestNoResponse(
+                "/api/v1/accounts/\(accountId)/reactivate",
+                method: "PATCH"
+            )
+            inactiveAccount = nil
+            await load()
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
         }
     }
 }

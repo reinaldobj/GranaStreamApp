@@ -45,6 +45,22 @@ struct AccountFormView: View {
             }
             .task { prefill() }
             .errorAlert(message: $errorMessage)
+            .alert(item: $viewModel.inactiveAccount) { info in
+                Alert(
+                    title: Text(info.title),
+                    message: Text(info.detail),
+                    primaryButton: .default(Text("Reativar")) {
+                        Task {
+                            let success = await viewModel.reactivate(accountId: info.id)
+                            if success {
+                                onComplete()
+                                dismiss()
+                            }
+                        }
+                    },
+                    secondaryButton: .cancel(Text("Cancelar"))
+                )
+            }
         }
         .tint(DS.Colors.primary)
     }

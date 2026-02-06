@@ -163,6 +163,18 @@ final class SessionStore: ObservableObject {
         }
     }
 
+    func changePassword(currentPassword: String, newPassword: String) async throws {
+        let request = ChangePasswordRequestDto(
+            currentPassword: currentPassword,
+            newPassword: newPassword
+        )
+        try await APIClient.shared.requestNoResponse(
+            "/api/v1/users/me/password",
+            method: "PATCH",
+            body: AnyEncodable(request)
+        )
+    }
+
     private func storeTokens(from response: LoginResponseDto) throws {
         guard let accessToken = response.accessToken, let refreshToken = response.refreshToken else {
             throw APIError.decodingError

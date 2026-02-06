@@ -6,7 +6,7 @@ struct ProfileView: View {
 
     @State private var name = ""
     @State private var email = ""
-    @State private var showChangePasswordAlert = false
+    @State private var showChangePasswordSheet = false
     @State private var errorMessage: String?
     @State private var isSaving = false
     @State private var showSavedToast = false
@@ -49,7 +49,7 @@ struct ProfileView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         SecondaryButton(title: "Alterar senha") {
-                            showChangePasswordAlert = true
+                            showChangePasswordSheet = true
                         }
 
                         PrimaryButton(title: isSaving ? "Salvando..." : "Salvar", isDisabled: isSaving) {
@@ -75,10 +75,9 @@ struct ProfileView: View {
             }
         }
         .errorAlert(message: $errorMessage)
-        .alert("Em breve", isPresented: $showChangePasswordAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("A tela de alteração de senha ainda está sendo preparada.")
+        .sheet(isPresented: $showChangePasswordSheet) {
+            ChangePasswordView()
+                .environmentObject(session)
         }
         .overlay(alignment: .bottom) {
             if showSavedToast {

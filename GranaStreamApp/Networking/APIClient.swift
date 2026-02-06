@@ -90,6 +90,8 @@ final class APIClient {
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
+            let payload = String(data: data, encoding: .utf8) ?? "<sem corpo>"
+            print("Erro ao decodificar resposta em \(path): \(payload)")
             throw APIError.decodingError
         }
     }

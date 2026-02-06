@@ -66,8 +66,12 @@ struct TransactionFormView: View {
                     Section("Categoria") {
                         Picker("Categoria", selection: $categoryId) {
                             Text("Selecione").tag("")
-                            ForEach(referenceStore.categories) { category in
-                                Text(category.name ?? "Categoria").tag(category.id)
+                            ForEach(filteredCategorySections) { section in
+                                Section(section.title) {
+                                    ForEach(section.children) { child in
+                                        Text(child.name ?? "Categoria").tag(child.id)
+                                    }
+                                }
                             }
                         }
                     }
@@ -91,9 +95,27 @@ struct TransactionFormView: View {
                 }
             }
             .task { prefill() }
+            .onChange(of: type) { newValue in
+                guard newValue != .transfer else {
+                    categoryId = ""
+                    return
+                }
+                let validIds = Set(
+                    groupCategoriesForPicker(referenceStore.categories, transactionType: newValue)
+                        .flatMap { $0.children.map(\.id) }
+                )
+                if !categoryId.isEmpty && !validIds.contains(categoryId) {
+                    categoryId = ""
+                }
+            }
             .errorAlert(message: $errorMessage)
         }
         .tint(DS.Colors.primary)
+    }
+
+    private var filteredCategorySections: [CategorySection] {
+        guard type != .transfer else { return [] }
+        return groupCategoriesForPicker(referenceStore.categories, transactionType: type)
     }
 
     private var isValid: Bool {

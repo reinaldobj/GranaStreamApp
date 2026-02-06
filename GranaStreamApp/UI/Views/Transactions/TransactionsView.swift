@@ -11,48 +11,69 @@ struct TransactionsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(viewModel.transactions) { transaction in
-                    Button {
-                        selectedTransactionForDetail = transaction
-                    } label: {
-                        AppCard {
-                            TransactionRow(transaction: transaction)
+            Group {
+                if viewModel.isLoading && viewModel.transactions.isEmpty {
+                    SkeletonListView()
+                } else {
+                    List {
+                        ForEach(viewModel.transactions) { transaction in
+                            Button {
+                                selectedTransactionForDetail = transaction
+                            } label: {
+                                AppCard {
+                                    TransactionRow(transaction: transaction)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                            .listRowBackground(Color.clear)
+                            .swipeActions(edge: .trailing) {
+                                Button {
+                                    selectedTransactionForEdit = transaction
+                                    showForm = true
+                                } label: {
+                                    Label("Editar", systemImage: "pencil")
+                                }
+                                .tint(DS.Colors.primary)
+                                Button(role: .destructive) {
+                                    Task { await viewModel.delete(transaction: transaction) }
+                                } label: {
+                                    Label("Excluir", systemImage: "trash")
+                                }
+                                .tint(DS.Colors.error)
+                            }
                         }
-                    }
-                    .buttonStyle(.plain)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                    .listRowBackground(Color.clear)
-                    .swipeActions(edge: .leading) {
-                        Button {
-                            selectedTransactionForEdit = transaction
-                            showForm = true
-                        } label: {
-                            Label("Editar", systemImage: "pencil")
-                        }
-                        Button(role: .destructive) {
-                            Task { await viewModel.delete(transaction: transaction) }
-                        } label: {
-                            Label("Excluir", systemImage: "trash")
-                        }
-                    }
-                }
 
-                if viewModel.canLoadMore {
-                    HStack {
-                        Spacer()
-                        ProgressView()
+                        if viewModel.canLoadMore {
+                            HStack {
+                                Spacer()
+                                if viewModel.isLoadingMore {
+                                    ProgressView()
+                                        .tint(DS.Colors.primary)
+                                }
+                                Spacer()
+                            }
                             .task { await viewModel.loadMore() }
-                        Spacer()
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                        }
                     }
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .background(DS.Colors.background)
+                    .safeAreaInset(edge: .top) {
+                        if viewModel.isLoading && !viewModel.transactions.isEmpty {
+                            HStack {
+                                Spacer()
+                                LoadingPillView()
+                                Spacer()
+                            }
+                            .padding(.top, 6)
+                        }
+                    }
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .background(DS.Colors.background)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {

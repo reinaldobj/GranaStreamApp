@@ -46,7 +46,5 @@ struct InstallmentSeriesResponseDto: Codable, Identifiable {
     let amountSettled: Double
     let amountRemaining: Double
     let isActive: Bool
-    let createdAt: Date
-    let updatedAt: Date?
     let installments: [InstallmentItemDto]?
 }

@@ -27,7 +27,7 @@ struct CategoryFormView: View {
                 }
                 Picker("Categoria pai", selection: $parentId) {
                     Text("Nenhuma").tag("")
-                    ForEach(referenceStore.categories) { category in
+                    ForEach(parentOptions) { category in
                         Text(category.name ?? "Categoria").tag(category.id)
                     }
                 }
@@ -61,8 +61,21 @@ struct CategoryFormView: View {
         guard let existing else { return }
         name = existing.name ?? ""
         description = existing.description ?? ""
+        type = existing.categoryType ?? .expense
         parentId = existing.parentCategoryId ?? ""
         sortOrder = String(existing.sortOrder)
+    }
+
+    private var parentOptions: [CategoryResponseDto] {
+        referenceStore.categories
+            .filter { $0.parentCategoryId == nil }
+            .filter { $0.id != existing?.id }
+            .sorted { lhs, rhs in
+                if lhs.sortOrder == rhs.sortOrder {
+                    return (lhs.name ?? "").localizedCaseInsensitiveCompare(rhs.name ?? "") == .orderedAscending
+                }
+                return lhs.sortOrder < rhs.sortOrder
+            }
     }
 
     private func save() async {

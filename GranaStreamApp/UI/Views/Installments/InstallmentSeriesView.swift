@@ -6,39 +6,57 @@ struct InstallmentSeriesView: View {
     @State private var selectedSeries: InstallmentSeriesResponseDto?
 
     var body: some View {
-        List {
-            ForEach(viewModel.series) { series in
-                AppCard {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.base) {
-                        Text(series.description ?? "Parcelada")
-                            .font(AppTheme.Typography.section)
-                            .foregroundColor(DS.Colors.textPrimary)
-                        Text("Restante: \(CurrencyFormatter.string(from: series.amountRemaining))")
-                            .font(AppTheme.Typography.caption)
-                            .foregroundColor(DS.Colors.textSecondary)
+        Group {
+            if viewModel.isLoading && viewModel.series.isEmpty {
+                SkeletonListView()
+            } else {
+                List {
+                    ForEach(viewModel.series) { series in
+                        AppCard {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.base) {
+                                Text(series.description ?? "Parcelada")
+                                    .font(AppTheme.Typography.section)
+                                    .foregroundColor(DS.Colors.textPrimary)
+                                Text("Restante: \(CurrencyFormatter.string(from: series.amountRemaining))")
+                                    .font(AppTheme.Typography.caption)
+                                    .foregroundColor(DS.Colors.textSecondary)
+                            }
+                        }
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .swipeActions(edge: .trailing) {
+                            Button {
+                                selectedSeries = series
+                                showForm = true
+                            } label: {
+                                Label("Editar", systemImage: "pencil")
+                            }
+                            .tint(DS.Colors.primary)
+                            Button(role: .destructive) {
+                                Task { await viewModel.delete(id: series.id) }
+                            } label: {
+                                Label("Excluir", systemImage: "trash")
+                            }
+                            .tint(DS.Colors.error)
+                        }
                     }
                 }
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                .listRowBackground(Color.clear)
-                .swipeActions(edge: .leading) {
-                    Button {
-                        selectedSeries = series
-                        showForm = true
-                    } label: {
-                        Label("Editar", systemImage: "pencil")
-                    }
-                    Button(role: .destructive) {
-                        Task { await viewModel.delete(id: series.id) }
-                    } label: {
-                        Label("Excluir", systemImage: "trash")
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .background(DS.Colors.background)
+                .safeAreaInset(edge: .top) {
+                    if viewModel.isLoading && !viewModel.series.isEmpty {
+                        HStack {
+                            Spacer()
+                            LoadingPillView()
+                            Spacer()
+                        }
+                        .padding(.top, 6)
                     }
                 }
             }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(DS.Colors.background)
         .navigationTitle("Parceladas")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

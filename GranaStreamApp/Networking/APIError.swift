@@ -7,6 +7,7 @@ struct ProblemDetails: Codable {
     let detail: String?
     let instance: String?
     let errors: [String: [String]]?
+    let accountId: String?
 }
 
 enum APIError: Error, LocalizedError {
@@ -30,7 +31,7 @@ enum APIError: Error, LocalizedError {
         case .unauthorized:
             return "Sessão expirada. Faça login novamente."
         case .decodingError:
-            return "Erro ao processar dados."
+            return "Resposta inesperada do servidor. Veja o log no Xcode."
         }
     }
 }
