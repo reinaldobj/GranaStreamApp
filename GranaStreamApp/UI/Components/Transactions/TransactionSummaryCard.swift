@@ -11,7 +11,7 @@ struct TransactionSummaryCardLarge: View {
                 .foregroundColor(DS.Colors.textSecondary)
 
             Text(value)
-                .font(.system(size: 24, weight: .semibold))
+                .font(AppTheme.Typography.metric)
                 .foregroundColor(DS.Colors.textPrimary)
         }
         .frame(maxWidth: .infinity)

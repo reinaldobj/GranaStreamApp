@@ -55,7 +55,7 @@ struct TransactionSwipeRow<Content: View>: View {
                     Image(systemName: "pencil")
                         .font(.system(size: 15, weight: .semibold))
                     Text("Editar")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppTheme.Typography.caption.weight(.semibold))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .foregroundColor(DS.Colors.onPrimary)
@@ -70,7 +70,7 @@ struct TransactionSwipeRow<Content: View>: View {
                     Image(systemName: "trash")
                         .font(.system(size: 15, weight: .semibold))
                     Text("Excluir")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppTheme.Typography.caption.weight(.semibold))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }

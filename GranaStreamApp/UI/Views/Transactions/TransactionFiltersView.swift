@@ -50,24 +50,20 @@ struct TransactionFiltersView: View {
         HStack {
             Spacer()
             Text("Filtros")
-                .font(.system(size: 20, weight: .semibold))
+                .font(AppTheme.Typography.title)
                 .foregroundColor(DS.Colors.textPrimary)
             Spacer()
         }
     }
 
     private var searchField: some View {
-        HStack(spacing: 8) {
+        TransactionField(label: "Busca") {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(DS.Colors.textSecondary)
 
             TextField("Buscar...", text: $filters.searchText)
                 .textInputAutocapitalization(.sentences)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(DS.Colors.surface2)
-        .clipShape(Capsule())
     }
 
     private var filterCard: some View {
@@ -164,7 +160,7 @@ private struct FilterPillButton: View {
             Text(title)
                 .font(AppTheme.Typography.body)
                 .foregroundColor(isSelected ? DS.Colors.onPrimary : DS.Colors.textPrimary)
-                .frame(maxWidth: .infinity, minHeight: 40)
+                .frame(maxWidth: .infinity, minHeight: AppTheme.Spacing.controlHeight)
                 .background(
                     Capsule()
                         .fill(isSelected ? DS.Colors.primary : DS.Colors.surface2)

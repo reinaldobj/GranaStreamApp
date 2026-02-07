@@ -6,6 +6,7 @@ enum AppTheme {
         static let section = Font.system(size: 17, weight: .semibold)
         static let body = Font.system(size: 15, weight: .regular)
         static let caption = Font.system(size: 13, weight: .regular)
+        static let metric = Font.system(size: 24, weight: .semibold)
     }
 
     enum Spacing {

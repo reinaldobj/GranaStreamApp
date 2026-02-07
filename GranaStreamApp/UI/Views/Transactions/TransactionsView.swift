@@ -87,7 +87,7 @@ struct TransactionsView: View {
             Spacer()
 
             Text("Transações")
-                .font(.system(size: 20, weight: .semibold))
+                .font(AppTheme.Typography.title)
                 .foregroundColor(DS.Colors.onPrimary)
 
             Spacer()
