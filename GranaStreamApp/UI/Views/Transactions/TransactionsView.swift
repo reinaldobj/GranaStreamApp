@@ -73,9 +73,9 @@ struct TransactionsView: View {
             Button {
                 showFilters = true
             } label: {
-                Image(systemName: "line.3.horizontal.decrease.circle")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 32, height: 32)
+                Image(systemName: "funnel.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 40, height: 40)
                     .background(DS.Colors.surface.opacity(0.45))
                     .clipShape(Circle())
             }
@@ -94,8 +94,8 @@ struct TransactionsView: View {
                 showForm = true
             } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 32, height: 32)
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 40, height: 40)
                     .background(DS.Colors.surface.opacity(0.45))
                     .clipShape(Circle())
             }
