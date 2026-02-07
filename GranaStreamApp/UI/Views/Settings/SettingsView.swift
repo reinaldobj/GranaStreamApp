@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var session: SessionStore
+    @EnvironmentObject private var appLock: AppLockService
     @State private var showLogoutConfirm = false
     @State private var showProfileSheet = false
 
@@ -142,6 +143,8 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 
+            biometricProtectionCard
+
             Button {
                 showLogoutConfirm = true
             } label: {
@@ -157,6 +160,63 @@ struct SettingsView: View {
             Spacer(minLength: 0)
         }
         .padding(.top, 16)
+    }
+
+    private var biometricProtectionCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Toggle(isOn: biometricToggleBinding) {
+                HStack(spacing: AppTheme.Spacing.item) {
+                    ZStack {
+                        Circle()
+                            .fill(DS.Colors.primary.opacity(0.18))
+                            .frame(width: 42, height: 42)
+
+                        Image(systemName: appLock.biometricSystemImage)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(DS.Colors.primary)
+                    }
+
+                    Text("Proteção por \(appLock.biometricDisplayName)")
+                        .font(AppTheme.Typography.section)
+                        .foregroundColor(DS.Colors.textPrimary)
+                }
+            }
+            .tint(DS.Colors.primary)
+            .disabled(!appLock.isBiometricOptionAvailable && !appLock.isBiometricLockEnabled)
+
+            Text(biometricHelpText)
+                .font(AppTheme.Typography.caption)
+                .foregroundColor(DS.Colors.textSecondary)
+                .padding(.leading, 2)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(DS.Colors.surface)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(DS.Colors.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private var biometricToggleBinding: Binding<Bool> {
+        Binding(
+            get: { appLock.isBiometricLockEnabled },
+            set: { isEnabled in
+                if isEnabled {
+                    appLock.enableBiometricLock()
+                } else {
+                    appLock.disableBiometricLock()
+                }
+            }
+        )
+    }
+
+    private var biometricHelpText: String {
+        if appLock.isBiometricOptionAvailable {
+            return "Ao voltar para o app depois de 15 segundos fora, use \(appLock.biometricDisplayName) ou código do iPhone."
+        }
+        return "Este aparelho não oferece Face ID ou Touch ID no momento."
     }
 
     private var displayName: String {
@@ -185,5 +245,6 @@ struct SettingsView_Previews: PreviewProvider {
                 .preferredColorScheme(.dark)
         }
         .environmentObject(SessionStore.shared)
+        .environmentObject(AppLockService.shared)
     }
 }

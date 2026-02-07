@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AccountFormView: View {
     let existing: AccountResponseDto?
+    @ObservedObject var viewModel: AccountsViewModel
     var onComplete: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -10,8 +11,6 @@ struct AccountFormView: View {
     @State private var initialBalance = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
-
-    @StateObject private var viewModel = AccountsViewModel()
 
     var body: some View {
         NavigationStack {

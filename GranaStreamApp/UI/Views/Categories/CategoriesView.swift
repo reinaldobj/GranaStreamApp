@@ -43,9 +43,7 @@ struct CategoriesView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $formMode) { mode in
-            CategoryFormView(existing: mode.existing) {
-                Task { await viewModel.load(syncReferenceData: true) }
-            }
+            CategoryFormView(existing: mode.existing, viewModel: viewModel) { }
             .presentationDetents([.fraction(0.72)])
             .presentationDragIndicator(.visible)
         }

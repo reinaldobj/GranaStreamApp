@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CategoryFormView: View {
     let existing: CategoryResponseDto?
+    @ObservedObject var viewModel: CategoriesViewModel
     var onComplete: () -> Void
 
     @EnvironmentObject private var referenceStore: ReferenceDataStore
@@ -12,8 +13,6 @@ struct CategoryFormView: View {
     @State private var parentId: String = ""
     @State private var sortOrder = "0"
     @State private var errorMessage: String?
-
-    @StateObject private var viewModel = CategoriesViewModel()
 
     var body: some View {
         NavigationStack {

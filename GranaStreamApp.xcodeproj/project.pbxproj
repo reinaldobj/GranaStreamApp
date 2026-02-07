@@ -260,6 +260,7 @@
 				INFOPLIST_KEY_BASE_URL_DEV = "https://granastreamappcontainer.purplehill-6384ee00.brazilsouth.azurecontainerapps.io";
 				INFOPLIST_KEY_BASE_URL_HML = "https://granastreamappcontainer.purplehill-6384ee00.brazilsouth.azurecontainerapps.io";
 				INFOPLIST_KEY_BASE_URL_PROD = "https://granastreamappcontainer.purplehill-6384ee00.brazilsouth.azurecontainerapps.io";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Use o Face ID para proteger seus dados financeiros no app.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -297,6 +298,7 @@
 				INFOPLIST_KEY_BASE_URL_DEV = "https://granastreamappcontainer.purplehill-6384ee00.brazilsouth.azurecontainerapps.io";
 				INFOPLIST_KEY_BASE_URL_HML = "https://granastreamappcontainer.purplehill-6384ee00.brazilsouth.azurecontainerapps.io";
 				INFOPLIST_KEY_BASE_URL_PROD = "https://granastreamappcontainer.purplehill-6384ee00.brazilsouth.azurecontainerapps.io";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Use o Face ID para proteger seus dados financeiros no app.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -40,16 +40,26 @@ final class AccountsViewModel: ObservableObject {
         name: String,
         type: AccountType,
         initialBalance: Double,
-        reloadAfterChange: Bool = true
+        reloadAfterChange: Bool = false
     ) async -> Bool {
         do {
             inactiveAccount = nil
             let request = CreateAccountRequestDto(name: name, accountType: type, initialBalance: initialBalance)
-            let _: CreateAccountResponseDto = try await APIClient.shared.request(
+            let response: CreateAccountResponseDto = try await APIClient.shared.request(
                 "/api/v1/accounts",
                 method: "POST",
                 body: AnyEncodable(request)
             )
+
+            let created = AccountResponseDto(
+                id: response.id,
+                name: response.name ?? name,
+                initialBalance: response.initialBalance,
+                accountType: type
+            )
+            upsertLocalAccount(created)
+            ReferenceDataStore.shared.upsertAccount(created)
+
             if reloadAfterChange {
                 await load(syncReferenceData: true)
             }
@@ -71,7 +81,7 @@ final class AccountsViewModel: ObservableObject {
         account: AccountResponseDto,
         name: String,
         type: AccountType,
-        reloadAfterChange: Bool = true
+        reloadAfterChange: Bool = false
     ) async -> Bool {
         do {
             let request = UpdateAccountRequestDto(name: name, accountType: type)
@@ -80,6 +90,16 @@ final class AccountsViewModel: ObservableObject {
                 method: "PATCH",
                 body: AnyEncodable(request)
             )
+
+            let updated = AccountResponseDto(
+                id: account.id,
+                name: name,
+                initialBalance: account.initialBalance,
+                accountType: type
+            )
+            upsertLocalAccount(updated)
+            ReferenceDataStore.shared.upsertAccount(updated)
+
             if reloadAfterChange {
                 await load(syncReferenceData: true)
             }
@@ -93,7 +113,9 @@ final class AccountsViewModel: ObservableObject {
     func delete(account: AccountResponseDto) async {
         do {
             try await APIClient.shared.requestNoResponse("/api/v1/accounts/\(account.id)", method: "DELETE")
-            await load(syncReferenceData: true)
+            allAccounts.removeAll { $0.id == account.id }
+            applySearch(term: activeSearchTerm, updateActiveTerm: false)
+            ReferenceDataStore.shared.removeAccount(id: account.id)
         } catch {
             errorMessage = error.userMessage
         }
@@ -136,5 +158,14 @@ final class AccountsViewModel: ObservableObject {
         value
             .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "pt_BR"))
             .lowercased()
+    }
+
+    private func upsertLocalAccount(_ item: AccountResponseDto) {
+        if let index = allAccounts.firstIndex(where: { $0.id == item.id }) {
+            allAccounts[index] = item
+        } else {
+            allAccounts.append(item)
+        }
+        applySearch(term: activeSearchTerm, updateActiveTerm: false)
     }
 }

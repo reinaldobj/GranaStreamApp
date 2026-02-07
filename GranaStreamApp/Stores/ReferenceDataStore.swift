@@ -30,6 +30,30 @@ final class ReferenceDataStore: ObservableObject {
         categories = items
     }
 
+    func upsertAccount(_ item: AccountResponseDto) {
+        if let index = accounts.firstIndex(where: { $0.id == item.id }) {
+            accounts[index] = item
+        } else {
+            accounts.append(item)
+        }
+    }
+
+    func removeAccount(id: String) {
+        accounts.removeAll { $0.id == id }
+    }
+
+    func upsertCategory(_ item: CategoryResponseDto) {
+        if let index = categories.firstIndex(where: { $0.id == item.id }) {
+            categories[index] = item
+        } else {
+            categories.append(item)
+        }
+    }
+
+    func removeCategory(id: String) {
+        categories.removeAll { $0.id == id }
+    }
+
     func loadIfNeeded() async {
         if accounts.isEmpty && categories.isEmpty {
             await refresh()

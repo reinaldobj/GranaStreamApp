@@ -9,9 +9,14 @@ import SwiftUI
 
 @main
 struct GranaStreamAppApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            AppLockService.shared.handleScenePhaseChange(phase)
         }
     }
 }

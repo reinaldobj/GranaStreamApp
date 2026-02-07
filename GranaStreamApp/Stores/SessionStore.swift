@@ -212,5 +212,6 @@ final class SessionStore: ObservableObject {
         keychain.delete(accessTokenKey)
         keychain.delete(refreshTokenKey)
         keychain.delete(expiresAtKey)
+        AppLockService.shared.resetForLogout()
     }
 }

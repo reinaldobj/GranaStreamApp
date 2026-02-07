@@ -4,13 +4,24 @@ struct TransactionsView: View {
     @StateObject private var viewModel = TransactionsViewModel()
     @EnvironmentObject private var referenceStore: ReferenceDataStore
 
-    @State private var formMode: TransactionFormMode?
+    @State private var showUnifiedEntryForm = false
+    @State private var transactionToEdit: TransactionSummaryDto?
     @State private var selectedTransactionForDetail: TransactionSummaryDto?
     @State private var showFilters = false
     @State private var quickFilter: TransactionType?
     @State private var hasFinishedInitialLoad = false
     @State private var transactionPendingDelete: TransactionSummaryDto?
+    @State private var successMessage: String?
+    @State private var initialLoadTask: Task<Void, Never>?
+    @State private var reloadTask: Task<Void, Never>?
+    @State private var deleteTask: Task<Void, Never>?
+    @State private var loadMoreTask: Task<Void, Never>?
+    @State private var successBannerTask: Task<Void, Never>?
     private let sectionSpacing = AppTheme.Spacing.item
+    private let shortcutColumns = [
+        GridItem(.flexible(), spacing: AppTheme.Spacing.item),
+        GridItem(.flexible(), spacing: AppTheme.Spacing.item)
+    ]
 
     var body: some View {
         NavigationStack {
@@ -40,9 +51,16 @@ struct TransactionsView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .sheet(item: $formMode) { mode in
-                TransactionFormView(existing: mode.existing) {
-                    Task { await viewModel.load(reset: true) }
+            .sheet(isPresented: $showUnifiedEntryForm) {
+                UnifiedEntryFormView(initialMode: .single) { message in
+                    handleCreateSuccess(message: message)
+                }
+                .presentationDetents([.fraction(0.90)])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(item: $transactionToEdit) { transaction in
+                TransactionFormView(existing: transaction) {
+                    requestReload()
                 }
                 .presentationDetents([.fraction(0.80)])
                 .presentationDragIndicator(.visible)
@@ -50,7 +68,7 @@ struct TransactionsView: View {
             .sheet(isPresented: $showFilters) {
                 TransactionFiltersView(filters: $viewModel.filters) {
                     syncQuickFilter()
-                    Task { await viewModel.load(reset: true) }
+                    requestReload()
                 }
                 .presentationDetents([.fraction(0.70)])
                 .presentationDragIndicator(.visible)
@@ -60,12 +78,8 @@ struct TransactionsView: View {
                     .presentationDetents([.fraction(0.72)])
                     .presentationDragIndicator(.visible)
             }
-            .task {
-                await referenceStore.loadIfNeeded()
-                syncQuickFilter()
-                await viewModel.load(reset: true)
-                hasFinishedInitialLoad = true
-            }
+            .task { startInitialLoad() }
+            .onDisappear { cancelAllTasks() }
             .alert(
                 "Excluir lançamento?",
                 isPresented: Binding(
@@ -81,12 +95,19 @@ struct TransactionsView: View {
                 Button("Excluir", role: .destructive) {
                     guard let transaction = transactionPendingDelete else { return }
                     transactionPendingDelete = nil
-                    Task { await viewModel.delete(transaction: transaction) }
+                    startDelete(transaction)
                 }
             } message: {
                 Text(deleteMessage)
             }
             .errorAlert(message: $viewModel.errorMessage)
+            .overlay(alignment: .top) {
+                if let successMessage {
+                    successBanner(text: successMessage)
+                        .padding(.top, 8)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
         }
         .tint(DS.Colors.primary)
     }
@@ -113,7 +134,7 @@ struct TransactionsView: View {
             Spacer()
 
             Button {
-                formMode = .new
+                showUnifiedEntryForm = true
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 18, weight: .semibold))
@@ -129,6 +150,7 @@ struct TransactionsView: View {
         VStack(spacing: AppTheme.Spacing.item) {
             header
             summaryCards
+            managementShortcuts
         }
         .padding(.horizontal, AppTheme.Spacing.screen)
         .padding(.top, 6)
@@ -139,7 +161,7 @@ struct TransactionsView: View {
         VStack(spacing: AppTheme.Spacing.item) {
             TransactionSummaryCardLarge(
                 title: "Saldo total",
-                value: CurrencyFormatter.string(from: totalBalance)
+                value: CurrencyFormatter.string(from: viewModel.totalBalance)
             )
 
             HStack(spacing: AppTheme.Spacing.item) {
@@ -148,7 +170,7 @@ struct TransactionsView: View {
                 } label: {
                     TransactionSummaryCardSmall(
                         title: "Receita",
-                        value: CurrencyFormatter.string(from: incomeTotal),
+                        value: CurrencyFormatter.string(from: viewModel.incomeTotal),
                         icon: "arrow.down.left",
                         accentColor: DS.Colors.primary,
                         isSelected: quickFilter == .income
@@ -161,7 +183,7 @@ struct TransactionsView: View {
                 } label: {
                     TransactionSummaryCardSmall(
                         title: "Despesa",
-                        value: CurrencyFormatter.string(from: -abs(expenseTotal)),
+                        value: CurrencyFormatter.string(from: -abs(viewModel.expenseTotal)),
                         icon: "arrow.up.right",
                         accentColor: DS.Colors.error,
                         isSelected: quickFilter == .expense
@@ -170,6 +192,61 @@ struct TransactionsView: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    private var managementShortcuts: some View {
+        LazyVGrid(columns: shortcutColumns, spacing: AppTheme.Spacing.item) {
+            NavigationLink {
+                PayablesView()
+            } label: {
+                managementShortcutCard(
+                    title: "Pendências",
+                    systemImage: "checklist"
+                )
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                RecurrencesView()
+            } label: {
+                managementShortcutCard(
+                    title: "Recorrências",
+                    systemImage: "arrow.triangle.2.circlepath"
+                )
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                InstallmentSeriesView()
+            } label: {
+                managementShortcutCard(
+                    title: "Parceladas",
+                    systemImage: "creditcard"
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func managementShortcutCard(title: String, systemImage: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .semibold))
+            Text(title)
+                .font(AppTheme.Typography.caption)
+                .lineLimit(1)
+        }
+        .foregroundColor(DS.Colors.primary)
+        .frame(maxWidth: .infinity, minHeight: 36)
+        .padding(.horizontal, 8)
+        .background(
+            RoundedRectangle(cornerRadius: AppTheme.Radius.field)
+                .fill(DS.Colors.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.Radius.field)
+                .stroke(DS.Colors.border, lineWidth: 1)
+        )
     }
 
     private func transactionsSection(viewportHeight: CGFloat) -> some View {
@@ -181,7 +258,7 @@ struct TransactionsView: View {
             .padding(.bottom, 0)
             .frame(
                 maxWidth: .infinity,
-                minHeight: monthSections.isEmpty ? emptyMinHeight : nil,
+                minHeight: viewModel.monthSections.isEmpty ? emptyMinHeight : nil,
                 alignment: .top
             )
             .topSectionStyle()
@@ -191,14 +268,14 @@ struct TransactionsView: View {
         LazyVStack(alignment: .leading, spacing: 16) {
             if shouldShowLoadingState {
                 loadingState
-            } else if monthSections.isEmpty {
+            } else if viewModel.monthSections.isEmpty {
                 Text("Sem transações neste período.")
                     .font(AppTheme.Typography.body)
                     .foregroundColor(DS.Colors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 24)
             } else {
-                ForEach(Array(monthSections.enumerated()), id: \.element.id) { index, section in
+                ForEach(Array(viewModel.monthSections.enumerated()), id: \.element.id) { index, section in
                     TransactionMonthHeader(title: section.title)
                         .padding(.leading, 4)
                         .padding(.top, index == 0 ? 14 : 0)
@@ -208,7 +285,7 @@ struct TransactionsView: View {
                             TransactionSwipeRow(
                                 onTap: { selectedTransactionForDetail = transaction },
                                 onEdit: {
-                                    formMode = .edit(transaction)
+                                    transactionToEdit = transaction
                                 },
                                 onDelete: {
                                     transactionPendingDelete = transaction
@@ -218,7 +295,7 @@ struct TransactionsView: View {
                             }
                             .contextMenu {
                                 Button("Editar") {
-                                    formMode = .edit(transaction)
+                                    transactionToEdit = transaction
                                 }
                                 Button("Excluir", role: .destructive) {
                                     transactionPendingDelete = transaction
@@ -243,7 +320,7 @@ struct TransactionsView: View {
                             ProgressView()
                                 .tint(DS.Colors.primary)
                                 .onAppear {
-                                    Task { await viewModel.loadMore() }
+                                    requestLoadMore()
                                 }
                         }
                         Spacer()
@@ -269,77 +346,6 @@ struct TransactionsView: View {
         .padding(.vertical, 24)
     }
 
-    private var incomeTotal: Double {
-        viewModel.transactions
-            .filter { $0.type == .income }
-            .reduce(0) { $0 + $1.amount }
-    }
-
-    private var expenseTotal: Double {
-        viewModel.transactions
-            .filter { $0.type == .expense }
-            .reduce(0) { $0 + $1.amount }
-    }
-
-    private var totalBalance: Double {
-        incomeTotal - expenseTotal
-    }
-
-    private var monthSections: [MonthSection] {
-        let sorted = viewModel.transactions.sorted { $0.date > $1.date }
-        guard !sorted.isEmpty else { return [] }
-
-        let calendar = Calendar.current
-        let years = Set(sorted.map { calendar.component(.year, from: $0.date) })
-        let showYear = years.count > 1
-
-        var sections: [MonthSection] = []
-        var currentKey = ""
-        var currentDate = Date()
-        var currentItems: [TransactionSummaryDto] = []
-
-        for item in sorted {
-            let components = calendar.dateComponents([.year, .month], from: item.date)
-            let key = String(format: "%04d-%02d", components.year ?? 0, components.month ?? 0)
-            if key != currentKey {
-                if !currentItems.isEmpty {
-                    sections.append(
-                        MonthSection(
-                            id: currentKey,
-                            title: monthTitle(for: currentDate, showYear: showYear),
-                            items: currentItems
-                        )
-                    )
-                }
-                currentKey = key
-                currentDate = item.date
-                currentItems = [item]
-            } else {
-                currentItems.append(item)
-            }
-        }
-
-        if !currentItems.isEmpty {
-            sections.append(
-                MonthSection(
-                    id: currentKey,
-                    title: monthTitle(for: currentDate, showYear: showYear),
-                    items: currentItems
-                )
-            )
-        }
-
-        return sections
-    }
-
-    private func monthTitle(for date: Date, showYear: Bool) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.dateFormat = showYear ? "LLLL yyyy" : "LLLL"
-        let text = formatter.string(from: date)
-        return text.prefix(1).uppercased() + text.dropFirst()
-    }
-
     private func toggleQuickFilter(_ type: TransactionType) {
         if quickFilter == type {
             quickFilter = nil
@@ -348,7 +354,7 @@ struct TransactionsView: View {
             quickFilter = type
             viewModel.filters.type = type
         }
-        Task { await viewModel.load(reset: true) }
+        requestReload()
     }
 
     private func syncQuickFilter() {
@@ -367,33 +373,107 @@ struct TransactionsView: View {
         }
         return "Você realmente quer excluir este lançamento?"
     }
-}
 
-private enum TransactionFormMode: Identifiable {
-    case new
-    case edit(TransactionSummaryDto)
+    private func startInitialLoad() {
+        initialLoadTask?.cancel()
+        hasFinishedInitialLoad = false
 
-    var id: String {
-        switch self {
-        case .new:
-            return "new"
-        case .edit(let transaction):
-            return "edit-\(transaction.id)"
+        initialLoadTask = Task {
+            await referenceStore.loadIfNeeded()
+            if Task.isCancelled { return }
+
+            await MainActor.run {
+                syncQuickFilter()
+            }
+
+            await viewModel.load(reset: true)
+            if Task.isCancelled { return }
+
+            await MainActor.run {
+                hasFinishedInitialLoad = true
+            }
         }
     }
 
-    var existing: TransactionSummaryDto? {
-        switch self {
-        case .new:
-            return nil
-        case .edit(let transaction):
-            return transaction
+    private func requestReload() {
+        reloadTask?.cancel()
+        reloadTask = Task {
+            await viewModel.load(reset: true)
         }
     }
-}
 
-private struct MonthSection: Identifiable {
-    let id: String
-    let title: String
-    let items: [TransactionSummaryDto]
+    private func requestLoadMore() {
+        guard loadMoreTask == nil else { return }
+
+        loadMoreTask = Task {
+            await viewModel.loadMore()
+            await MainActor.run {
+                loadMoreTask = nil
+            }
+        }
+    }
+
+    private func startDelete(_ transaction: TransactionSummaryDto) {
+        deleteTask?.cancel()
+        deleteTask = Task {
+            await viewModel.delete(transaction: transaction)
+        }
+    }
+
+    private func cancelAllTasks() {
+        initialLoadTask?.cancel()
+        reloadTask?.cancel()
+        deleteTask?.cancel()
+        loadMoreTask?.cancel()
+        successBannerTask?.cancel()
+
+        initialLoadTask = nil
+        reloadTask = nil
+        deleteTask = nil
+        loadMoreTask = nil
+        successBannerTask = nil
+    }
+
+    private func handleCreateSuccess(message: String) {
+        requestReload()
+        showSuccessBanner(message: message)
+    }
+
+    private func showSuccessBanner(message: String) {
+        successBannerTask?.cancel()
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            successMessage = message
+        }
+
+        successBannerTask = Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    successMessage = nil
+                }
+            }
+        }
+    }
+
+    private func successBanner(text: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(DS.Colors.success)
+            Text(text)
+                .font(AppTheme.Typography.caption)
+                .foregroundColor(DS.Colors.textPrimary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(DS.Colors.surface)
+        .overlay(
+            Capsule()
+                .stroke(DS.Colors.border, lineWidth: 1)
+        )
+        .clipShape(Capsule())
+        .shadow(color: DS.Colors.border.opacity(0.25), radius: 6, x: 0, y: 3)
+    }
 }

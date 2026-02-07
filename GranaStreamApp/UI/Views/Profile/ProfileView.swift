@@ -10,6 +10,8 @@ struct ProfileView: View {
     @State private var errorMessage: String?
     @State private var isSaving = false
     @State private var showSavedToast = false
+    @State private var saveTask: Task<Void, Never>?
+    @State private var hideToastTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -104,6 +106,10 @@ struct ProfileView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .onDisappear {
+            saveTask?.cancel()
+            hideToastTask?.cancel()
+        }
         .tint(DS.Colors.primary)
     }
 
@@ -122,20 +128,33 @@ struct ProfileView: View {
             return
         }
 
+        saveTask?.cancel()
         isSaving = true
-        Task {
-            defer { isSaving = false }
+
+        saveTask = Task {
+            defer {
+                isSaving = false
+                saveTask = nil
+            }
             do {
                 try await session.updateProfile(name: trimmedName, email: trimmedEmail)
+                if Task.isCancelled { return }
+
                 loadFromSession()
+                hideToastTask?.cancel()
                 showSavedToast = true
-                Task {
+
+                hideToastTask = Task {
                     try? await Task.sleep(nanoseconds: 1_200_000_000)
+                    if Task.isCancelled { return }
+
                     withAnimation {
                         showSavedToast = false
                     }
                     dismiss()
                 }
+            } catch is CancellationError {
+                return
             } catch {
                 errorMessage = error.userMessage
             }

@@ -1,6 +1,12 @@
 import Foundation
 import Combine
 
+struct TransactionMonthSection: Identifiable {
+    let id: String
+    let title: String
+    let items: [TransactionSummaryDto]
+}
+
 @MainActor
 final class TransactionsViewModel: ObservableObject {
     @Published var transactions: [TransactionSummaryDto] = []
@@ -8,10 +14,17 @@ final class TransactionsViewModel: ObservableObject {
     @Published var isLoadingMore = false
     @Published var errorMessage: String?
     @Published var filters: TransactionFilters
+    @Published private(set) var monthSections: [TransactionMonthSection] = []
+    @Published private(set) var incomeTotal: Double = 0
+    @Published private(set) var expenseTotal: Double = 0
 
     private var page = 1
     private let size = 20
     private var total = 0
+
+    var totalBalance: Double {
+        incomeTotal - expenseTotal
+    }
 
     init() {
         let now = Date()
@@ -63,6 +76,7 @@ final class TransactionsViewModel: ObservableObject {
             } else {
                 transactions.append(contentsOf: response.items ?? [])
             }
+            recalculateDerivedData()
         } catch {
             errorMessage = error.userMessage
         }
@@ -101,6 +115,7 @@ final class TransactionsViewModel: ObservableObject {
             total = response.total
             page = nextPage
             transactions.append(contentsOf: response.items ?? [])
+            recalculateDerivedData()
         } catch {
             errorMessage = error.userMessage
         }
@@ -117,4 +132,83 @@ final class TransactionsViewModel: ObservableObject {
             errorMessage = error.userMessage
         }
     }
+
+    private func recalculateDerivedData() {
+        incomeTotal = transactions
+            .filter { $0.type == .income }
+            .reduce(0) { $0 + $1.amount }
+
+        expenseTotal = transactions
+            .filter { $0.type == .expense }
+            .reduce(0) { $0 + $1.amount }
+
+        monthSections = buildMonthSections(from: transactions)
+    }
+
+    private func buildMonthSections(from items: [TransactionSummaryDto]) -> [TransactionMonthSection] {
+        let sorted = items.sorted { $0.date > $1.date }
+        guard !sorted.isEmpty else { return [] }
+
+        let calendar = Calendar.current
+        let years = Set(sorted.map { calendar.component(.year, from: $0.date) })
+        let showYear = years.count > 1
+
+        var sections: [TransactionMonthSection] = []
+        var currentKey = ""
+        var currentDate = Date()
+        var currentItems: [TransactionSummaryDto] = []
+
+        for item in sorted {
+            let components = calendar.dateComponents([.year, .month], from: item.date)
+            let key = String(format: "%04d-%02d", components.year ?? 0, components.month ?? 0)
+            if key != currentKey {
+                if !currentItems.isEmpty {
+                    sections.append(
+                        TransactionMonthSection(
+                            id: currentKey,
+                            title: Self.monthTitle(for: currentDate, showYear: showYear),
+                            items: currentItems
+                        )
+                    )
+                }
+                currentKey = key
+                currentDate = item.date
+                currentItems = [item]
+            } else {
+                currentItems.append(item)
+            }
+        }
+
+        if !currentItems.isEmpty {
+            sections.append(
+                TransactionMonthSection(
+                    id: currentKey,
+                    title: Self.monthTitle(for: currentDate, showYear: showYear),
+                    items: currentItems
+                )
+            )
+        }
+
+        return sections
+    }
+
+    private static func monthTitle(for date: Date, showYear: Bool) -> String {
+        let formatter = showYear ? monthFormatterWithYear : monthFormatterNoYear
+        let text = formatter.string(from: date)
+        return text.prefix(1).uppercased() + text.dropFirst()
+    }
+
+    private static let monthFormatterNoYear: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.dateFormat = "LLLL"
+        return formatter
+    }()
+
+    private static let monthFormatterWithYear: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.dateFormat = "LLLL yyyy"
+        return formatter
+    }()
 }

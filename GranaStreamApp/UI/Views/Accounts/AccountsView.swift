@@ -41,9 +41,7 @@ struct AccountsView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $formMode) { mode in
-            AccountFormView(existing: mode.existing) {
-                Task { await viewModel.load(syncReferenceData: true) }
-            }
+            AccountFormView(existing: mode.existing, viewModel: viewModel) { }
             .presentationDetents([.fraction(0.50)])
             .presentationDragIndicator(.visible)
         }

@@ -38,7 +38,7 @@ final class CategoriesViewModel: ObservableObject {
         type: CategoryType,
         parentId: String?,
         sortOrder: Int,
-        reloadAfterChange: Bool = true
+        reloadAfterChange: Bool = false
     ) async -> Bool {
         do {
             let request = CreateCategoryRequestDto(
@@ -48,11 +48,26 @@ final class CategoriesViewModel: ObservableObject {
                 parentCategoryId: parentId,
                 sortOrder: sortOrder
             )
-            let _: CreateCategoryResponseDto = try await APIClient.shared.request(
+            let response: CreateCategoryResponseDto = try await APIClient.shared.request(
                 "/api/v1/categories",
                 method: "POST",
                 body: AnyEncodable(request)
             )
+
+            let created = CategoryResponseDto(
+                id: response.id,
+                name: response.name ?? name,
+                description: response.description ?? description,
+                categoryType: response.categoryType ?? type,
+                parentCategoryId: response.parentCategoryId,
+                parentCategoryName: response.parentCategoryName,
+                sortOrder: response.sortOrder,
+                isActive: true,
+                subCategories: nil
+            )
+            upsertLocalCategory(created)
+            ReferenceDataStore.shared.upsertCategory(created)
+
             if reloadAfterChange {
                 await load(syncReferenceData: true)
             }
@@ -70,7 +85,7 @@ final class CategoriesViewModel: ObservableObject {
         type: CategoryType,
         parentId: String?,
         sortOrder: Int,
-        reloadAfterChange: Bool = true
+        reloadAfterChange: Bool = false
     ) async -> Bool {
         do {
             let request = UpdateCategoryRequestDto(
@@ -85,6 +100,21 @@ final class CategoriesViewModel: ObservableObject {
                 method: "PUT",
                 body: AnyEncodable(request)
             )
+
+            let updated = CategoryResponseDto(
+                id: category.id,
+                name: name,
+                description: description,
+                categoryType: type,
+                parentCategoryId: parentId,
+                parentCategoryName: category.parentCategoryName,
+                sortOrder: sortOrder,
+                isActive: category.isActive,
+                subCategories: category.subCategories
+            )
+            upsertLocalCategory(updated)
+            ReferenceDataStore.shared.upsertCategory(updated)
+
             if reloadAfterChange {
                 await load(syncReferenceData: true)
             }
@@ -98,7 +128,12 @@ final class CategoriesViewModel: ObservableObject {
     func delete(category: CategoryResponseDto) async {
         do {
             try await APIClient.shared.requestNoResponse("/api/v1/categories/\(category.id)", method: "DELETE")
-            await load(syncReferenceData: true)
+            let removedIds = categoriesToRemove(for: category.id)
+            allCategories.removeAll { removedIds.contains($0.id) }
+            applySearch(term: activeSearchTerm, updateActiveTerm: false)
+            for id in removedIds {
+                ReferenceDataStore.shared.removeCategory(id: id)
+            }
         } catch {
             errorMessage = error.userMessage
         }
@@ -162,5 +197,31 @@ final class CategoriesViewModel: ObservableObject {
         value
             .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "pt_BR"))
             .lowercased()
+    }
+
+    private func upsertLocalCategory(_ item: CategoryResponseDto) {
+        if let index = allCategories.firstIndex(where: { $0.id == item.id }) {
+            allCategories[index] = item
+        } else {
+            allCategories.append(item)
+        }
+        applySearch(term: activeSearchTerm, updateActiveTerm: false)
+    }
+
+    private func categoriesToRemove(for rootId: String) -> Set<String> {
+        var removedIds: Set<String> = [rootId]
+        var changed = true
+
+        while changed {
+            changed = false
+            for category in allCategories {
+                if let parentId = category.parentCategoryId, removedIds.contains(parentId), !removedIds.contains(category.id) {
+                    removedIds.insert(category.id)
+                    changed = true
+                }
+            }
+        }
+
+        return removedIds
     }
 }

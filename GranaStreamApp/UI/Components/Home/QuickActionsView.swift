@@ -3,6 +3,8 @@ import SwiftUI
 struct QuickActionsView: View {
     @EnvironmentObject private var referenceStore: ReferenceDataStore
     @State private var showTransactionForm = false
+    @State private var successMessage: String?
+    @State private var successTask: Task<Void, Never>?
 
     var body: some View {
         AppCard {
@@ -29,10 +31,47 @@ struct QuickActionsView: View {
                     }
                     .buttonStyle(.plain)
                 }
+
+                if let successMessage {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(DS.Colors.success)
+                        Text(successMessage)
+                            .font(AppTheme.Typography.caption)
+                            .foregroundColor(DS.Colors.textSecondary)
+                    }
+                    .transition(.opacity)
+                }
             }
         }
         .sheet(isPresented: $showTransactionForm) {
-            TransactionFormView(existing: nil) { }
+            UnifiedEntryFormView(initialMode: .single) { message in
+                showSuccessMessage(message)
+            }
+            .presentationDetents([.fraction(0.90)])
+            .presentationDragIndicator(.visible)
+        }
+        .onDisappear {
+            successTask?.cancel()
+            successTask = nil
+        }
+    }
+
+    private func showSuccessMessage(_ message: String) {
+        successTask?.cancel()
+        withAnimation(.easeInOut(duration: 0.2)) {
+            successMessage = message
+        }
+
+        successTask = Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    successMessage = nil
+                }
+            }
         }
     }
 }
