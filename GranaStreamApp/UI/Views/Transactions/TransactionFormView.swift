@@ -21,79 +21,20 @@ struct TransactionFormView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Tipo") {
-                    Picker("Tipo", selection: $type) {
-                        ForEach(TransactionType.allCases) { item in
-                            Text(item.label).tag(item)
-                        }
-                    }
-                    .disabled(existing != nil)
-                }
+            ZStack {
+                DS.Colors.background
+                    .ignoresSafeArea()
 
-                Section("Dados") {
-                    DatePicker("Data", selection: $date, displayedComponents: .date)
-                    TextField("Valor", text: $amount)
-                        .keyboardType(.decimalPad)
-                    TextField("Descrição", text: $description)
-                }
-
-                if type == .transfer {
-                    Section("Contas") {
-                        Picker("De", selection: $fromAccountId) {
-                            Text("Selecione").tag("")
-                            ForEach(referenceStore.accounts) { account in
-                                Text(account.name ?? "Conta").tag(account.id)
-                            }
-                        }
-                        Picker("Para", selection: $toAccountId) {
-                            Text("Selecione").tag("")
-                            ForEach(referenceStore.accounts) { account in
-                                Text(account.name ?? "Conta").tag(account.id)
-                            }
-                        }
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: AppTheme.Spacing.item) {
+                        transactionCard
                     }
-                } else {
-                    Section("Conta") {
-                        Picker("Conta", selection: $accountId) {
-                            Text("Selecione").tag("")
-                            ForEach(referenceStore.accounts) { account in
-                                Text(account.name ?? "Conta").tag(account.id)
-                            }
-                        }
-                    }
-
-                    Section("Categoria") {
-                        Picker("Categoria", selection: $categoryId) {
-                            Text("Selecione").tag("")
-                            ForEach(filteredCategorySections) { section in
-                                Section(section.title) {
-                                    ForEach(section.children) { child in
-                                        Text(child.name ?? "Categoria").tag(child.id)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    .padding(.horizontal, AppTheme.Spacing.screen)
+                    .padding(.top, AppTheme.Spacing.screen)
+                    .padding(.bottom, AppTheme.Spacing.screen * 2)
                 }
             }
-            .listRowBackground(DS.Colors.surface)
-            .scrollContentBackground(.hidden)
-            .background(DS.Colors.background)
             .navigationTitle(existing == nil ? "Novo lançamento" : "Editar lançamento")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancelar") {
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Salvar") {
-                        Task { await save() }
-                    }
-                    .disabled(!isValid)
-                }
-            }
             .task { prefill() }
             .onChange(of: type) { newValue in
                 guard newValue != .transfer else {
@@ -113,24 +54,165 @@ struct TransactionFormView: View {
         .tint(DS.Colors.primary)
     }
 
+    private var transactionCard: some View {
+        VStack(spacing: AppTheme.Spacing.item) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Tipo")
+                    .font(AppTheme.Typography.caption)
+                    .foregroundColor(DS.Colors.textSecondary)
+
+                Picker("Tipo", selection: $type) {
+                    ForEach(TransactionType.allCases) { item in
+                        Text(item.label).tag(item)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .disabled(existing != nil)
+            }
+
+            TransactionDateRow(label: "Data", date: $date)
+
+            if type == .transfer {
+                TransactionPickerRow(
+                    label: "De",
+                    value: fromAccountName,
+                    placeholder: "Selecione"
+                ) {
+                    accountMenu(selection: $fromAccountId)
+                }
+
+                TransactionPickerRow(
+                    label: "Para",
+                    value: toAccountName,
+                    placeholder: "Selecione"
+                ) {
+                    accountMenu(selection: $toAccountId)
+                }
+            } else {
+                TransactionPickerRow(
+                    label: "Categoria",
+                    value: categoryName,
+                    placeholder: "Selecione a categoria"
+                ) {
+                    categoryMenu(selection: $categoryId)
+                }
+
+                TransactionPickerRow(
+                    label: "Conta",
+                    value: accountName,
+                    placeholder: "Selecione a conta"
+                ) {
+                    accountMenu(selection: $accountId)
+                }
+            }
+
+            TransactionField(label: "Valor") {
+                CurrencyTextField(placeholder: "R$ 0,00", text: $amount)
+            }
+
+            TransactionField(label: "Título") {
+                TextField("Ex: Cinema", text: $description)
+                    .textInputAutocapitalization(.sentences)
+            }
+
+            TransactionPrimaryButton(
+                title: isLoading ? "Salvando..." : "Salvar",
+                isDisabled: !isValid || isLoading
+            ) {
+                Task { await save() }
+            }
+            .padding(.top, 8)
+        }
+        .padding(20)
+        .background(DS.Colors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .shadow(color: DS.Colors.border.opacity(0.35), radius: 12, x: 0, y: 6)
+    }
+
     private var filteredCategorySections: [CategorySection] {
         guard type != .transfer else { return [] }
         return groupCategoriesForPicker(referenceStore.categories, transactionType: type)
     }
 
     private var isValid: Bool {
-        if Double(amount.replacingOccurrences(of: ",", with: ".")) == nil { return false }
+        if amountValue == nil { return false }
         if type == .transfer {
             return !fromAccountId.isEmpty && !toAccountId.isEmpty
         }
         return !accountId.isEmpty
     }
 
+    private var amountValue: Double? {
+        CurrencyTextField.value(from: amount)
+    }
+
+    private var accountName: String? {
+        referenceStore.accounts.first(where: { $0.id == accountId })?.name
+    }
+
+    private var fromAccountName: String? {
+        referenceStore.accounts.first(where: { $0.id == fromAccountId })?.name
+    }
+
+    private var toAccountName: String? {
+        referenceStore.accounts.first(where: { $0.id == toAccountId })?.name
+    }
+
+    private var categoryName: String? {
+        referenceStore.categories.first(where: { $0.id == categoryId })?.name
+    }
+
+    @ViewBuilder
+    private func categoryMenu(selection: Binding<String>) -> some View {
+        Button("Limpar seleção") {
+            selection.wrappedValue = ""
+        }
+        .disabled(selection.wrappedValue.isEmpty)
+
+        if filteredCategorySections.isEmpty {
+            Text("Sem categorias")
+                .font(AppTheme.Typography.caption)
+                .foregroundColor(DS.Colors.textSecondary)
+        } else {
+            ForEach(filteredCategorySections) { section in
+                Text(section.title)
+                    .font(AppTheme.Typography.caption)
+                    .foregroundColor(DS.Colors.textSecondary)
+                    .disabled(true)
+                ForEach(section.children) { child in
+                    Button(child.name ?? "Categoria") {
+                        selection.wrappedValue = child.id
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func accountMenu(selection: Binding<String>) -> some View {
+        Button("Limpar seleção") {
+            selection.wrappedValue = ""
+        }
+        .disabled(selection.wrappedValue.isEmpty)
+
+        if referenceStore.accounts.isEmpty {
+            Text("Sem contas")
+                .font(AppTheme.Typography.caption)
+                .foregroundColor(DS.Colors.textSecondary)
+        } else {
+            ForEach(referenceStore.accounts) { account in
+                Button(account.name ?? "Conta") {
+                    selection.wrappedValue = account.id
+                }
+            }
+        }
+    }
+
     private func prefill() {
         guard let existing else { return }
         type = existing.type
         date = existing.date
-        amount = String(format: "%.2f", existing.amount)
+        amount = CurrencyFormatter.string(from: existing.amount)
         description = existing.description ?? ""
         accountId = existing.accountId ?? ""
         categoryId = existing.categoryId ?? ""
@@ -141,7 +223,7 @@ struct TransactionFormView: View {
     private func save() async {
         isLoading = true
         defer { isLoading = false }
-        guard let amountValue = Double(amount.replacingOccurrences(of: ",", with: ".")) else {
+        guard let amountValue else {
             errorMessage = "Informe um valor válido."
             return
         }

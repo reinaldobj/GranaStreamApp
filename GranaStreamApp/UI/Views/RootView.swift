@@ -4,7 +4,6 @@ struct RootView: View {
     @StateObject private var session = SessionStore.shared
     @StateObject private var monthStore = MonthFilterStore()
     @StateObject private var referenceStore = ReferenceDataStore.shared
-    @State private var showSignup = false
 
     var body: some View {
         Group {
@@ -14,19 +13,8 @@ struct RootView: View {
                     .environmentObject(monthStore)
                     .environmentObject(referenceStore)
             } else {
-                NavigationStack {
-                    LoginView(showSignup: $showSignup, session: session)
-                        .navigationDestination(isPresented: $showSignup) {
-                            SignupView(showSignup: $showSignup)
-                        }
-                }
+                AuthFlowView(session: session)
             }
         }
-    }
-}
-
-struct AuthFlowView: View {
-    var body: some View {
-        RootView()
     }
 }

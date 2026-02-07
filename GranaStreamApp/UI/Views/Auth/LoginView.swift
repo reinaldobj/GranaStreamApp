@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct LoginView: View {
-    @Binding var showSignup: Bool
     @ObservedObject var session: SessionStore
+    let onSignup: () -> Void
 
     @State private var email = ""
     @State private var password = ""
@@ -10,62 +10,50 @@ struct LoginView: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        ZStack {
-            DS.Colors.background
-                .ignoresSafeArea()
+        AuthScreenContainer(
+            title: "Bem-vindo",
+            subtitle: "Acesse sua conta"
+        ) {
+            VStack(spacing: AppTheme.Spacing.item) {
+                AuthTextField(
+                    label: "Email",
+                    placeholder: "voce@exemplo.com",
+                    text: $email,
+                    keyboardType: .emailAddress,
+                    textContentType: .emailAddress,
+                    autocapitalization: .never,
+                    autocorrectionDisabled: true
+                )
 
-            VStack(spacing: AppTheme.Spacing.screen) {
-                VStack(spacing: AppTheme.Spacing.base) {
-                    AppTitle(text: "GranaStream")
-                    Text("Acesse sua conta")
-                        .font(AppTheme.Typography.body)
-                        .foregroundColor(DS.Colors.textSecondary)
-                }
+                AuthTextField(
+                    label: "Senha",
+                    placeholder: "Sua senha",
+                    text: $password,
+                    isSecure: true,
+                    textContentType: .password,
+                    autocapitalization: .never
+                )
 
-                AppCard {
-                    VStack(spacing: AppTheme.Spacing.item) {
-                        AppTextField(
-                            placeholder: "Email",
-                            text: $email,
-                            keyboardType: .emailAddress,
-                            textContentType: .emailAddress,
-                            autocapitalization: .never,
-                            autocorrectionDisabled: true
-                        )
-
-                        AppTextField(
-                            placeholder: "Senha",
-                            text: $password,
-                            isSecure: true,
-                            textContentType: .password,
-                            autocapitalization: .never
-                        )
-
-                        PrimaryButton(
-                            title: isLoading ? "Entrando..." : "Entrar",
-                            isDisabled: email.isEmpty || password.isEmpty || isLoading
-                        ) {
-                            guard !isLoading else { return }
-                            isLoading = true
-                            Task {
-                                defer { isLoading = false }
-                                do {
-                                    try await session.login(email: email, password: password)
-                                } catch {
-                                    errorMessage = error.localizedDescription
-                                }
-                            }
-                        }
-
-                        SecondaryButton(title: "Criar conta") {
-                            showSignup = true
+                AuthPrimaryButton(
+                    title: isLoading ? "Entrando..." : "Entrar",
+                    isDisabled: email.isEmpty || password.isEmpty || isLoading
+                ) {
+                    guard !isLoading else { return }
+                    isLoading = true
+                    Task {
+                        defer { isLoading = false }
+                        do {
+                            try await session.login(email: email, password: password)
+                        } catch {
+                            errorMessage = error.localizedDescription
                         }
                     }
                 }
 
-                Spacer()
+                AuthSecondaryButton(title: "Criar conta") {
+                    onSignup()
+                }
             }
-            .padding(AppTheme.Spacing.screen)
         }
         .errorAlert(message: $errorMessage)
     }

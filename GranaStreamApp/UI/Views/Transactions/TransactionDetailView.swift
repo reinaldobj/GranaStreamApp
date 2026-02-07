@@ -2,6 +2,8 @@ import SwiftUI
 
 struct TransactionDetailView: View {
     let transaction: TransactionSummaryDto
+    var onEdit: (() -> Void)?
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -24,6 +26,14 @@ struct TransactionDetailView: View {
             .scrollContentBackground(.hidden)
             .background(DS.Colors.background)
             .navigationTitle("Detalhe")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Editar") {
+                        dismiss()
+                        onEdit?()
+                    }
+                }
+            }
         }
         .tint(DS.Colors.primary)
     }
