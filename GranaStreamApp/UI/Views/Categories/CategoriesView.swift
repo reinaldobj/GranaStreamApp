@@ -44,7 +44,7 @@ struct CategoriesView: View {
         .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $formMode) { mode in
             CategoryFormView(existing: mode.existing) {
-                Task { await viewModel.load() }
+                Task { await viewModel.load(syncReferenceData: true) }
             }
             .presentationDetents([.fraction(0.72)])
             .presentationDragIndicator(.visible)
@@ -170,9 +170,7 @@ struct CategoriesView: View {
                 minHeight: !hasRows ? emptyMinHeight : nil,
                 alignment: .top
             )
-            .background(DS.Colors.surface2)
-            .clipShape(CategoriesTopRoundedRectangle(radius: 44))
-            .shadow(color: DS.Colors.border.opacity(0.15), radius: 8, x: 0, y: -2)
+            .topSectionStyle()
     }
 
     private var categoriesCard: some View {
@@ -377,19 +375,6 @@ private enum CategoryFormMode: Identifiable {
         case .edit(let category):
             return category
         }
-    }
-}
-
-private struct CategoriesTopRoundedRectangle: Shape {
-    let radius: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: [.topLeft, .topRight],
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
     }
 }
 

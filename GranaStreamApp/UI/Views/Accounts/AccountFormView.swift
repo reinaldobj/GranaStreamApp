@@ -122,7 +122,12 @@ struct AccountFormView: View {
         let balanceValue = CurrencyTextField.value(from: initialBalance) ?? 0
 
         if let existing {
-            let success = await viewModel.update(account: existing, name: trimmedName, type: type)
+            let success = await viewModel.update(
+                account: existing,
+                name: trimmedName,
+                type: type,
+                reloadAfterChange: false
+            )
             if success {
                 onComplete()
                 dismiss()
@@ -130,7 +135,12 @@ struct AccountFormView: View {
                 errorMessage = viewModel.errorMessage
             }
         } else {
-            let success = await viewModel.create(name: trimmedName, type: type, initialBalance: balanceValue)
+            let success = await viewModel.create(
+                name: trimmedName,
+                type: type,
+                initialBalance: balanceValue,
+                reloadAfterChange: false
+            )
             if success {
                 onComplete()
                 dismiss()

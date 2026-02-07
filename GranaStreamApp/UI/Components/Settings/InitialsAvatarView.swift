@@ -39,11 +39,13 @@ struct InitialsAvatarView: View {
     }
 }
 
-#Preview {
-    VStack(spacing: 16) {
-        InitialsAvatarView(name: "Joao Silva")
-        InitialsAvatarView(name: "Maria")
-        InitialsAvatarView(name: "")
+struct InitialsAvatarView_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack(spacing: 16) {
+            InitialsAvatarView(name: "Joao Silva")
+            InitialsAvatarView(name: "Maria")
+            InitialsAvatarView(name: "")
+        }
+        .padding()
     }
-    .padding()
 }

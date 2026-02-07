@@ -1,13 +1,15 @@
 import SwiftUI
 
 struct SignupView: View {
+    @ObservedObject var session: SessionStore
     let onLogin: () -> Void
 
     @State private var name = ""
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
-    @State private var showSignupAlert = false
+    @State private var isLoading = false
+    @State private var errorMessage: String?
 
     var body: some View {
         AuthScreenContainer(
@@ -58,10 +60,10 @@ struct SignupView: View {
                 }
 
                 AuthPrimaryButton(
-                    title: "Cadastrar",
-                    isDisabled: !canSubmit
+                    title: isLoading ? "Cadastrando..." : "Cadastrar",
+                    isDisabled: !canSubmit || isLoading
                 ) {
-                    showSignupAlert = true
+                    handleSignup()
                 }
 
                 HStack(spacing: 4) {
@@ -78,9 +80,7 @@ struct SignupView: View {
                 .padding(.top, 4)
             }
         }
-        .alert("Cadastro ainda não implementado", isPresented: $showSignupAlert) {
-            Button("OK", role: .cancel) {}
-        }
+        .errorAlert(message: $errorMessage)
     }
 
     private var canSubmit: Bool {
@@ -98,5 +98,30 @@ struct SignupView: View {
         let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedConfirm = confirmPassword.trimmingCharacters(in: .whitespacesAndNewlines)
         return !trimmedConfirm.isEmpty && trimmedPassword != trimmedConfirm
+    }
+
+    private func handleSignup() {
+        guard !isLoading else { return }
+
+        errorMessage = nil
+        isLoading = true
+
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        Task {
+            defer { isLoading = false }
+
+            do {
+                try await session.signup(
+                    name: trimmedName,
+                    email: trimmedEmail,
+                    password: trimmedPassword
+                )
+            } catch {
+                errorMessage = error.userMessage
+            }
+        }
     }
 }

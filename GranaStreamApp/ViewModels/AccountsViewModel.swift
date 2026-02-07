@@ -17,16 +17,18 @@ final class AccountsViewModel: ObservableObject {
 
     private var allAccounts: [AccountResponseDto] = []
 
-    func load() async {
+    func load(syncReferenceData: Bool = false) async {
         isLoading = true
         defer { isLoading = false }
         do {
             let response: [AccountResponseDto] = try await APIClient.shared.request("/api/v1/accounts")
             allAccounts = response
             applySearch(term: activeSearchTerm, updateActiveTerm: false)
-            await ReferenceDataStore.shared.refresh()
+            if syncReferenceData {
+                ReferenceDataStore.shared.replaceAccounts(response)
+            }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 
@@ -34,7 +36,12 @@ final class AccountsViewModel: ObservableObject {
         applySearch(term: term, updateActiveTerm: true)
     }
 
-    func create(name: String, type: AccountType, initialBalance: Double) async -> Bool {
+    func create(
+        name: String,
+        type: AccountType,
+        initialBalance: Double,
+        reloadAfterChange: Bool = true
+    ) async -> Bool {
         do {
             inactiveAccount = nil
             let request = CreateAccountRequestDto(name: name, accountType: type, initialBalance: initialBalance)
@@ -43,7 +50,9 @@ final class AccountsViewModel: ObservableObject {
                 method: "POST",
                 body: AnyEncodable(request)
             )
-            await load()
+            if reloadAfterChange {
+                await load(syncReferenceData: true)
+            }
             return true
         } catch {
             if case APIError.server(_, let problem) = error,
@@ -53,12 +62,17 @@ final class AccountsViewModel: ObservableObject {
                 inactiveAccount = InactiveAccountInfo(id: accountId, title: "Conta inativa", detail: detail)
                 return false
             }
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
             return false
         }
     }
 
-    func update(account: AccountResponseDto, name: String, type: AccountType) async -> Bool {
+    func update(
+        account: AccountResponseDto,
+        name: String,
+        type: AccountType,
+        reloadAfterChange: Bool = true
+    ) async -> Bool {
         do {
             let request = UpdateAccountRequestDto(name: name, accountType: type)
             try await APIClient.shared.requestNoResponse(
@@ -66,10 +80,12 @@ final class AccountsViewModel: ObservableObject {
                 method: "PATCH",
                 body: AnyEncodable(request)
             )
-            await load()
+            if reloadAfterChange {
+                await load(syncReferenceData: true)
+            }
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
             return false
         }
     }
@@ -77,9 +93,9 @@ final class AccountsViewModel: ObservableObject {
     func delete(account: AccountResponseDto) async {
         do {
             try await APIClient.shared.requestNoResponse("/api/v1/accounts/\(account.id)", method: "DELETE")
-            await load()
+            await load(syncReferenceData: true)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 
@@ -90,10 +106,10 @@ final class AccountsViewModel: ObservableObject {
                 method: "PATCH"
             )
             inactiveAccount = nil
-            await load()
+            await load(syncReferenceData: true)
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
             return false
         }
     }

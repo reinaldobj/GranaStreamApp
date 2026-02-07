@@ -184,9 +184,7 @@ struct TransactionsView: View {
                 minHeight: monthSections.isEmpty ? emptyMinHeight : nil,
                 alignment: .top
             )
-            .background(DS.Colors.surface2)
-            .clipShape(TopRoundedRectangle(radius: 44))
-            .shadow(color: DS.Colors.border.opacity(0.15), radius: 8, x: 0, y: -2)
+            .topSectionStyle()
     }
 
     private var transactionsCard: some View {
@@ -398,17 +396,4 @@ private struct MonthSection: Identifiable {
     let id: String
     let title: String
     let items: [TransactionSummaryDto]
-}
-
-private struct TopRoundedRectangle: Shape {
-    let radius: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: [.topLeft, .topRight],
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
-    }
 }

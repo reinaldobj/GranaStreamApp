@@ -150,12 +150,14 @@ struct ChangePasswordView: View {
             )
             showSuccess = true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 }
 
-#Preview {
-    ChangePasswordView()
-        .environmentObject(SessionStore.shared)
+struct ChangePasswordView_Previews: PreviewProvider {
+    static var previews: some View {
+        ChangePasswordView()
+            .environmentObject(SessionStore.shared)
+    }
 }

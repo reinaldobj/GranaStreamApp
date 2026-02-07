@@ -58,7 +58,18 @@ final class APIClient {
             urlRequest.httpBody = try encoder.encode(body)
         }
 
-        let (data, response) = try await session.data(for: urlRequest)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: urlRequest)
+        } catch is CancellationError {
+            throw APIError.requestCancelled
+        } catch let urlError as URLError {
+            throw APIError.from(urlError: urlError)
+        } catch {
+            throw APIError.network
+        }
+
         guard let http = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
@@ -78,6 +89,10 @@ final class APIClient {
             throw APIError.unauthorized
         }
 
+        if http.statusCode == 408 || http.statusCode == 504 {
+            throw APIError.timeout
+        }
+
         guard (200...299).contains(http.statusCode) else {
             let problem = try? decoder.decode(ProblemDetails.self, from: data)
             throw APIError.server(status: http.statusCode, problem: problem)
@@ -90,8 +105,9 @@ final class APIClient {
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
-            let payload = String(data: data, encoding: .utf8) ?? "<sem corpo>"
-            print("Erro ao decodificar resposta em \(path): \(payload)")
+            #if DEBUG
+            print("Falha ao processar a resposta da rota \(path). Status HTTP: \(http.statusCode).")
+            #endif
             throw APIError.decodingError
         }
     }

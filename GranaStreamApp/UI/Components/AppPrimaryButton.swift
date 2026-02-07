@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct PrimaryButton: View {
+struct AppPrimaryButton: View {
     let title: String
     var isDisabled: Bool = false
     let action: () -> Void
@@ -11,18 +11,18 @@ struct PrimaryButton: View {
                 .font(AppTheme.Typography.section)
                 .frame(maxWidth: .infinity, minHeight: AppTheme.Spacing.controlHeight)
         }
-        .buttonStyle(PrimaryButtonStyle())
+        .buttonStyle(AppPrimaryButtonStyle())
         .disabled(isDisabled)
         .opacity(isDisabled ? 0.6 : 1)
     }
 }
 
-private struct PrimaryButtonStyle: ButtonStyle {
+private struct AppPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundColor(DS.Colors.onPrimary)
             .background(
-                RoundedRectangle(cornerRadius: AppTheme.Radius.button)
+                Capsule()
                     .fill(DS.Colors.primary.opacity(configuration.isPressed ? 0.9 : 1))
             )
     }

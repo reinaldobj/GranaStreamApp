@@ -88,20 +88,22 @@ struct AppHeaderView: View {
     }
 }
 
-#Preview {
-    Group {
-        NavigationStack {
-            AppHeaderView()
-                .padding()
-        }
-        .preferredColorScheme(.light)
+struct AppHeaderView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            NavigationStack {
+                AppHeaderView()
+                    .padding()
+            }
+            .preferredColorScheme(.light)
 
-        NavigationStack {
-            AppHeaderView()
-                .padding()
+            NavigationStack {
+                AppHeaderView()
+                    .padding()
+            }
+            .preferredColorScheme(.dark)
         }
-        .preferredColorScheme(.dark)
+        .environmentObject(SessionStore.shared)
+        .environmentObject(MonthFilterStore())
     }
-    .environmentObject(SessionStore.shared)
-    .environmentObject(MonthFilterStore())
 }

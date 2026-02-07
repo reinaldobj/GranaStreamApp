@@ -14,11 +14,7 @@ struct AuthTextField: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(AppTheme.Typography.caption)
-                .foregroundColor(DS.Colors.textSecondary)
-
+        AppFormField(label: label, isFocused: isFocused) {
             ZStack(alignment: .leading) {
                 if text.isEmpty {
                     Text(placeholder)
@@ -30,15 +26,6 @@ struct AuthTextField: View {
                     .font(AppTheme.Typography.body)
                     .foregroundColor(DS.Colors.textPrimary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .frame(minHeight: AppTheme.Spacing.controlHeight)
-            .background(DS.Colors.surface2)
-            .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(isFocused ? DS.Colors.primary : DS.Colors.border, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
     }
 

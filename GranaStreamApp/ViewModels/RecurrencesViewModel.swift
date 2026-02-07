@@ -14,7 +14,7 @@ final class RecurrencesViewModel: ObservableObject {
             let response: [RecurrenceResponseDto] = try await APIClient.shared.request("/api/v1/recurrences")
             recurrences = response
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 
@@ -28,7 +28,7 @@ final class RecurrencesViewModel: ObservableObject {
             await load()
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
             return false
         }
     }
@@ -43,7 +43,7 @@ final class RecurrencesViewModel: ObservableObject {
             await load()
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
             return false
         }
     }
@@ -56,7 +56,7 @@ final class RecurrencesViewModel: ObservableObject {
             )
             await load()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 
@@ -68,7 +68,7 @@ final class RecurrencesViewModel: ObservableObject {
             )
             await load()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 
@@ -80,7 +80,7 @@ final class RecurrencesViewModel: ObservableObject {
             )
             await load()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 }

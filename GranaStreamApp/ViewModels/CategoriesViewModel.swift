@@ -10,7 +10,7 @@ final class CategoriesViewModel: ObservableObject {
 
     private var allCategories: [CategoryResponseDto] = []
 
-    func load() async {
+    func load(syncReferenceData: Bool = false) async {
         isLoading = true
         defer { isLoading = false }
         do {
@@ -20,9 +20,11 @@ final class CategoriesViewModel: ObservableObject {
             )
             allCategories = response
             applySearch(term: activeSearchTerm, updateActiveTerm: false)
-            await ReferenceDataStore.shared.refresh()
+            if syncReferenceData {
+                ReferenceDataStore.shared.replaceCategories(response)
+            }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 
@@ -30,7 +32,14 @@ final class CategoriesViewModel: ObservableObject {
         applySearch(term: term, updateActiveTerm: true)
     }
 
-    func create(name: String, description: String, type: CategoryType, parentId: String?, sortOrder: Int) async -> Bool {
+    func create(
+        name: String,
+        description: String,
+        type: CategoryType,
+        parentId: String?,
+        sortOrder: Int,
+        reloadAfterChange: Bool = true
+    ) async -> Bool {
         do {
             let request = CreateCategoryRequestDto(
                 name: name,
@@ -44,15 +53,25 @@ final class CategoriesViewModel: ObservableObject {
                 method: "POST",
                 body: AnyEncodable(request)
             )
-            await load()
+            if reloadAfterChange {
+                await load(syncReferenceData: true)
+            }
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
             return false
         }
     }
 
-    func update(category: CategoryResponseDto, name: String, description: String, type: CategoryType, parentId: String?, sortOrder: Int) async -> Bool {
+    func update(
+        category: CategoryResponseDto,
+        name: String,
+        description: String,
+        type: CategoryType,
+        parentId: String?,
+        sortOrder: Int,
+        reloadAfterChange: Bool = true
+    ) async -> Bool {
         do {
             let request = UpdateCategoryRequestDto(
                 name: name,
@@ -66,10 +85,12 @@ final class CategoriesViewModel: ObservableObject {
                 method: "PUT",
                 body: AnyEncodable(request)
             )
-            await load()
+            if reloadAfterChange {
+                await load(syncReferenceData: true)
+            }
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
             return false
         }
     }
@@ -77,9 +98,9 @@ final class CategoriesViewModel: ObservableObject {
     func delete(category: CategoryResponseDto) async {
         do {
             try await APIClient.shared.requestNoResponse("/api/v1/categories/\(category.id)", method: "DELETE")
-            await load()
+            await load(syncReferenceData: true)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 
@@ -89,9 +110,9 @@ final class CategoriesViewModel: ObservableObject {
                 "/api/v1/categories/seed",
                 method: "POST"
             )
-            await load()
+            await load(syncReferenceData: true)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 

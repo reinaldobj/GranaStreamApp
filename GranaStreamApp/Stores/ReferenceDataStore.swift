@@ -14,9 +14,32 @@ final class ReferenceDataStore: ObservableObject {
         _ = await (accountsTask, categoriesTask)
     }
 
+    func refreshAccounts() async {
+        await loadAccounts()
+    }
+
+    func refreshCategories() async {
+        await loadCategories()
+    }
+
+    func replaceAccounts(_ items: [AccountResponseDto]) {
+        accounts = items
+    }
+
+    func replaceCategories(_ items: [CategoryResponseDto]) {
+        categories = items
+    }
+
     func loadIfNeeded() async {
-        if accounts.isEmpty || categories.isEmpty {
+        if accounts.isEmpty && categories.isEmpty {
             await refresh()
+            return
+        }
+        if accounts.isEmpty {
+            await loadAccounts()
+        }
+        if categories.isEmpty {
+            await loadCategories()
         }
     }
 
@@ -25,7 +48,7 @@ final class ReferenceDataStore: ObservableObject {
             let response: [AccountResponseDto] = try await APIClient.shared.request("/api/v1/accounts")
             accounts = response
         } catch {
-            accounts = []
+            // Mantém dados atuais para evitar tela vazia quando houver falha temporária de rede.
         }
     }
 
@@ -39,7 +62,7 @@ final class ReferenceDataStore: ObservableObject {
             )
             categories = response
         } catch {
-            categories = []
+            // Mantém dados atuais para evitar tela vazia quando houver falha temporária de rede.
         }
     }
 }

@@ -53,12 +53,14 @@ struct SettingsMenuRow: View {
     }
 }
 
-#Preview {
-    VStack(spacing: 12) {
-        SettingsMenuRow(title: "Contas", systemImage: "wallet.pass")
-        SettingsMenuRow(title: "Categorias", systemImage: "square.grid.2x2")
-        SettingsMenuRow(title: "Sair", systemImage: "rectangle.portrait.and.arrow.right", isDestructive: true, showsChevron: false)
+struct SettingsMenuRow_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack(spacing: 12) {
+            SettingsMenuRow(title: "Contas", systemImage: "wallet.pass")
+            SettingsMenuRow(title: "Categorias", systemImage: "square.grid.2x2")
+            SettingsMenuRow(title: "Sair", systemImage: "rectangle.portrait.and.arrow.right", isDestructive: true, showsChevron: false)
+        }
+        .padding()
+        .background(DS.Colors.surface2)
     }
-    .padding()
-    .background(DS.Colors.surface2)
 }

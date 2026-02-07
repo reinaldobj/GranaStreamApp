@@ -42,7 +42,7 @@ struct AccountsView: View {
         .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $formMode) { mode in
             AccountFormView(existing: mode.existing) {
-                Task { await viewModel.load() }
+                Task { await viewModel.load(syncReferenceData: true) }
             }
             .presentationDetents([.fraction(0.50)])
             .presentationDragIndicator(.visible)
@@ -145,9 +145,7 @@ struct AccountsView: View {
                 minHeight: viewModel.accounts.isEmpty ? emptyMinHeight : nil,
                 alignment: .top
             )
-            .background(DS.Colors.surface2)
-            .clipShape(AccountsTopRoundedRectangle(radius: 44))
-            .shadow(color: DS.Colors.border.opacity(0.15), radius: 8, x: 0, y: -2)
+            .topSectionStyle()
     }
 
     private var accountsCard: some View {
@@ -237,18 +235,5 @@ private enum AccountFormMode: Identifiable {
         case .edit(let account):
             return account
         }
-    }
-}
-
-private struct AccountsTopRoundedRectangle: Shape {
-    let radius: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: [.topLeft, .topRight],
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
     }
 }

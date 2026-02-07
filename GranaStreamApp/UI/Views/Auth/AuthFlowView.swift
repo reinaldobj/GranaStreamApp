@@ -62,6 +62,7 @@ struct AuthFlowView: View {
             )
         case .signup:
             SignupView(
+                session: session,
                 onLogin: { returnToLogin() }
             )
         }

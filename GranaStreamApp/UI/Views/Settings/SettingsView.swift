@@ -123,9 +123,7 @@ struct SettingsView: View {
             .padding(.horizontal, AppTheme.Spacing.screen)
             .padding(.top, 6)
             .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .top)
-            .background(DS.Colors.surface2)
-            .clipShape(SettingsTopRoundedRectangle(radius: 44))
-            .shadow(color: DS.Colors.border.opacity(0.15), radius: 8, x: 0, y: -2)
+            .topSectionStyle()
     }
 
     private var settingsCard: some View {
@@ -177,26 +175,15 @@ struct SettingsView: View {
     }
 }
 
-private struct SettingsTopRoundedRectangle: Shape {
-    let radius: CGFloat
+struct SettingsView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            SettingsView()
+                .preferredColorScheme(.light)
 
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: [.topLeft, .topRight],
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
+            SettingsView()
+                .preferredColorScheme(.dark)
+        }
+        .environmentObject(SessionStore.shared)
     }
-}
-
-#Preview {
-    Group {
-        SettingsView()
-            .preferredColorScheme(.light)
-
-        SettingsView()
-            .preferredColorScheme(.dark)
-    }
-    .environmentObject(SessionStore.shared)
 }

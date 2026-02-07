@@ -15,6 +15,10 @@ enum APIError: Error, LocalizedError {
     case server(status: Int, problem: ProblemDetails?)
     case unauthorized
     case decodingError
+    case timeout
+    case offline
+    case requestCancelled
+    case network
 
     var errorDescription: String? {
         switch self {
@@ -31,7 +35,28 @@ enum APIError: Error, LocalizedError {
         case .unauthorized:
             return "Sessão expirada. Faça login novamente."
         case .decodingError:
-            return "Resposta inesperada do servidor. Veja o log no Xcode."
+            return "Não foi possível entender a resposta do servidor."
+        case .timeout:
+            return "A conexão demorou demais. Tente novamente."
+        case .offline:
+            return "Você está sem internet. Verifique sua conexão."
+        case .requestCancelled:
+            return "A solicitação foi cancelada."
+        case .network:
+            return "Não foi possível conectar ao servidor. Tente novamente."
+        }
+    }
+
+    static func from(urlError: URLError) -> APIError {
+        switch urlError.code {
+        case .timedOut:
+            return .timeout
+        case .notConnectedToInternet, .networkConnectionLost, .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed:
+            return .offline
+        case .cancelled:
+            return .requestCancelled
+        default:
+            return .network
         }
     }
 }

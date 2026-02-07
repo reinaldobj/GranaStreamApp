@@ -22,12 +22,14 @@ struct ContentView: View {
     }
 }
 
-#Preview {
-    Group {
-        ContentView()
-            .preferredColorScheme(.light)
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            ContentView()
+                .preferredColorScheme(.light)
 
-        ContentView()
-            .preferredColorScheme(.dark)
+            ContentView()
+                .preferredColorScheme(.dark)
+        }
     }
 }

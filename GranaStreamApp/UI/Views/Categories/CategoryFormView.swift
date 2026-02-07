@@ -83,7 +83,8 @@ struct CategoryFormView: View {
                 description: description,
                 type: type,
                 parentId: parent,
-                sortOrder: orderValue
+                sortOrder: orderValue,
+                reloadAfterChange: false
             )
             if success {
                 onComplete()
@@ -97,7 +98,8 @@ struct CategoryFormView: View {
                 description: description,
                 type: type,
                 parentId: parent,
-                sortOrder: orderValue
+                sortOrder: orderValue,
+                reloadAfterChange: false
             )
             if success {
                 onComplete()

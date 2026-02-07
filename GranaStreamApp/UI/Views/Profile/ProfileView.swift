@@ -76,7 +76,7 @@ struct ProfileView: View {
                 try await session.loadProfile()
                 loadFromSession()
             } catch {
-                errorMessage = error.localizedDescription
+                errorMessage = error.userMessage
             }
         }
         .errorAlert(message: $errorMessage)
@@ -137,19 +137,21 @@ struct ProfileView: View {
                     dismiss()
                 }
             } catch {
-                errorMessage = error.localizedDescription
+                errorMessage = error.userMessage
             }
         }
     }
 }
 
-#Preview {
-    Group {
-        ProfileView()
-            .preferredColorScheme(.light)
+struct ProfileView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            ProfileView()
+                .preferredColorScheme(.light)
 
-        ProfileView()
-            .preferredColorScheme(.dark)
+            ProfileView()
+                .preferredColorScheme(.dark)
+        }
+        .environmentObject(SessionStore.shared)
     }
-    .environmentObject(SessionStore.shared)
 }

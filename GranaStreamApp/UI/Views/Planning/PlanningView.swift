@@ -42,14 +42,16 @@ struct PlanningView: View {
     }
 }
 
-#Preview {
-    Group {
-        PlanningView()
-            .preferredColorScheme(.light)
+struct PlanningView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            PlanningView()
+                .preferredColorScheme(.light)
 
-        PlanningView()
-            .preferredColorScheme(.dark)
+            PlanningView()
+                .preferredColorScheme(.dark)
+        }
+        .environmentObject(SessionStore.shared)
+        .environmentObject(MonthFilterStore())
     }
-    .environmentObject(SessionStore.shared)
-    .environmentObject(MonthFilterStore())
 }

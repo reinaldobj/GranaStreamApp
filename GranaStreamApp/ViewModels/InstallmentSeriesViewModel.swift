@@ -14,7 +14,7 @@ final class InstallmentSeriesViewModel: ObservableObject {
             let response: [InstallmentSeriesResponseDto] = try await APIClient.shared.request("/api/v1/installment-series")
             series = response
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 
@@ -28,7 +28,7 @@ final class InstallmentSeriesViewModel: ObservableObject {
             await load()
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
             return false
         }
     }
@@ -43,7 +43,7 @@ final class InstallmentSeriesViewModel: ObservableObject {
             await load()
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
             return false
         }
     }
@@ -56,7 +56,7 @@ final class InstallmentSeriesViewModel: ObservableObject {
             )
             await load()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 }

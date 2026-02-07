@@ -64,19 +64,19 @@ final class TransactionsViewModel: ObservableObject {
                 transactions.append(contentsOf: response.items ?? [])
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 
     func loadMore() async {
         guard canLoadMore, !isLoadingMore else { return }
         isLoadingMore = true
-        page += 1
+        let nextPage = page + 1
         defer { isLoadingMore = false }
 
         do {
             var items: [URLQueryItem] = [
-                URLQueryItem(name: "page", value: String(page)),
+                URLQueryItem(name: "page", value: String(nextPage)),
                 URLQueryItem(name: "size", value: String(size)),
                 URLQueryItem(name: "startDate", value: DateCoder.string(from: filters.startDate)),
                 URLQueryItem(name: "endDate", value: DateCoder.string(from: filters.endDate))
@@ -99,9 +99,10 @@ final class TransactionsViewModel: ObservableObject {
                 queryItems: items
             )
             total = response.total
+            page = nextPage
             transactions.append(contentsOf: response.items ?? [])
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 
@@ -113,7 +114,7 @@ final class TransactionsViewModel: ObservableObject {
             )
             await load(reset: true)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 }

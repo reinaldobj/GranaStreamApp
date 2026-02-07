@@ -271,7 +271,7 @@ struct TransactionFormView: View {
             onComplete()
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userMessage
         }
     }
 }

@@ -6,24 +6,10 @@ struct AuthPrimaryButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(AppTheme.Typography.section)
-                .frame(maxWidth: .infinity, minHeight: AppTheme.Spacing.controlHeight)
-        }
-        .buttonStyle(AuthPrimaryButtonStyle())
-        .disabled(isDisabled)
-        .opacity(isDisabled ? 0.6 : 1)
-    }
-}
-
-private struct AuthPrimaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundColor(DS.Colors.onPrimary)
-            .background(
-                Capsule()
-                    .fill(DS.Colors.primary.opacity(configuration.isPressed ? 0.9 : 1))
-            )
+        AppPrimaryButton(
+            title: title,
+            isDisabled: isDisabled,
+            action: action
+        )
     }
 }

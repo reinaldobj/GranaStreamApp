@@ -45,14 +45,16 @@ struct HomeView: View {
     }
 }
 
-#Preview {
-    Group {
-        HomeView()
-            .preferredColorScheme(.light)
+struct HomeView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            HomeView()
+                .preferredColorScheme(.light)
 
-        HomeView()
-            .preferredColorScheme(.dark)
+            HomeView()
+                .preferredColorScheme(.dark)
+        }
+        .environmentObject(SessionStore.shared)
+        .environmentObject(MonthFilterStore())
     }
-    .environmentObject(SessionStore.shared)
-    .environmentObject(MonthFilterStore())
 }

@@ -45,7 +45,7 @@ struct LoginView: View {
                         do {
                             try await session.login(email: email, password: password)
                         } catch {
-                            errorMessage = error.localizedDescription
+                            errorMessage = error.userMessage
                         }
                     }
                 }
