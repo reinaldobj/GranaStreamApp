@@ -4,12 +4,12 @@ struct TransactionsView: View {
     @StateObject private var viewModel = TransactionsViewModel()
     @EnvironmentObject private var referenceStore: ReferenceDataStore
 
-    @State private var showForm = false
+    @State private var formMode: TransactionFormMode?
     @State private var selectedTransactionForDetail: TransactionSummaryDto?
-    @State private var selectedTransactionForEdit: TransactionSummaryDto?
     @State private var showFilters = false
     @State private var quickFilter: TransactionType?
     @State private var hasFinishedInitialLoad = false
+    @State private var transactionPendingDelete: TransactionSummaryDto?
     private let sectionSpacing = AppTheme.Spacing.item
 
     var body: some View {
@@ -40,8 +40,8 @@ struct TransactionsView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .sheet(isPresented: $showForm) {
-                TransactionFormView(existing: selectedTransactionForEdit) {
+            .sheet(item: $formMode) { mode in
+                TransactionFormView(existing: mode.existing) {
                     Task { await viewModel.load(reset: true) }
                 }
                 .presentationDetents([.fraction(0.80)])
@@ -65,6 +65,26 @@ struct TransactionsView: View {
                 syncQuickFilter()
                 await viewModel.load(reset: true)
                 hasFinishedInitialLoad = true
+            }
+            .alert(
+                "Excluir lançamento?",
+                isPresented: Binding(
+                    get: { transactionPendingDelete != nil },
+                    set: { isPresented in
+                        if !isPresented { transactionPendingDelete = nil }
+                    }
+                )
+            ) {
+                Button("Cancelar", role: .cancel) {
+                    transactionPendingDelete = nil
+                }
+                Button("Excluir", role: .destructive) {
+                    guard let transaction = transactionPendingDelete else { return }
+                    transactionPendingDelete = nil
+                    Task { await viewModel.delete(transaction: transaction) }
+                }
+            } message: {
+                Text(deleteMessage)
             }
             .errorAlert(message: $viewModel.errorMessage)
         }
@@ -93,8 +113,7 @@ struct TransactionsView: View {
             Spacer()
 
             Button {
-                selectedTransactionForEdit = nil
-                showForm = true
+                formMode = .new
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 18, weight: .semibold))
@@ -191,22 +210,20 @@ struct TransactionsView: View {
                             TransactionSwipeRow(
                                 onTap: { selectedTransactionForDetail = transaction },
                                 onEdit: {
-                                    selectedTransactionForEdit = transaction
-                                    showForm = true
+                                    formMode = .edit(transaction)
                                 },
                                 onDelete: {
-                                    Task { await viewModel.delete(transaction: transaction) }
+                                    transactionPendingDelete = transaction
                                 }
                             ) {
                                 TransactionRow(transaction: transaction)
                             }
                             .contextMenu {
                                 Button("Editar") {
-                                    selectedTransactionForEdit = transaction
-                                    showForm = true
+                                    formMode = .edit(transaction)
                                 }
                                 Button("Excluir", role: .destructive) {
-                                    Task { await viewModel.delete(transaction: transaction) }
+                                    transactionPendingDelete = transaction
                                 }
                             }
 
@@ -342,6 +359,37 @@ struct TransactionsView: View {
             quickFilter = viewModel.filters.type
         default:
             quickFilter = nil
+        }
+    }
+
+    private var deleteMessage: String {
+        let label = transactionPendingDelete?.description?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let label, !label.isEmpty {
+            return "Você realmente quer excluir \"\(label)\"?"
+        }
+        return "Você realmente quer excluir este lançamento?"
+    }
+}
+
+private enum TransactionFormMode: Identifiable {
+    case new
+    case edit(TransactionSummaryDto)
+
+    var id: String {
+        switch self {
+        case .new:
+            return "new"
+        case .edit(let transaction):
+            return "edit-\(transaction.id)"
+        }
+    }
+
+    var existing: TransactionSummaryDto? {
+        switch self {
+        case .new:
+            return nil
+        case .edit(let transaction):
+            return transaction
         }
     }
 }

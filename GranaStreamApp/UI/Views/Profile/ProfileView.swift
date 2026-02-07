@@ -12,72 +12,79 @@ struct ProfileView: View {
     @State private var showSavedToast = false
 
     var body: some View {
-        ZStack {
-            DS.Colors.background
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                DS.Colors.background
+                    .ignoresSafeArea()
 
-            VStack(spacing: AppTheme.Spacing.screen) {
-                VStack(spacing: AppTheme.Spacing.base) {
-                    AppTitle(text: "Perfil")
-                    Text("Atualize suas informações")
-                        .font(AppTheme.Typography.body)
-                        .foregroundColor(DS.Colors.textSecondary)
-                }
-
-                AppCard {
+                ScrollView(showsIndicators: false) {
                     VStack(spacing: AppTheme.Spacing.item) {
-                        AppTextField(
-                            placeholder: "Nome",
-                            text: $name,
-                            textContentType: .name
-                        )
+                        VStack(spacing: 6) {
+                            Text("Perfil")
+                                .font(AppTheme.Typography.title)
+                                .foregroundColor(DS.Colors.textPrimary)
 
-                        AppTextField(
-                            placeholder: "Email",
-                            text: $email,
-                            keyboardType: .emailAddress,
-                            textContentType: .emailAddress,
-                            autocapitalization: .never,
-                            autocorrectionDisabled: true
-                        )
-                        .disabled(true)
-                        .opacity(0.7)
-
-                        Text("Email não pode ser alterado.")
-                            .font(AppTheme.Typography.caption)
-                            .foregroundColor(DS.Colors.textSecondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        SecondaryButton(title: "Alterar senha") {
-                            showChangePasswordSheet = true
+                            Text("Atualize suas informações")
+                                .font(AppTheme.Typography.body)
+                                .foregroundColor(DS.Colors.textSecondary)
                         }
+                        .frame(maxWidth: .infinity)
 
-                        PrimaryButton(title: isSaving ? "Salvando..." : "Salvar", isDisabled: isSaving) {
-                            handleSave()
+                        AuthCard {
+                            AuthTextField(
+                                label: "Nome",
+                                placeholder: "Seu nome",
+                                text: $name,
+                                textContentType: .name
+                            )
+
+                            AuthTextField(
+                                label: "Email",
+                                placeholder: "seu@email.com",
+                                text: $email,
+                                keyboardType: .emailAddress,
+                                textContentType: .emailAddress,
+                                autocapitalization: .never,
+                                autocorrectionDisabled: true
+                            )
+                            .disabled(true)
+                            .opacity(0.75)
+
+                            Text("Email não pode ser alterado.")
+                                .font(AppTheme.Typography.caption)
+                                .foregroundColor(DS.Colors.textSecondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            AuthSecondaryButton(title: "Alterar senha") {
+                                showChangePasswordSheet = true
+                            }
+
+                            AuthPrimaryButton(title: isSaving ? "Salvando..." : "Salvar", isDisabled: isSaving) {
+                                handleSave()
+                            }
                         }
                     }
+                    .padding(.horizontal, AppTheme.Spacing.screen)
+                    .padding(.top, AppTheme.Spacing.screen + 10)
+                    .padding(.bottom, AppTheme.Spacing.screen * 2)
                 }
-
-                Spacer()
             }
-            .padding(AppTheme.Spacing.screen)
         }
-        .navigationTitle("Perfil")
-        .onAppear {
+        .task {
             loadFromSession()
-            Task {
-                do {
-                    try await session.loadProfile()
-                    loadFromSession()
-                } catch {
-                    errorMessage = error.localizedDescription
-                }
+            do {
+                try await session.loadProfile()
+                loadFromSession()
+            } catch {
+                errorMessage = error.localizedDescription
             }
         }
         .errorAlert(message: $errorMessage)
         .sheet(isPresented: $showChangePasswordSheet) {
             ChangePasswordView()
                 .environmentObject(session)
+                .presentationDetents([.fraction(0.75)])
+                .presentationDragIndicator(.visible)
         }
         .overlay(alignment: .bottom) {
             if showSavedToast {
@@ -97,6 +104,7 @@ struct ProfileView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .tint(DS.Colors.primary)
     }
 
     private func loadFromSession() {
@@ -137,15 +145,11 @@ struct ProfileView: View {
 
 #Preview {
     Group {
-        NavigationStack {
-            ProfileView()
-        }
-        .preferredColorScheme(.light)
+        ProfileView()
+            .preferredColorScheme(.light)
 
-        NavigationStack {
-            ProfileView()
-        }
-        .preferredColorScheme(.dark)
+        ProfileView()
+            .preferredColorScheme(.dark)
     }
     .environmentObject(SessionStore.shared)
 }

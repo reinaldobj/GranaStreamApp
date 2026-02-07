@@ -3,12 +3,13 @@ import SwiftUI
 struct AppHeaderView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var monthStore: MonthFilterStore
+    @State private var showProfileSheet = false
 
     var body: some View {
         AppCard {
             HStack(alignment: .center, spacing: AppTheme.Spacing.item) {
-                NavigationLink {
-                    ProfileView()
+                Button {
+                    showProfileSheet = true
                 } label: {
                     HStack(spacing: AppTheme.Spacing.item) {
                         Image(systemName: "person.crop.circle")
@@ -53,6 +54,12 @@ struct AppHeaderView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .sheet(isPresented: $showProfileSheet) {
+            ProfileView()
+                .environmentObject(session)
+                .presentationDetents([.fraction(0.80)])
+                .presentationDragIndicator(.visible)
         }
     }
 

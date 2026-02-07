@@ -6,6 +6,9 @@ final class CategoriesViewModel: ObservableObject {
     @Published var categories: [CategoryResponseDto] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published private(set) var activeSearchTerm: String = ""
+
+    private var allCategories: [CategoryResponseDto] = []
 
     func load() async {
         isLoading = true
@@ -15,11 +18,16 @@ final class CategoriesViewModel: ObservableObject {
                 "/api/v1/categories",
                 queryItems: [URLQueryItem(name: "includeHierarchy", value: "false")]
             )
-            categories = response
+            allCategories = response
+            applySearch(term: activeSearchTerm, updateActiveTerm: false)
             await ReferenceDataStore.shared.refresh()
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func applySearch(term: String) {
+        applySearch(term: term, updateActiveTerm: true)
     }
 
     func create(name: String, description: String, type: CategoryType, parentId: String?, sortOrder: Int) async -> Bool {
@@ -85,5 +93,53 @@ final class CategoriesViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func applySearch(term: String, updateActiveTerm: Bool) {
+        let cleaned = term.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if updateActiveTerm {
+            activeSearchTerm = cleaned
+        }
+
+        guard !cleaned.isEmpty else {
+            categories = allCategories
+            return
+        }
+
+        let normalizedTerm = normalized(cleaned)
+        let matches = allCategories.filter { category in
+            normalized(category.name ?? "").contains(normalizedTerm)
+        }
+
+        guard !matches.isEmpty else {
+            categories = []
+            return
+        }
+
+        var includedIds = Set(matches.map(\.id))
+        let matchedParentIds = Set(matches.filter { $0.parentCategoryId == nil }.map(\.id))
+
+        for category in matches {
+            if let parentId = category.parentCategoryId {
+                includedIds.insert(parentId)
+            }
+        }
+
+        if !matchedParentIds.isEmpty {
+            for category in allCategories where category.parentCategoryId != nil {
+                if let parentId = category.parentCategoryId, matchedParentIds.contains(parentId) {
+                    includedIds.insert(category.id)
+                }
+            }
+        }
+
+        categories = allCategories.filter { includedIds.contains($0.id) }
+    }
+
+    private func normalized(_ value: String) -> String {
+        value
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "pt_BR"))
+            .lowercased()
     }
 }

@@ -4,6 +4,7 @@ struct RecurrencesView: View {
     @StateObject private var viewModel = RecurrencesViewModel()
     @State private var showForm = false
     @State private var selectedRecurrence: RecurrenceResponseDto?
+    @State private var recurrencePendingDelete: RecurrenceResponseDto?
 
     var body: some View {
         Group {
@@ -49,7 +50,7 @@ struct RecurrencesView: View {
                                 .tint(DS.Colors.warning)
                             }
                             Button(role: .destructive) {
-                                Task { await viewModel.delete(id: recurrence.id) }
+                                recurrencePendingDelete = recurrence
                             } label: {
                                 Label("Excluir", systemImage: "trash")
                             }
@@ -88,9 +89,37 @@ struct RecurrencesView: View {
                 Task { await viewModel.load() }
             }
         }
+        .alert(
+            "Excluir recorrência?",
+            isPresented: Binding(
+                get: { recurrencePendingDelete != nil },
+                set: { isPresented in
+                    if !isPresented { recurrencePendingDelete = nil }
+                }
+            )
+        ) {
+            Button("Cancelar", role: .cancel) {
+                recurrencePendingDelete = nil
+            }
+            Button("Excluir", role: .destructive) {
+                guard let recurrence = recurrencePendingDelete else { return }
+                recurrencePendingDelete = nil
+                Task { await viewModel.delete(id: recurrence.id) }
+            }
+        } message: {
+            Text(deleteMessage)
+        }
         .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
         .errorAlert(message: $viewModel.errorMessage)
         .tint(DS.Colors.primary)
+    }
+
+    private var deleteMessage: String {
+        let label = recurrencePendingDelete?.templateTransaction.description?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let label, !label.isEmpty {
+            return "Você realmente quer excluir \"\(label)\"?"
+        }
+        return "Você realmente quer excluir esta recorrência?"
     }
 }

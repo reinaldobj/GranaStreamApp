@@ -13,17 +13,25 @@ final class AccountsViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var inactiveAccount: InactiveAccountInfo?
+    @Published private(set) var activeSearchTerm: String = ""
+
+    private var allAccounts: [AccountResponseDto] = []
 
     func load() async {
         isLoading = true
         defer { isLoading = false }
         do {
             let response: [AccountResponseDto] = try await APIClient.shared.request("/api/v1/accounts")
-            accounts = response
+            allAccounts = response
+            applySearch(term: activeSearchTerm, updateActiveTerm: false)
             await ReferenceDataStore.shared.refresh()
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func applySearch(term: String) {
+        applySearch(term: term, updateActiveTerm: true)
     }
 
     func create(name: String, type: AccountType, initialBalance: Double) async -> Bool {
@@ -88,5 +96,29 @@ final class AccountsViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             return false
         }
+    }
+
+    private func applySearch(term: String, updateActiveTerm: Bool) {
+        let cleaned = term.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if updateActiveTerm {
+            activeSearchTerm = cleaned
+        }
+
+        guard !cleaned.isEmpty else {
+            accounts = allAccounts
+            return
+        }
+
+        let normalizedTerm = normalized(cleaned)
+        accounts = allAccounts.filter { account in
+            normalized(account.name ?? "").contains(normalizedTerm)
+        }
+    }
+
+    private func normalized(_ value: String) -> String {
+        value
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "pt_BR"))
+            .lowercased()
     }
 }

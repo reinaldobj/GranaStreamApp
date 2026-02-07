@@ -13,45 +13,87 @@ struct ChangePasswordView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                SecureField("Senha atual", text: $currentPassword)
-                    .textContentType(.password)
+            ZStack {
+                DS.Colors.background
+                    .ignoresSafeArea()
 
-                SecureField("Nova senha", text: $newPassword)
-                    .textContentType(.newPassword)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: AppTheme.Spacing.item) {
+                        VStack(spacing: 6) {
+                            Text("Alterar senha")
+                                .font(AppTheme.Typography.title)
+                                .foregroundColor(DS.Colors.textPrimary)
 
-                SecureField("Confirmar nova senha", text: $confirmPassword)
-                    .textContentType(.newPassword)
+                            Text("Atualize sua senha com segurança")
+                                .font(AppTheme.Typography.body)
+                                .foregroundColor(DS.Colors.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity)
 
-                Text("A nova senha deve ser diferente da senha atual.")
-                    .font(AppTheme.Typography.caption)
-                    .foregroundColor(DS.Colors.textSecondary)
-            }
-            .listRowBackground(DS.Colors.surface)
-            .scrollContentBackground(.hidden)
-            .background(DS.Colors.background)
-            .navigationTitle("Alterar senha")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancelar") {
-                        dismiss()
+                        AuthCard {
+                            AuthTextField(
+                                label: "Senha atual",
+                                placeholder: "Digite sua senha atual",
+                                text: $currentPassword,
+                                isSecure: true,
+                                textContentType: .password,
+                                autocapitalization: .never,
+                                autocorrectionDisabled: true
+                            )
+
+                            AuthTextField(
+                                label: "Nova senha",
+                                placeholder: "Digite a nova senha",
+                                text: $newPassword,
+                                isSecure: true,
+                                textContentType: .newPassword,
+                                autocapitalization: .never,
+                                autocorrectionDisabled: true
+                            )
+
+                            AuthTextField(
+                                label: "Confirmar nova senha",
+                                placeholder: "Confirme a nova senha",
+                                text: $confirmPassword,
+                                isSecure: true,
+                                textContentType: .newPassword,
+                                autocapitalization: .never,
+                                autocorrectionDisabled: true
+                            )
+
+                            Text("A nova senha deve ser diferente da senha atual.")
+                                .font(AppTheme.Typography.caption)
+                                .foregroundColor(DS.Colors.textSecondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            if let inlineValidationMessage {
+                                Text(inlineValidationMessage)
+                                    .font(AppTheme.Typography.caption)
+                                    .foregroundColor(DS.Colors.error)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            AuthPrimaryButton(
+                                title: isSaving ? "Salvando..." : "Salvar",
+                                isDisabled: isSaving || !canSubmit
+                            ) {
+                                Task { await save() }
+                            }
+                        }
                     }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(isSaving ? "Salvando..." : "Salvar") {
-                        Task { await save() }
-                    }
-                    .disabled(isSaving || !canSubmit)
+                    .padding(.horizontal, AppTheme.Spacing.screen)
+                    .padding(.top, AppTheme.Spacing.screen + 10)
+                    .padding(.bottom, AppTheme.Spacing.screen * 2)
                 }
             }
-            .errorAlert(message: $errorMessage)
-            .alert("Senha alterada", isPresented: $showSuccess) {
-                Button("OK") {
-                    dismiss()
-                }
-            } message: {
-                Text("Sua senha foi atualizada com sucesso.")
+        }
+        .errorAlert(message: $errorMessage)
+        .alert("Senha alterada", isPresented: $showSuccess) {
+            Button("OK") {
+                dismiss()
             }
+        } message: {
+            Text("Sua senha foi atualizada com sucesso.")
         }
         .tint(DS.Colors.primary)
     }
@@ -64,6 +106,22 @@ struct ChangePasswordView: View {
             && !trimmedNew.isEmpty
             && trimmedNew == trimmedConfirm
             && trimmedNew != trimmedCurrent
+    }
+
+    private var inlineValidationMessage: String? {
+        let trimmedCurrent = currentPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedNew = newPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedConfirm = confirmPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if !trimmedNew.isEmpty && !trimmedConfirm.isEmpty && trimmedNew != trimmedConfirm {
+            return "As senhas não conferem."
+        }
+
+        if !trimmedCurrent.isEmpty && !trimmedNew.isEmpty && trimmedNew == trimmedCurrent {
+            return "A nova senha deve ser diferente da senha atual."
+        }
+
+        return nil
     }
 
     private func save() async {
@@ -98,8 +156,6 @@ struct ChangePasswordView: View {
 }
 
 #Preview {
-    NavigationStack {
-        ChangePasswordView()
-    }
-    .environmentObject(SessionStore.shared)
+    ChangePasswordView()
+        .environmentObject(SessionStore.shared)
 }

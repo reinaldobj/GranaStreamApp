@@ -39,11 +39,6 @@ struct CategoryFormView: View {
             .background(DS.Colors.background)
             .navigationTitle(existing == nil ? "Nova categoria" : "Editar categoria")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancelar") {
-                        dismiss()
-                    }
-                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Salvar") {
                         Task { await save() }

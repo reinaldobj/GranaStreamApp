@@ -34,7 +34,7 @@ struct TransactionFormView: View {
                     .padding(.bottom, AppTheme.Spacing.screen * 2)
                 }
             }
-            .task { prefill() }
+            .task(id: existing?.id) { prefill() }
             .onChange(of: type) { newValue in
                 guard newValue != .transfer else {
                     categoryId = ""
@@ -208,6 +208,15 @@ struct TransactionFormView: View {
     }
 
     private func prefill() {
+        type = .expense
+        date = Date()
+        amount = ""
+        description = ""
+        accountId = ""
+        categoryId = ""
+        fromAccountId = ""
+        toAccountId = ""
+
         guard let existing else { return }
         type = existing.type
         date = existing.date
