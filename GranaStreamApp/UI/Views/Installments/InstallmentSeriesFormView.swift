@@ -63,7 +63,7 @@ struct InstallmentSeriesFormView: View {
             }
 
             TransactionField(label: "Valor total") {
-                CurrencyTextField(placeholder: "R$ 0,00", text: $totalAmount)
+                CurrencyMaskedTextField(text: $totalAmount, placeholder: "R$ 0,00")
             }
 
             TransactionField(label: "Parcelas") {
@@ -91,7 +91,7 @@ struct InstallmentSeriesFormView: View {
     }
 
     private var isValid: Bool {
-        guard CurrencyTextField.value(from: totalAmount) != nil else { return false }
+        guard CurrencyTextFieldHelper.value(from: totalAmount) != nil else { return false }
         guard let installmentsValue = Int(installments), installmentsValue > 0 else { return false }
         return !categoryId.isEmpty
     }
@@ -164,7 +164,7 @@ struct InstallmentSeriesFormView: View {
         description = existing.description ?? ""
         categoryId = existing.categoryId
         accountId = existing.accountDefaultId ?? ""
-        totalAmount = CurrencyTextField.initialText(from: existing.totalAmount)
+        totalAmount = CurrencyTextFieldHelper.initialText(from: existing.totalAmount) ?? ""
         installments = String(existing.installmentsPlanned)
         firstDueDate = existing.firstDueDate
     }
@@ -173,7 +173,7 @@ struct InstallmentSeriesFormView: View {
         isLoading = true
         defer { isLoading = false }
 
-        guard let totalValue = CurrencyTextField.value(from: totalAmount),
+        guard let totalValue = CurrencyTextFieldHelper.value(from: totalAmount),
               let installmentsValue = Int(installments),
               installmentsValue > 0 else {
             errorMessage = "Informe valores válidos."
@@ -222,3 +222,4 @@ private extension String {
         return trimmed.isEmpty ? nil : trimmed
     }
 }
+

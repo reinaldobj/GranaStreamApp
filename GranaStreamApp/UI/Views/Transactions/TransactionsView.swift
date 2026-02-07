@@ -1,5 +1,7 @@
 import SwiftUI
 
+// TODO: [TECH-DEBT] View com 506 linhas e 17+ @State - considerar extrair estado para um Coordinator ou usar @Observable
+// TODO: [TECH-DEBT] Múltiplas Tasks manuais - avaliar uso de .task modifiers com IDs para simplificar ciclo de vida
 struct TransactionsView: View {
     @StateObject private var viewModel = TransactionsViewModel()
     @EnvironmentObject private var referenceStore: ReferenceDataStore

@@ -1,5 +1,6 @@
 import SwiftUI
 
+// TODO: [TECH-DEBT] Typography e Spacing separados de DS.Colors - considerar mover para DS namespace
 enum AppTheme {
     enum Typography {
         static let title = Font.system(size: 22, weight: .semibold)

@@ -1,5 +1,8 @@
 import SwiftUI
 
+// TODO: [TECH-DEBT] View monolítica com 571 linhas - Extrair SingleEntryForm, InstallmentEntryForm, RecurringEntryForm como Views separadas
+// TODO: [TECH-DEBT] Extrair FormValidationError para arquivo compartilhado em Utilities/
+// TODO: [TECH-DEBT] Usar error.userMessage em vez de error.localizedDescription (linha 401) para consistência
 struct UnifiedEntryFormView: View {
     var onComplete: (String) -> Void
 
@@ -148,7 +151,7 @@ struct UnifiedEntryFormView: View {
             }
 
             TransactionField(label: "Valor") {
-                CurrencyTextField(placeholder: "R$ 0,00", text: $single.amount)
+                CurrencyMaskedTextField(text: $single.amount, placeholder: "R$ 0,00")
             }
 
             TransactionField(label: "Título") {
@@ -182,7 +185,7 @@ struct UnifiedEntryFormView: View {
             }
 
             TransactionField(label: "Valor total") {
-                CurrencyTextField(placeholder: "R$ 0,00", text: $installment.totalAmount)
+                CurrencyMaskedTextField(text: $installment.totalAmount, placeholder: "R$ 0,00")
             }
 
             TransactionField(label: "Parcelas") {
@@ -257,7 +260,7 @@ struct UnifiedEntryFormView: View {
             }
 
             TransactionField(label: "Valor") {
-                CurrencyTextField(placeholder: "R$ 0,00", text: $recurrence.amount)
+                CurrencyMaskedTextField(text: $recurrence.amount, placeholder: "R$ 0,00")
             }
 
             TransactionField(label: "Descrição") {
@@ -567,3 +570,4 @@ private extension String {
         return trimmed.isEmpty ? nil : trimmed
     }
 }
+

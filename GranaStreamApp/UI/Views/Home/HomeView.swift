@@ -1,5 +1,6 @@
 import SwiftUI
 
+// TODO: [TECH-DEBT] Dados hardcoded - conectar accounts, bills e transactions à API via ViewModel
 struct HomeView: View {
     private let accounts: [AccountSummary] = [
         .init(id: UUID(), name: "Carteira", balance: 350.25),

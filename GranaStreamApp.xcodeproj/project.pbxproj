@@ -6,11 +6,27 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		E8E510A12F37F34D0098F131 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E8E636812F33C523001DEE7D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E8E636882F33C523001DEE7D;
+			remoteInfo = GranaStreamApp;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		E8E5109B2F37F34D0098F131 /* GranaStreamAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GranaStreamAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E8E636892F33C523001DEE7D /* GranaStreamApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GranaStreamApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		E8E5109C2F37F34D0098F131 /* GranaStreamAppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = GranaStreamAppTests;
+			sourceTree = "<group>";
+		};
 		E8E6368B2F33C523001DEE7D /* GranaStreamApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = GranaStreamApp;
@@ -19,6 +35,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		E8E510982F37F34D0098F131 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E8E636862F33C523001DEE7D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				E8E6368B2F33C523001DEE7D /* GranaStreamApp */,
+				E8E5109C2F37F34D0098F131 /* GranaStreamAppTests */,
 				E8E6368A2F33C523001DEE7D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				E8E636892F33C523001DEE7D /* GranaStreamApp.app */,
+				E8E5109B2F37F34D0098F131 /* GranaStreamAppTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +73,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		E8E5109A2F37F34D0098F131 /* GranaStreamAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E8E510A32F37F34D0098F131 /* Build configuration list for PBXNativeTarget "GranaStreamAppTests" */;
+			buildPhases = (
+				E8E510972F37F34D0098F131 /* Sources */,
+				E8E510982F37F34D0098F131 /* Frameworks */,
+				E8E510992F37F34D0098F131 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E8E510A22F37F34D0098F131 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E8E5109C2F37F34D0098F131 /* GranaStreamAppTests */,
+			);
+			name = GranaStreamAppTests;
+			packageProductDependencies = (
+			);
+			productName = GranaStreamAppTests;
+			productReference = E8E5109B2F37F34D0098F131 /* GranaStreamAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		E8E636882F33C523001DEE7D /* GranaStreamApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E8E636942F33C525001DEE7D /* Build configuration list for PBXNativeTarget "GranaStreamApp" */;
@@ -77,9 +125,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2620;
+				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					E8E5109A2F37F34D0098F131 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = E8E636882F33C523001DEE7D;
+					};
 					E8E636882F33C523001DEE7D = {
 						CreatedOnToolsVersion = 26.2;
 					};
@@ -100,11 +152,19 @@
 			projectRoot = "";
 			targets = (
 				E8E636882F33C523001DEE7D /* GranaStreamApp */,
+				E8E5109A2F37F34D0098F131 /* GranaStreamAppTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		E8E510992F37F34D0098F131 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E8E636872F33C523001DEE7D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +175,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		E8E510972F37F34D0098F131 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E8E636852F33C523001DEE7D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +191,57 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		E8E510A22F37F34D0098F131 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E8E636882F33C523001DEE7D /* GranaStreamApp */;
+			targetProxy = E8E510A12F37F34D0098F131 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		E8E510A42F37F34D0098F131 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3VS44JEP8D;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.GranaStreamAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GranaStreamApp;
+			};
+			name = Debug;
+		};
+		E8E510A52F37F34D0098F131 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3VS44JEP8D;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.GranaStreamAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GranaStreamApp;
+			};
+			name = Release;
+		};
 		E8E636922F33C525001DEE7D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -178,7 +295,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -236,7 +353,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -325,6 +442,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		E8E510A32F37F34D0098F131 /* Build configuration list for PBXNativeTarget "GranaStreamAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E8E510A42F37F34D0098F131 /* Debug */,
+				E8E510A52F37F34D0098F131 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		E8E636842F33C523001DEE7D /* Build configuration list for PBXProject "GranaStreamApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -1,5 +1,7 @@
 import SwiftUI
 
+// TODO: [TECH-DEBT] View gigante com 587 linhas - Extrair CurrencyMaskedTextField para UI/Components/
+// TODO: [TECH-DEBT] Considerar dividir em subviews: BudgetHeaderView, BudgetListView, BudgetItemRow
 struct CategoryBudgetsView: View {
     let isPlanningRoot: Bool
     @StateObject private var viewModel = CategoryBudgetsViewModel()

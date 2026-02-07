@@ -1,6 +1,7 @@
 import Foundation
-import Combine
+import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
 
+// TODO: [TECH-DEBT] 218 linhas com múltiplas responsabilidades - considerar extrair TokenManager e ProfileService
 @MainActor
 final class SessionStore: ObservableObject {
     static let shared = SessionStore()

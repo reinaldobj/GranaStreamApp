@@ -1,5 +1,6 @@
 import SwiftUI
 
+// TODO: [TECH-DEBT] accountMenu e categoryMenu duplicados com UnifiedEntryFormView - extrair para componentes reutilizáveis
 struct TransactionFormView: View {
     let existing: TransactionSummaryDto?
     var onComplete: () -> Void

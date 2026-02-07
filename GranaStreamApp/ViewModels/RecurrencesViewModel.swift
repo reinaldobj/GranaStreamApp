@@ -1,5 +1,5 @@
 import Foundation
-import Combine
+import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
 
 @MainActor
 final class RecurrencesViewModel: ObservableObject {

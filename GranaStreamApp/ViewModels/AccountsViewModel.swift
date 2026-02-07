@@ -1,6 +1,7 @@
 import Foundation
-import Combine
+import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
 
+// TODO: [TECH-DEBT] Lógica de busca duplicada com CategoriesViewModel - criar protocolo SearchableViewModel
 @MainActor
 final class AccountsViewModel: ObservableObject {
     struct InactiveAccountInfo: Identifiable {
@@ -16,12 +17,17 @@ final class AccountsViewModel: ObservableObject {
     @Published private(set) var activeSearchTerm: String = ""
 
     private var allAccounts: [AccountResponseDto] = []
+    private let apiClient: APIClientProtocol
+    
+    init(apiClient: APIClientProtocol = APIClient.shared) {
+        self.apiClient = apiClient
+    }
 
     func load(syncReferenceData: Bool = false) async {
         isLoading = true
         defer { isLoading = false }
         do {
-            let response: [AccountResponseDto] = try await APIClient.shared.request("/api/v1/accounts")
+            let response: [AccountResponseDto] = try await apiClient.request("/api/v1/accounts")
             allAccounts = response
             applySearch(term: activeSearchTerm, updateActiveTerm: false)
             if syncReferenceData {
@@ -45,7 +51,7 @@ final class AccountsViewModel: ObservableObject {
         do {
             inactiveAccount = nil
             let request = CreateAccountRequestDto(name: name, accountType: type, initialBalance: initialBalance)
-            let response: CreateAccountResponseDto = try await APIClient.shared.request(
+            let response: CreateAccountResponseDto = try await apiClientt(
                 "/api/v1/accounts",
                 method: "POST",
                 body: AnyEncodable(request)
@@ -85,7 +91,7 @@ final class AccountsViewModel: ObservableObject {
     ) async -> Bool {
         do {
             let request = UpdateAccountRequestDto(name: name, accountType: type)
-            try await APIClient.shared.requestNoResponse(
+            try await apiClient.requestNoResponse(
                 "/api/v1/accounts/\(account.id)",
                 method: "PATCH",
                 body: AnyEncodable(request)
@@ -112,7 +118,7 @@ final class AccountsViewModel: ObservableObject {
 
     func delete(account: AccountResponseDto) async {
         do {
-            try await APIClient.shared.requestNoResponse("/api/v1/accounts/\(account.id)", method: "DELETE")
+            try await apiClient.requestNoResponse("/api/v1/accounts/\(account.id)", method: "DELETE")
             allAccounts.removeAll { $0.id == account.id }
             applySearch(term: activeSearchTerm, updateActiveTerm: false)
             ReferenceDataStore.shared.removeAccount(id: account.id)
@@ -123,7 +129,7 @@ final class AccountsViewModel: ObservableObject {
 
     func reactivate(accountId: String) async -> Bool {
         do {
-            try await APIClient.shared.requestNoResponse(
+            try await apiClient.requestNoResponse(
                 "/api/v1/accounts/\(accountId)/reactivate",
                 method: "PATCH"
             )

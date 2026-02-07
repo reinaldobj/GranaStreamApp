@@ -1,5 +1,5 @@
 import Foundation
-import Combine
+import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine, usar apenas async/await
 
 struct TransactionMonthSection: Identifiable {
     let id: String
@@ -7,6 +7,7 @@ struct TransactionMonthSection: Identifiable {
     let items: [TransactionSummaryDto]
 }
 
+// TODO: [TECH-DEBT] Código duplicado entre load() e loadMore() - extrair buildQueryItems() privado
 @MainActor
 final class TransactionsViewModel: ObservableObject {
     @Published var transactions: [TransactionSummaryDto] = []
@@ -21,17 +22,19 @@ final class TransactionsViewModel: ObservableObject {
     private var page = 1
     private let size = 20
     private var total = 0
+    private let apiClient: APIClientProtocol
 
     var totalBalance: Double {
         incomeTotal - expenseTotal
     }
 
-    init() {
+    init(apiClient: APIClientProtocol = APIClient.shared) {
         let now = Date()
         let calendar = Calendar.current
         let start = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
         let end = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: start) ?? now
         self.filters = TransactionFilters(startDate: start, endDate: end)
+        self.apiClient = apiClient
     }
 
     var canLoadMore: Bool {
@@ -66,7 +69,7 @@ final class TransactionsViewModel: ObservableObject {
                 items.append(URLQueryItem(name: "searchText", value: filters.searchText))
             }
 
-            let response: ListTransactionsResponseDto = try await APIClient.shared.request(
+            let response: ListTransactionsResponseDto = try await apiClient.request(
                 "/api/v1/transactions",
                 queryItems: items
             )
@@ -108,7 +111,7 @@ final class TransactionsViewModel: ObservableObject {
                 items.append(URLQueryItem(name: "searchText", value: filters.searchText))
             }
 
-            let response: ListTransactionsResponseDto = try await APIClient.shared.request(
+            let response: ListTransactionsResponseDto = try await apiClient.request(
                 "/api/v1/transactions",
                 queryItems: items
             )
@@ -123,7 +126,7 @@ final class TransactionsViewModel: ObservableObject {
 
     func delete(transaction: TransactionSummaryDto) async {
         do {
-            try await APIClient.shared.requestNoResponse(
+            try await apiClient.requestNoResponse(
                 "/api/v1/transactions/\(transaction.id)",
                 method: "DELETE"
             )

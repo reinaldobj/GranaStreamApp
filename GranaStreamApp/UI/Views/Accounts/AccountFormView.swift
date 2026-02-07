@@ -78,7 +78,7 @@ struct AccountFormView: View {
 
             if existing == nil {
                 AccountField(label: "Saldo inicial") {
-                    CurrencyTextField(placeholder: "R$ 0,00", text: $initialBalance)
+                    CurrencyMaskedTextField(text: $initialBalance, placeholder: "R$ 0,00")
                 }
             }
 
@@ -98,7 +98,7 @@ struct AccountFormView: View {
 
     private var isValid: Bool {
         if existing == nil {
-            return !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && CurrencyTextField.value(from: initialBalance) != nil
+            return !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && CurrencyTextFieldHelper.value(from: initialBalance) != nil
         }
         return !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -118,7 +118,7 @@ struct AccountFormView: View {
         defer { isLoading = false }
 
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let balanceValue = CurrencyTextField.value(from: initialBalance) ?? 0
+        let balanceValue = CurrencyTextFieldHelper.value(from: initialBalance) ?? 0
 
         if let existing {
             let success = await viewModel.update(

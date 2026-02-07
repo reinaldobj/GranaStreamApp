@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 
+// TODO: [TECH-DEBT] Design tokens fragmentados entre DS.swift e AppTheme.swift - unificar em um único namespace
 enum DS {
     enum Colors {
         static let background = Color.token("Background", fallback: "F7F7FF")

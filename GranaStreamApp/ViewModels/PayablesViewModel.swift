@@ -1,6 +1,7 @@
 import Foundation
-import Combine
+import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
 
+// TODO: [TECH-DEBT] Fallback complexo em fetchPayables() com try-catch aninhado - simplificar lógica
 enum PayablesStatusFilter: String, CaseIterable, Identifiable {
     case pending
     case settled

@@ -1,6 +1,7 @@
 import Foundation
-import Combine
+import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
 
+// TODO: [TECH-DEBT] Catch blocks vazios silenciam erros - adicionar logging ou retry mechanism
 @MainActor
 final class ReferenceDataStore: ObservableObject {
     static let shared = ReferenceDataStore()

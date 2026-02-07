@@ -1,6 +1,7 @@
 import Foundation
 
-final class APIClient {
+// TODO: [TECH-DEBT] Singleton dificulta testes - considerar injeção de dependência via Environment ou protocolo
+final class APIClient: APIClientProtocol {
     static let shared = APIClient()
 
     private let session: URLSession

@@ -1,6 +1,7 @@
 import Foundation
-import Combine
+import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
 
+// TODO: [TECH-DEBT] Lógica de busca duplicada com AccountsViewModel - criar protocolo SearchableViewModel
 @MainActor
 final class CategoriesViewModel: ObservableObject {
     @Published var categories: [CategoryResponseDto] = []
@@ -9,12 +10,17 @@ final class CategoriesViewModel: ObservableObject {
     @Published private(set) var activeSearchTerm: String = ""
 
     private var allCategories: [CategoryResponseDto] = []
+    private let apiClient: APIClientProtocol
+    
+    init(apiClient: APIClientProtocol = APIClient.shared) {
+        self.apiClient = apiClient
+    }
 
     func load(syncReferenceData: Bool = false) async {
         isLoading = true
         defer { isLoading = false }
         do {
-            let response: [CategoryResponseDto] = try await APIClient.shared.request(
+            let response: [CategoryResponseDto] = try await apiClient.request(
                 "/api/v1/categories",
                 queryItems: [URLQueryItem(name: "includeHierarchy", value: "false")]
             )
@@ -48,7 +54,7 @@ final class CategoriesViewModel: ObservableObject {
                 parentCategoryId: parentId,
                 sortOrder: sortOrder
             )
-            let response: CreateCategoryResponseDto = try await APIClient.shared.request(
+            let response: CreateCategoryResponseDto = try await apiClientt(
                 "/api/v1/categories",
                 method: "POST",
                 body: AnyEncodable(request)
@@ -95,7 +101,7 @@ final class CategoriesViewModel: ObservableObject {
                 parentCategoryId: parentId,
                 sortOrder: sortOrder
             )
-            let _: CategoryResponseDto = try await APIClient.shared.request(
+            let _: CategoryResponseDto = try await apiClient.request(
                 "/api/v1/categories/\(category.id)",
                 method: "PUT",
                 body: AnyEncodable(request)
@@ -127,7 +133,7 @@ final class CategoriesViewModel: ObservableObject {
 
     func delete(category: CategoryResponseDto) async {
         do {
-            try await APIClient.shared.requestNoResponse("/api/v1/categories/\(category.id)", method: "DELETE")
+            try await apiClient.requestNoResponse("/api/v1/categories/\(category.id)", method: "DELETE")
             let removedIds = categoriesToRemove(for: category.id)
             allCategories.removeAll { removedIds.contains($0.id) }
             applySearch(term: activeSearchTerm, updateActiveTerm: false)
@@ -141,7 +147,7 @@ final class CategoriesViewModel: ObservableObject {
 
     func seed() async {
         do {
-            let _: SeedCategoriesResponseDto = try await APIClient.shared.request(
+            let _: SeedCategoriesResponseDto = try await apiClient.request(
                 "/api/v1/categories/seed",
                 method: "POST"
             )

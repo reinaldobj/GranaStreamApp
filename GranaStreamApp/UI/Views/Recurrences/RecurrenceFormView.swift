@@ -16,80 +16,127 @@ struct RecurrenceFormView: View {
     @State private var startDate = Date()
     @State private var endDate = Date()
     @State private var hasEndDate = false
+    @State private var isLoading = false
 
     @State private var errorMessage: String?
     @StateObject private var viewModel = RecurrencesViewModel()
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Transação modelo") {
-                    Picker("Tipo", selection: $type) {
-                        ForEach(TransactionType.allCases) { item in
-                            Text(item.label).tag(item)
-                        }
-                    }
-                    TextField("Valor", text: $amount)
-                        .keyboardType(.decimalPad)
-                    TextField("Descrição", text: $description)
-                    Picker("Conta", selection: $accountId) {
-                        Text("Selecione").tag("")
-                        ForEach(referenceStore.accounts) { account in
-                            Text(account.name ?? "Conta").tag(account.id)
-                        }
-                    }
-                    Picker("Categoria", selection: $categoryId) {
-                        Text("Selecione").tag("")
-                        ForEach(referenceStore.categories) { category in
-                            Text(category.name ?? "Categoria").tag(category.id)
-                        }
-                    }
-                }
+            ZStack {
+                DS.Colors.background
+                    .ignoresSafeArea()
 
-                Section("Recorrência") {
-                    Picker("Frequência", selection: $frequency) {
-                        ForEach(RecurrenceFrequency.allCases) { item in
-                            Text(item.label).tag(item)
-                        }
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: AppTheme.Spacing.item) {
+                        formCard
                     }
-                    DatePicker("Início", selection: $startDate, displayedComponents: .date)
-                    Toggle("Tem data fim", isOn: $hasEndDate)
-                    if hasEndDate {
-                        DatePicker("Fim", selection: $endDate, displayedComponents: .date)
-                    }
+                    .padding(.horizontal, AppTheme.Spacing.screen)
+                    .padding(.top, AppTheme.Spacing.screen + 10)
+                    .padding(.bottom, AppTheme.Spacing.screen * 2)
                 }
             }
-            .listRowBackground(DS.Colors.surface)
-            .scrollContentBackground(.hidden)
-            .background(DS.Colors.background)
-            .navigationTitle(existing == nil ? "Nova recorrência" : "Editar recorrência")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancelar") {
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Salvar") {
-                        Task { await save() }
-                    }
-                    .disabled(!isValid)
-                }
+            .task {
+                await referenceStore.loadIfNeeded()
+                prefill()
             }
-            .task { prefill() }
             .errorAlert(message: $errorMessage)
         }
         .tint(DS.Colors.primary)
     }
 
+    private var formCard: some View {
+        VStack(spacing: AppTheme.Spacing.item) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Tipo")
+                    .font(AppTheme.Typography.caption)
+                    .foregroundColor(DS.Colors.textSecondary)
+
+                Picker("Tipo", selection: $type) {
+                    ForEach(recurringTypes, id: \.rawValue) { item in
+                        Text(item.label).tag(item)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            TransactionPickerRow(
+                label: "Frequência",
+                value: frequency.label,
+                placeholder: "Selecione"
+            ) {
+                ForEach(RecurrenceFrequency.allCases) { item in
+                    Button(item.label) {
+                        frequency = item
+                    }
+                }
+            }
+
+            TransactionDateRow(label: "Início", date: $startDate)
+
+            Toggle(isOn: $hasEndDate) {
+                Text("Tem data fim")
+                    .font(AppTheme.Typography.caption)
+                    .foregroundColor(DS.Colors.textSecondary)
+            }
+            .tint(DS.Colors.primary)
+
+            if hasEndDate {
+                TransactionDateRow(label: "Fim", date: $endDate)
+            }
+
+            TransactionPickerRow(
+                label: "Categoria",
+                value: categoryName,
+                placeholder: "Selecione a categoria"
+            ) {
+                categoryMenu()
+            }
+
+            TransactionPickerRow(
+                label: "Conta",
+                value: accountName,
+                placeholder: "Selecione a conta"
+            ) {
+                accountMenu()
+            }
+
+            TransactionField(label: "Valor") {
+                CurrencyMaskedTextField(text: $amount, placeholder: "R$ 0,00")
+            }
+
+            TransactionField(label: "Descrição") {
+                TextField("Ex: Academia", text: $description)
+                    .textInputAutocapitalization(.sentences)
+            }
+
+            TransactionPrimaryButton(
+                title: isLoading ? "Salvando..." : "Salvar",
+                isDisabled: !isValid || isLoading
+            ) {
+                Task { await save() }
+            }
+            .padding(.top, 8)
+        }
+        .padding(20)
+        .background(DS.Colors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .shadow(color: DS.Colors.border.opacity(0.35), radius: 12, x: 0, y: 6)
+    }
+
     private var isValid: Bool {
-        Double(amount.replacingOccurrences(of: ",", with: ".")) != nil && !accountId.isEmpty
+        guard CurrencyTextFieldHelper.value(from: amount) != nil else { return false }
+        guard !accountId.isEmpty else { return false }
+        if hasEndDate {
+            return endDate >= startDate
+        }
+        return true
     }
 
     private func prefill() {
         guard let existing else { return }
         type = existing.templateTransaction.type
-        amount = String(format: "%.2f", existing.templateTransaction.amount)
+        amount = CurrencyTextFieldHelper.initialText(from: existing.templateTransaction.amount) ?? ""
         description = existing.templateTransaction.description ?? ""
         accountId = existing.templateTransaction.accountId ?? ""
         categoryId = existing.templateTransaction.categoryId ?? ""
@@ -102,10 +149,12 @@ struct RecurrenceFormView: View {
     }
 
     private func save() async {
-        guard let amountValue = Double(amount.replacingOccurrences(of: ",", with: ".")) else {
+        guard let amountValue = CurrencyTextFieldHelper.value(from: amount) else {
             errorMessage = "Informe um valor válido."
             return
         }
+        isLoading = true
+        defer { isLoading = false }
         let template = RecurrenceTemplateTransactionRequestDto(
             type: type,
             amount: amountValue,
@@ -147,4 +196,54 @@ struct RecurrenceFormView: View {
             }
         }
     }
+
+    private var accountName: String? {
+        referenceStore.accounts.first(where: { $0.id == accountId })?.name
+    }
+    private var categoryName: String? {
+        referenceStore.categories.first(where: { $0.id == categoryId })?.name
+    }
+
+    private var recurringTypes: [TransactionType] { [.income, .expense] }
+
+    @ViewBuilder
+    private func accountMenu() -> some View {
+        Button("Limpar seleção") {
+            accountId = ""
+        }
+        .disabled(accountId.isEmpty)
+
+        if referenceStore.accounts.isEmpty {
+            Text("Sem contas")
+                .font(AppTheme.Typography.caption)
+                .foregroundColor(DS.Colors.textSecondary)
+        } else {
+            ForEach(referenceStore.accounts) { account in
+                Button(account.name ?? "Conta") {
+                    accountId = account.id
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func categoryMenu() -> some View {
+        Button("Limpar seleção") {
+            categoryId = ""
+        }
+        .disabled(categoryId.isEmpty)
+
+        if referenceStore.categories.isEmpty {
+            Text("Sem categorias")
+                .font(AppTheme.Typography.caption)
+                .foregroundColor(DS.Colors.textSecondary)
+        } else {
+            ForEach(referenceStore.categories) { category in
+                Button(category.name ?? "Categoria") {
+                    categoryId = category.id
+                }
+            }
+        }
+    }
 }
+
