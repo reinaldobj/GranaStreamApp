@@ -20,6 +20,7 @@ struct TransactionsView: View {
     private let sectionSpacing = AppTheme.Spacing.item
     private let shortcutColumns = [
         GridItem(.flexible(), spacing: AppTheme.Spacing.item),
+        GridItem(.flexible(), spacing: AppTheme.Spacing.item),
         GridItem(.flexible(), spacing: AppTheme.Spacing.item)
     ]
 
@@ -199,30 +200,54 @@ struct TransactionsView: View {
             NavigationLink {
                 PayablesView()
             } label: {
-                managementShortcutCard(
-                    title: "Pendências",
-                    systemImage: "checklist"
-                )
+                Image(systemName: "checklist")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(DS.Colors.primary)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
+                            .fill(DS.Colors.surface)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
+                            .stroke(DS.Colors.border, lineWidth: 1)
+                    )
             }
             .buttonStyle(.plain)
 
             NavigationLink {
                 RecurrencesView()
             } label: {
-                managementShortcutCard(
-                    title: "Recorrências",
-                    systemImage: "arrow.triangle.2.circlepath"
-                )
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(DS.Colors.primary)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
+                            .fill(DS.Colors.surface)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
+                            .stroke(DS.Colors.border, lineWidth: 1)
+                    )
             }
             .buttonStyle(.plain)
 
             NavigationLink {
                 InstallmentSeriesView()
             } label: {
-                managementShortcutCard(
-                    title: "Parceladas",
-                    systemImage: "creditcard"
-                )
+                Image(systemName: "creditcard")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(DS.Colors.primary)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
+                            .fill(DS.Colors.surface)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
+                            .stroke(DS.Colors.border, lineWidth: 1)
+                    )
             }
             .buttonStyle(.plain)
         }
@@ -477,3 +502,4 @@ struct TransactionsView: View {
         .shadow(color: DS.Colors.border.opacity(0.25), radius: 6, x: 0, y: 3)
     }
 }
+

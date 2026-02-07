@@ -8,7 +8,7 @@ struct CategoryBudgetsView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var inputValues: [String: String] = [:]
-    @State private var baselineAmounts: [String: Double] = [:]
+    @State private var baselineAmounts: [String: String] = [:]
     @State private var hasFinishedInitialLoad = false
     @State private var infoMessage: String?
 
@@ -58,7 +58,16 @@ struct CategoryBudgetsView: View {
         .onChange(of: viewModel.items) { _, _ in
             syncFormWithLoadedData()
         }
-        .errorAlert(message: $viewModel.errorMessage)
+        .errorAlert(message: Binding(
+            get: {
+                let msg = viewModel.errorMessage
+                if msg == "Orçamento não encontrado para esse usuário" {
+                    return nil
+                }
+                return msg
+            },
+            set: { viewModel.errorMessage = $0 }
+        ))
         .alert(
             "Orçamento",
             isPresented: Binding(
@@ -273,7 +282,18 @@ struct CategoryBudgetsView: View {
                 Spacer(minLength: 8)
             }
 
-            CurrencyTextField(placeholder: "R$ 0,00", text: binding(for: item.id))
+            CurrencyMaskedTextField(text: binding(for: item.id), placeholder: "R$ 0,00")
+                .keyboardType(.decimalPad)
+                .font(AppTheme.Typography.body)
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(DS.Colors.surface)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(DS.Colors.border, lineWidth: 1)
+                )
 
             if isInvalid(categoryId: item.id) {
                 Text("Digite um valor válido, maior ou igual a zero.")
@@ -323,12 +343,12 @@ struct CategoryBudgetsView: View {
 
     private func syncFormWithLoadedData() {
         var newValues: [String: String] = [:]
-        var newBaseline: [String: Double] = [:]
+        var newBaseline: [String: String] = [:]
 
         for item in viewModel.items {
-            if let amount = item.amount {
-                newValues[item.id] = CurrencyTextField.initialText(from: amount)
-                newBaseline[item.id] = amount
+            if let amount = item.amount, let initial = CurrencyTextFieldHelper.initialText(from: amount) {
+                newValues[item.id] = initial
+                newBaseline[item.id] = initial
             } else {
                 newValues[item.id] = ""
             }
@@ -345,21 +365,16 @@ struct CategoryBudgetsView: View {
         )
     }
 
-    private func parsedAmount(from text: String) -> Double? {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        return CurrencyTextField.value(from: trimmed)
-    }
-
     private func baselineAmount(for categoryId: String) -> Double? {
-        baselineAmounts[categoryId]
+        if let str = baselineAmounts[categoryId] {
+            return CurrencyTextFieldHelper.value(from: str)
+        }
+        return nil
     }
 
     private func isInvalid(categoryId: String) -> Bool {
-        let text = inputValues[categoryId, default: ""]
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return false }
-        guard let value = parsedAmount(from: text) else { return true }
+        let valueString = inputValues[categoryId, default: ""]
+        guard let value = CurrencyTextFieldHelper.value(from: valueString) else { return false }
         return value < 0
     }
 
@@ -380,18 +395,18 @@ struct CategoryBudgetsView: View {
 
     private var pendingChanges: [CategoryBudgetSaveChange] {
         viewModel.items.compactMap { item in
-            let text = inputValues[item.id, default: ""]
-            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            let valueString = inputValues[item.id] ?? ""
+            let value = CurrencyTextFieldHelper.value(from: valueString)
             let baseline = baselineAmount(for: item.id)
 
-            if trimmed.isEmpty {
+            if value == nil {
                 if amountsAreEqual(nil, baseline) {
                     return nil
                 }
                 return CategoryBudgetSaveChange(categoryId: item.id, limitAmount: 0)
             }
 
-            guard let parsed = parsedAmount(from: text), parsed >= 0 else {
+            guard let parsed = value, parsed >= 0 else {
                 return nil
             }
 
@@ -439,14 +454,118 @@ struct CategoryBudgetsView: View {
 
     private func updateBaselineAfterSave(savedCategoryIds: Set<String>) {
         for categoryId in savedCategoryIds {
-            let text = inputValues[categoryId, default: ""]
-            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.isEmpty {
+            let valueString = inputValues[categoryId] ?? ""
+            if valueString.isEmpty {
                 baselineAmounts.removeValue(forKey: categoryId)
-            } else if let value = parsedAmount(from: text) {
-                baselineAmounts[categoryId] = value
+            } else {
+                baselineAmounts[categoryId] = valueString
             }
         }
+    }
+}
+
+// MARK: - CurrencyMaskedTextField
+
+struct CurrencyMaskedTextField: UIViewRepresentable {
+    @Binding var text: String
+    var placeholder: String
+
+    class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: CurrencyMaskedTextField
+
+        init(_ parent: CurrencyMaskedTextField) {
+            self.parent = parent
+        }
+
+        @objc func textFieldEditingChanged(_ textField: UITextField) {
+            // Remove any character except digits
+            let digits = textField.text?.compactMap { $0.isWholeNumber ? $0 : nil } ?? []
+            let digitString = String(digits)
+
+            // Convert digits to number and format as currency
+            let number = NSDecimalNumber(string: digitString).dividing(by: 100)
+
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .currency
+            formatter.locale = Locale(identifier: "pt_BR")
+            formatter.maximumFractionDigits = 2
+            formatter.minimumFractionDigits = 2
+
+            if let formatted = formatter.string(from: number) {
+                textField.text = formatted
+                parent.text = formatted
+            } else {
+                textField.text = ""
+                parent.text = ""
+            }
+        }
+
+        func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+            // Allow only digits and decimal separator
+            let locale = Locale(identifier: "pt_BR")
+            guard let decimalSeparator = locale.decimalSeparator else {
+                return false
+            }
+
+            let allowedCharacters = CharacterSet.decimalDigits.union(CharacterSet(charactersIn: decimalSeparator))
+
+            if string.rangeOfCharacter(from: allowedCharacters.inverted) != nil {
+                return false
+            }
+
+            return true
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIView(context: Context) -> UITextField {
+        let textField = UITextField(frame: .zero)
+        textField.keyboardType = .decimalPad
+        textField.placeholder = placeholder
+        textField.delegate = context.coordinator
+        textField.text = text
+        textField.addTarget(context.coordinator, action: #selector(Coordinator.textFieldEditingChanged(_:)), for: .editingChanged)
+        textField.font = UIFont.preferredFont(forTextStyle: .body)
+        textField.borderStyle = .none
+        textField.autocorrectionType = .no
+        textField.autocapitalizationType = .none
+        textField.tintColor = UIColor.label
+        return textField
+    }
+
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        if uiView.text != text {
+            uiView.text = text
+        }
+    }
+}
+
+// MARK: - CurrencyTextFieldHelper Helpers
+
+struct CurrencyTextFieldHelper {
+    static func value(from text: String) -> Double? {
+        // Remove currency symbols, spaces and dots, replace comma with dot for decimal separator
+        let cleaned = text
+            .replacingOccurrences(of: "R$", with: "")
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: ".", with: "")
+            .replacingOccurrences(of: ",", with: ".")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !cleaned.isEmpty else { return nil }
+        return Double(cleaned)
+    }
+
+    static func initialText(from value: Double) -> String? {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: value))
     }
 }
 
@@ -464,3 +583,4 @@ struct CategoryBudgetsView_Previews: PreviewProvider {
         .environmentObject(ReferenceDataStore.shared)
     }
 }
+
