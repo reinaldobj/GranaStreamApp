@@ -44,18 +44,21 @@ struct TransactionsView: View {
                 TransactionFormView(existing: selectedTransactionForEdit) {
                     Task { await viewModel.load(reset: true) }
                 }
+                .presentationDetents([.fraction(0.80)])
+                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showFilters) {
                 TransactionFiltersView(filters: $viewModel.filters) {
                     syncQuickFilter()
                     Task { await viewModel.load(reset: true) }
                 }
+                .presentationDetents([.fraction(0.70)])
+                .presentationDragIndicator(.visible)
             }
             .sheet(item: $selectedTransactionForDetail) { item in
-                TransactionDetailView(transaction: item) {
-                    selectedTransactionForEdit = item
-                    showForm = true
-                }
+                TransactionDetailView(transaction: item)
+                    .presentationDetents([.fraction(0.72)])
+                    .presentationDragIndicator(.visible)
             }
             .task {
                 await referenceStore.loadIfNeeded()
@@ -73,7 +76,7 @@ struct TransactionsView: View {
             Button {
                 showFilters = true
             } label: {
-                Image(systemName: "funnel.fill")
+                Image(systemName: "line.3.horizontal.decrease.circle.fill")
                     .font(.system(size: 18, weight: .semibold))
                     .frame(width: 40, height: 40)
                     .background(DS.Colors.surface.opacity(0.45))

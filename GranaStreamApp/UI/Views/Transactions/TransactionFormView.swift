@@ -30,11 +30,10 @@ struct TransactionFormView: View {
                         transactionCard
                     }
                     .padding(.horizontal, AppTheme.Spacing.screen)
-                    .padding(.top, AppTheme.Spacing.screen)
+                    .padding(.top, AppTheme.Spacing.screen + 10)
                     .padding(.bottom, AppTheme.Spacing.screen * 2)
                 }
             }
-            .navigationTitle(existing == nil ? "Novo lançamento" : "Editar lançamento")
             .task { prefill() }
             .onChange(of: type) { newValue in
                 guard newValue != .transfer else {
