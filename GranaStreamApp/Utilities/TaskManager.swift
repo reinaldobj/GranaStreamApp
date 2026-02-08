@@ -5,6 +5,7 @@ import Foundation
 @MainActor
 final class TaskManager {
     private var activeTasks: [String: Task<Void, Never>] = [:]
+    private var activeTaskTokens: [String: UUID] = [:]
     
     /// Executa uma operação assíncrona e gerencia seu ciclo de vida
     /// Se uma task com mesmo ID já existe, cancela a anterior
@@ -14,12 +15,15 @@ final class TaskManager {
     ) {
         // Cancelar task anterior se existir
         activeTasks[id]?.cancel()
-        
-        // Criar e armazenar nova task
-        let task = Task {
+
+        let token = UUID()
+        activeTaskTokens[id] = token
+
+        let task = Task { [weak self] in
             await operation()
+            await self?.finishTask(id: id, token: token)
         }
-        
+
         activeTasks[id] = task
     }
     
@@ -46,12 +50,14 @@ final class TaskManager {
     func cancel(id: String) {
         activeTasks[id]?.cancel()
         activeTasks[id] = nil
+        activeTaskTokens[id] = nil
     }
     
     /// Cancela todas as tasks ativas
     func cancelAll() {
         activeTasks.values.forEach { $0.cancel() }
         activeTasks.removeAll()
+        activeTaskTokens.removeAll()
     }
     
     /// Verifica se uma task está ativa
@@ -64,6 +70,12 @@ final class TaskManager {
     deinit {
         // Cancelamento de tasks é seguro fora do context de MainActor
         activeTasks.values.forEach { $0.cancel() }
+    }
+    
+    private func finishTask(id: String, token: UUID) {
+        guard activeTaskTokens[id] == token else { return }
+        activeTasks[id] = nil
+        activeTaskTokens[id] = nil
     }
 }
 

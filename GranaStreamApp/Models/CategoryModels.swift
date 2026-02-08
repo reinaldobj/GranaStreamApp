@@ -1,6 +1,6 @@
 import Foundation
 
-struct CategoryResponseDto: Codable, Identifiable {
+struct CategoryResponseDto: Codable, Identifiable, Sendable {
     let id: String
     let name: String?
     let description: String?

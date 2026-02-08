@@ -14,7 +14,7 @@ struct UpdateBudgetRequestDto: Encodable {
     let monthStart: Date
 }
 
-struct CategoryBudgetItem: Identifiable, Equatable {
+struct CategoryBudgetItem: Identifiable, Equatable, Sendable {
     let categoryId: String
     let categoryName: String
     let parentCategoryName: String?

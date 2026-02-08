@@ -38,7 +38,7 @@ final class AccountsViewModel: ObservableObject, SearchableViewModel {
     }
 
     func load(syncReferenceData: Bool = false) async {
-        await taskManager.executeCommonAndWait(id: .initialLoad) {
+        taskManager.execute(id: "load") {
             self.loadingState = .loading
             do {
                 let response: [AccountResponseDto] = try await self.apiClient.request("/api/v1/accounts")

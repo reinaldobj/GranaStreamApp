@@ -24,7 +24,6 @@ final class CategoryBudgetsViewModel: ObservableObject {
             self.errorMessage = nil
 
             let categoryNamesById = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0.name ?? "Categoria") })
-            let finalCategories = self.finalExpenseCategories(from: categories)
             let normalizedMonth = self.normalizedMonthStart(from: monthStart)
 
             var budgetsByCategory: [String: Double] = [:]
@@ -46,15 +45,16 @@ final class CategoryBudgetsViewModel: ObservableObject {
                 }
             }
 
-            self.items = finalCategories.map { category in
-                CategoryBudgetItem(
-                    categoryId: category.id,
-                    categoryName: category.name ?? "Categoria",
-                    parentCategoryName: self.parentName(for: category, namesById: categoryNamesById),
-                    amount: budgetsByCategory[category.id],
-                    sortOrder: category.sortOrder
+            let categoriesSnapshot = categories
+            let items = await Task.detached(priority: .utility) { @Sendable in
+                CategoryBudgetBuilder.buildItems(
+                    categories: categoriesSnapshot,
+                    namesById: categoryNamesById,
+                    budgetsByCategory: budgetsByCategory
                 )
-            }
+            }.value
+
+            self.items = items
 
             if let requestError {
                 self.errorMessage = requestError.localizedDescription
@@ -133,7 +133,43 @@ final class CategoryBudgetsViewModel: ObservableObject {
         return formatter.string(from: monthStart)
     }
 
-    private func finalExpenseCategories(from categories: [CategoryResponseDto]) -> [CategoryResponseDto] {
+    private func isNoBudgetForMonthError(_ error: Error) -> Bool {
+        guard case let APIError.server(status, problem) = error else { return false }
+
+        if status == 404 {
+            return true
+        }
+
+        if status == 422 {
+            let detail = (problem?.detail ?? problem?.title ?? "").lowercased()
+            if detail.contains("nenhum orçamento") || detail.contains("no budget") || detail.contains("not found") {
+                return true
+            }
+        }
+
+        return false
+    }
+}
+
+private enum CategoryBudgetBuilder {
+    static func buildItems(
+        categories: [CategoryResponseDto],
+        namesById: [String: String],
+        budgetsByCategory: [String: Double]
+    ) -> [CategoryBudgetItem] {
+        let finalCategories = finalExpenseCategories(from: categories)
+        return finalCategories.map { category in
+            CategoryBudgetItem(
+                categoryId: category.id,
+                categoryName: category.name ?? "Categoria",
+                parentCategoryName: parentName(for: category, namesById: namesById),
+                amount: budgetsByCategory[category.id],
+                sortOrder: category.sortOrder
+            )
+        }
+    }
+
+    private static func finalExpenseCategories(from categories: [CategoryResponseDto]) -> [CategoryResponseDto] {
         let activeCategories = categories.filter(\.isActive)
         let parentIdsWithChildren = Set(activeCategories.compactMap(\.parentCategoryId))
 
@@ -162,25 +198,8 @@ final class CategoryBudgetsViewModel: ObservableObject {
             }
     }
 
-    private func parentName(for category: CategoryResponseDto, namesById: [String: String]) -> String? {
+    private static func parentName(for category: CategoryResponseDto, namesById: [String: String]) -> String? {
         guard let parentId = category.parentCategoryId else { return nil }
         return namesById[parentId]
-    }
-
-    private func isNoBudgetForMonthError(_ error: Error) -> Bool {
-        guard case let APIError.server(status, problem) = error else { return false }
-
-        if status == 404 {
-            return true
-        }
-
-        if status == 422 {
-            let detail = (problem?.detail ?? problem?.title ?? "").lowercased()
-            if detail.contains("nenhum orçamento") || detail.contains("no budget") || detail.contains("not found") {
-                return true
-            }
-        }
-
-        return false
     }
 }
