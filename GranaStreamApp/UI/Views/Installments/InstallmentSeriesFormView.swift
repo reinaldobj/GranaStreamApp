@@ -1,22 +1,24 @@
 import SwiftUI
 
+/// Formulário para criar/editar séries de parcelamento
+/// Reutiliza InstallmentEntryFormContent como componente de UI
 struct InstallmentSeriesFormView: View {
     let existing: InstallmentSeriesResponseDto?
     var onComplete: () -> Void
 
     @EnvironmentObject private var referenceStore: ReferenceDataStore
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var viewModel = InstallmentSeriesViewModel()
 
-    @State private var description = ""
-    @State private var categoryId: String = ""
-    @State private var accountId: String = ""
+    // State para o formulário
+    @State private var firstDueDate = Date()
+    @State private var categoryId = ""
+    @State private var accountId = ""
     @State private var totalAmount = ""
     @State private var installments = ""
-    @State private var firstDueDate = Date()
+    @State private var description = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
-
-    @StateObject private var viewModel = InstallmentSeriesViewModel()
 
     var body: some View {
         NavigationStack {
@@ -33,7 +35,7 @@ struct InstallmentSeriesFormView: View {
                     .padding(.bottom, DS.Spacing.screen * 2)
                 }
             }
-            .task(id: existing?.id) {
+            .task {
                 await referenceStore.loadIfNeeded()
                 prefill()
             }
@@ -42,40 +44,23 @@ struct InstallmentSeriesFormView: View {
         .tint(DS.Colors.primary)
     }
 
+    // MARK: - Form Card
+
     private var formCard: some View {
         VStack(spacing: DS.Spacing.item) {
-            TransactionDateRow(label: "Primeiro vencimento", date: $firstDueDate)
+            // Reutiliza o componente de conteúdo de parcelamento
+            InstallmentEntryFormContent(
+                firstDueDate: $firstDueDate,
+                categoryId: $categoryId,
+                accountId: $accountId,
+                totalAmount: $totalAmount,
+                installments: $installments,
+                description: $description,
+                accounts: referenceStore.accounts,
+                categorySections: categorySections
+            )
 
-            TransactionPickerRow(
-                label: "Categoria",
-                value: categoryName,
-                placeholder: "Selecione a categoria"
-            ) {
-                categoryMenu()
-            }
-
-            TransactionPickerRow(
-                label: "Conta padrão",
-                value: accountName,
-                placeholder: "Opcional"
-            ) {
-                accountMenu()
-            }
-
-            TransactionField(label: "Valor total") {
-                CurrencyTextField(placeholder: "R$ 0,00", text: $totalAmount)
-            }
-
-            TransactionField(label: "Parcelas") {
-                TextField("Ex: 12", text: $installments)
-                    .keyboardType(.numberPad)
-            }
-
-            TransactionField(label: "Descrição") {
-                TextField("Ex: Geladeira", text: $description)
-                    .textInputAutocapitalization(.sentences)
-            }
-
+            // Botão salvar
             TransactionPrimaryButton(
                 title: isLoading ? "Salvando..." : "Salvar",
                 isDisabled: !isValid || isLoading
@@ -90,76 +75,21 @@ struct InstallmentSeriesFormView: View {
         .shadow(color: DS.Colors.border.opacity(0.35), radius: 12, x: 0, y: 6)
     }
 
+    // MARK: - Helpers
+
+    private var categorySections: [CategorySection] {
+        groupCategoriesForPicker(referenceStore.categories, transactionType: .expense)
+    }
+
     private var isValid: Bool {
         guard CurrencyTextField.value(from: totalAmount) != nil else { return false }
         guard let installmentsValue = Int(installments), installmentsValue > 0 else { return false }
         return !categoryId.isEmpty
     }
 
-    private var accountName: String? {
-        referenceStore.accounts.first(where: { $0.id == accountId })?.name
-    }
-
-    private var categoryName: String? {
-        referenceStore.categories.first(where: { $0.id == categoryId })?.name
-    }
-
-    @ViewBuilder
-    private func categoryMenu() -> some View {
-        Button("Limpar seleção") {
-            categoryId = ""
-        }
-        .disabled(categoryId.isEmpty)
-
-        let sections = groupCategoriesForPicker(referenceStore.categories, transactionType: .expense)
-        if sections.isEmpty {
-            Text("Sem categorias")
-                .font(DS.Typography.caption)
-                .foregroundColor(DS.Colors.textSecondary)
-        } else {
-            ForEach(sections) { section in
-                Text(section.title)
-                    .font(DS.Typography.caption)
-                    .foregroundColor(DS.Colors.textSecondary)
-                    .disabled(true)
-
-                ForEach(section.children) { child in
-                    Button(child.name ?? "Categoria") {
-                        categoryId = child.id
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func accountMenu() -> some View {
-        Button("Limpar seleção") {
-            accountId = ""
-        }
-        .disabled(accountId.isEmpty)
-
-        if referenceStore.accounts.isEmpty {
-            Text("Sem contas")
-                .font(DS.Typography.caption)
-                .foregroundColor(DS.Colors.textSecondary)
-        } else {
-            ForEach(referenceStore.accounts) { account in
-                Button(account.name ?? "Conta") {
-                    accountId = account.id
-                }
-            }
-        }
-    }
+    // MARK: - Prefill (para edição)
 
     private func prefill() {
-        description = ""
-        categoryId = ""
-        accountId = ""
-        totalAmount = ""
-        installments = ""
-        firstDueDate = Date()
-
         guard let existing else { return }
         description = existing.description ?? ""
         categoryId = existing.categoryId
@@ -168,6 +98,8 @@ struct InstallmentSeriesFormView: View {
         installments = String(existing.installmentsPlanned)
         firstDueDate = existing.firstDueDate
     }
+
+    // MARK: - Save
 
     private func save() async {
         isLoading = true
@@ -181,6 +113,7 @@ struct InstallmentSeriesFormView: View {
         }
 
         if let existing {
+            // Update
             let request = UpdateInstallmentSeriesRequestDto(
                 description: description.nilIfBlank,
                 categoryId: categoryId.isEmpty ? nil : categoryId,
@@ -197,6 +130,7 @@ struct InstallmentSeriesFormView: View {
                 errorMessage = viewModel.errorMessage
             }
         } else {
+            // Create
             let request = CreateInstallmentSeriesRequestDto(
                 description: description.nilIfBlank,
                 categoryId: categoryId,
