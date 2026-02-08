@@ -1,38 +1,14 @@
 import Foundation
 
 enum DateCoder {
-    static let formatterWithFraction: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    static let formatterNoFraction: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
-
-    static let noTimeZoneFormatters: [DateFormatter] = {
-        func makeFormatter(_ format: String) -> DateFormatter {
-            let formatter = DateFormatter()
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.timeZone = TimeZone.current
-            formatter.dateFormat = format
-            return formatter
-        }
-
-        return [
-            makeFormatter("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS"),
-            makeFormatter("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
-            makeFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-            makeFormatter("yyyy-MM-dd'T'HH:mm:ss")
-        ]
-    }()
-
     static func decode(_ decoder: Decoder) throws -> Date {
         let container = try decoder.singleValueContainer()
         let value = try container.decode(String.self)
+
+        let formatterWithFraction = makeFormatterWithFraction()
+        let formatterNoFraction = makeFormatterNoFraction()
+        let noTimeZoneFormatters = makeNoTimeZoneFormatters()
+
         if let date = formatterWithFraction.date(from: value) {
             return date
         }
@@ -47,7 +23,7 @@ enum DateCoder {
            let date = formatterWithFraction.date(from: trimmed) {
             return date
         }
-        if let date = parseNoTimeZone(value) {
+        if let date = parseNoTimeZone(value, formatters: noTimeZoneFormatters) {
             return date
         }
         throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date: \(value)")
@@ -55,12 +31,34 @@ enum DateCoder {
 
     static func encode(_ date: Date, encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        let value = formatterWithFraction.string(from: date)
+        let value = makeFormatterWithFraction().string(from: date)
         try container.encode(value)
     }
 
     static func string(from date: Date) -> String {
-        formatterWithFraction.string(from: date)
+        makeFormatterWithFraction().string(from: date)
+    }
+
+    static func parseDate(_ value: String) -> Date? {
+        let formatterWithFraction = makeFormatterWithFraction()
+        let formatterNoFraction = makeFormatterNoFraction()
+        let noTimeZoneFormatters = makeNoTimeZoneFormatters()
+
+        if let date = formatterWithFraction.date(from: value) {
+            return date
+        }
+        if let date = formatterNoFraction.date(from: value) {
+            return date
+        }
+        if let trimmed = trimFraction(value, maxDigits: 6),
+           let date = formatterWithFraction.date(from: trimmed) {
+            return date
+        }
+        if let trimmed = trimFraction(value, maxDigits: 3),
+           let date = formatterWithFraction.date(from: trimmed) {
+            return date
+        }
+        return parseNoTimeZone(value, formatters: noTimeZoneFormatters)
     }
 
     private static func trimFraction(_ value: String, maxDigits: Int) -> String? {
@@ -76,7 +74,7 @@ enum DateCoder {
         return String(value[..<afterDot]) + trimmedFraction + value[fractionEnd...]
     }
 
-    private static func parseNoTimeZone(_ value: String) -> Date? {
+    private static func parseNoTimeZone(_ value: String, formatters: [DateFormatter]) -> Date? {
         guard let tIndex = value.firstIndex(of: "T") else { return nil }
         let timePortion = value[tIndex...]
         if timePortion.contains("Z") || timePortion.contains("+") {
@@ -87,7 +85,7 @@ enum DateCoder {
             return nil
         }
 
-        for formatter in noTimeZoneFormatters {
+        for formatter in formatters {
             if let digits = fractionDigits(for: formatter.dateFormat),
                let normalized = trimFraction(value, maxDigits: digits),
                let date = formatter.date(from: normalized) {
@@ -98,6 +96,35 @@ enum DateCoder {
             }
         }
         return nil
+    }
+
+    private static func makeFormatterWithFraction() -> ISO8601DateFormatter {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }
+
+    private static func makeFormatterNoFraction() -> ISO8601DateFormatter {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }
+
+    private static func makeNoTimeZoneFormatters() -> [DateFormatter] {
+        func makeFormatter(_ format: String) -> DateFormatter {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.timeZone = TimeZone.current
+            formatter.dateFormat = format
+            return formatter
+        }
+
+        return [
+            makeFormatter("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS"),
+            makeFormatter("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
+            makeFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS"),
+            makeFormatter("yyyy-MM-dd'T'HH:mm:ss")
+        ]
     }
 
     private static func fractionDigits(for format: String) -> Int? {

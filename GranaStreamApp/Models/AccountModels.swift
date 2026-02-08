@@ -8,13 +8,13 @@ struct AccountResponseDto: Codable, Identifiable {
 }
 
 struct CreateAccountRequestDto: Codable {
-    let name: String
+    let name: String?
     let accountType: AccountType
     let initialBalance: Double
 }
 
 struct UpdateAccountRequestDto: Codable {
-    let name: String
+    let name: String?
     let accountType: AccountType
 }
 

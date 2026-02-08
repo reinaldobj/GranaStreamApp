@@ -8,53 +8,57 @@ final class CategoryBudgetsViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var isSaving = false
     @Published var errorMessage: String?
+    
+    private let taskManager = TaskManager()
+    private let apiClient: APIClientProtocol
+    
+    init(apiClient: APIClientProtocol? = nil) {
+        self.apiClient = apiClient ?? APIClient.shared
+    }
 
     func load(for monthStart: Date, categories: [CategoryResponseDto]) async {
-        isLoading = true
-        defer { isLoading = false }
+        taskManager.execute(id: "load") {
+            self.isLoading = true
+            defer { self.isLoading = false }
 
-        errorMessage = nil
+            self.errorMessage = nil
 
-        let categoryNamesById = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0.name ?? "Categoria") })
-        let finalCategories = finalExpenseCategories(from: categories)
-        let normalizedMonth = normalizedMonthStart(from: monthStart)
+            let categoryNamesById = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0.name ?? "Categoria") })
+            let finalCategories = self.finalExpenseCategories(from: categories)
+            let normalizedMonth = self.normalizedMonthStart(from: monthStart)
 
-        var budgetsByCategory: [String: Double] = [:]
-        var requestError: Error?
+            var budgetsByCategory: [String: Double] = [:]
+            var requestError: Error?
 
-        do {
-            let response: [BudgetResponseDto] = try await APIClient.shared.request(
-                "/api/v1/budgets",
-                queryItems: [
-                    URLQueryItem(name: "month", value: monthValue(from: normalizedMonth)),
-                    URLQueryItem(name: "monthStart", value: monthStartValue(from: normalizedMonth))
-                ]
-            )
+            do {
+                let response: [BudgetResponseDto] = try await self.apiClient.request(
+                    "/api/v1/budgets",
+                    queryItems: [
+                        URLQueryItem(name: "month", value: self.monthValue(from: normalizedMonth)),
+                        URLQueryItem(name: "monthStart", value: self.monthStartValue(from: normalizedMonth))
+                    ]
+                )
 
-            let budgetPairs: [(String, Double)] = response.compactMap { item in
-                guard let categoryId = item.categoryId,
-                      let limitAmount = item.resolvedAmount else { return nil }
-                return (categoryId, limitAmount)
+                budgetsByCategory = Dictionary(uniqueKeysWithValues: response.map { ($0.categoryId, $0.limitAmount) })
+            } catch {
+                if !self.isNoBudgetForMonthError(error) {
+                    requestError = error
+                }
             }
-            budgetsByCategory = Dictionary(uniqueKeysWithValues: budgetPairs)
-        } catch {
-            if !isNoBudgetForMonthError(error) {
-                requestError = error
+
+            self.items = finalCategories.map { category in
+                CategoryBudgetItem(
+                    categoryId: category.id,
+                    categoryName: category.name ?? "Categoria",
+                    parentCategoryName: self.parentName(for: category, namesById: categoryNamesById),
+                    amount: budgetsByCategory[category.id],
+                    sortOrder: category.sortOrder
+                )
             }
-        }
 
-        items = finalCategories.map { category in
-            CategoryBudgetItem(
-                categoryId: category.id,
-                categoryName: category.name ?? "Categoria",
-                parentCategoryName: parentName(for: category, namesById: categoryNamesById),
-                amount: budgetsByCategory[category.id],
-                sortOrder: category.sortOrder
-            )
-        }
-
-        if let requestError {
-            errorMessage = requestError.localizedDescription
+            if let requestError {
+                self.errorMessage = requestError.localizedDescription
+            }
         }
     }
 

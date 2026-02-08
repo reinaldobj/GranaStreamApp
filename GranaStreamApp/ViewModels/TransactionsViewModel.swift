@@ -11,19 +11,33 @@ struct TransactionMonthSection: Identifiable {
 /// ViewModel para gerenciar transações com filtros e paginação
 @MainActor
 final class TransactionsViewModel: ObservableObject {
-    @Published var transactions: [TransactionSummaryDto] = []
-    @Published var isLoading = false
+    @Published var loadingState: LoadingState<[TransactionSummaryDto]> = .idle
     @Published var isLoadingMore = false
     @Published var errorMessage: String?
     @Published var filters: TransactionFilters
     @Published private(set) var monthSections: [TransactionMonthSection] = []
     @Published private(set) var incomeTotal: Double = 0
     @Published private(set) var expenseTotal: Double = 0
+    
+    var transactions: [TransactionSummaryDto] {
+        if case .loaded(let items) = loadingState {
+            return items
+        }
+        return []
+    }
+    
+    var isLoading: Bool {
+        if case .loading = loadingState {
+            return true
+        }
+        return false
+    }
 
     private var page = 1
     private let size = 20
     private var total = 0
     private let apiClient: APIClientProtocol
+    private let taskManager = TaskManager()
 
     var totalBalance: Double {
         incomeTotal - expenseTotal
@@ -43,28 +57,30 @@ final class TransactionsViewModel: ObservableObject {
     }
 
     func load(reset: Bool = false) async {
-        if reset {
-            page = 1
-            total = 0
-        }
-        isLoading = true
-        defer { isLoading = false }
-
-        do {
-            let items = buildQueryItems(page: page)
-            let response: ListTransactionsResponseDto = try await apiClient.request(
-                "/api/v1/transactions",
-                queryItems: items
-            )
-            total = response.total
-            if page == 1 {
-                transactions = response.items ?? []
-            } else {
-                transactions.append(contentsOf: response.items ?? [])
+        taskManager.execute(id: "load") {
+            if reset {
+                self.page = 1
+                self.total = 0
             }
-            recalculateDerivedData()
-        } catch {
-            errorMessage = error.userMessage
+            self.loadingState = .loading
+            
+            do {
+                let items = self.buildQueryItems(page: self.page)
+                let response: ListTransactionsResponseDto = try await self.apiClient.request(
+                    "/api/v1/transactions",
+                    queryItems: items
+                )
+                self.total = response.total
+                let newItems = response.items ?? []
+                let allItems = self.page == 1 ? newItems : (self.transactions + newItems)
+                self.loadingState = .loaded(allItems)
+                self.recalculateDerivedData()
+                self.errorMessage = nil
+            } catch {
+                let message = error.userMessage ?? "Erro ao carregar transações"
+                self.errorMessage = message
+                self.loadingState = .error(message)
+            }
         }
     }
 
@@ -82,7 +98,8 @@ final class TransactionsViewModel: ObservableObject {
             )
             total = response.total
             page = nextPage
-            transactions.append(contentsOf: response.items ?? [])
+            let allItems = transactions + (response.items ?? [])
+            loadingState = .loaded(allItems)
             recalculateDerivedData()
         } catch {
             errorMessage = error.userMessage

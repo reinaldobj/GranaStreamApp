@@ -40,28 +40,45 @@ enum PayablesStatusFilter: String, CaseIterable, Identifiable {
 /// ViewModel para gerenciar contas a pagar com fallback de requisição
 @MainActor
 final class PayablesViewModel: ObservableObject {
-    @Published private(set) var items: [PayableListItemDto] = []
-    @Published var isLoading = false
+    @Published var loadingState: LoadingState<[PayableListItemDto]> = .idle
     @Published var errorMessage: String?
     @Published private(set) var settlingIds: Set<String> = []
     @Published private(set) var undoingIds: Set<String> = []
+    
+    var items: [PayableListItemDto] {
+        if case .loaded(let data) = loadingState {
+            return data
+        }
+        return []
+    }
+    
+    var isLoading: Bool {
+        if case .loading = loadingState {
+            return true
+        }
+        return false
+    }
 
     private let apiClient: APIClientProtocol
+    private let taskManager = TaskManager()
     
     init(apiClient: APIClientProtocol? = nil) {
         self.apiClient = apiClient ?? APIClient.shared
     }
 
     func load(month: Date, statusFilter: PayablesStatusFilter) async {
-        isLoading = true
-        defer { isLoading = false }
+        taskManager.execute(id: "load") {
+            self.loadingState = .loading
+            self.errorMessage = nil
 
-        errorMessage = nil
-
-        do {
-            items = try await fetchPayables(month: month, statusFilter: statusFilter)
-        } catch {
-            errorMessage = error.userMessage
+            do {
+                let items = try await self.fetchPayables(month: month, statusFilter: statusFilter)
+                self.loadingState = .loaded(items)
+            } catch {
+                let message = error.userMessage ?? "Erro ao carregar contas a pagar"
+                self.errorMessage = message
+                self.loadingState = .error(message)
+            }
         }
     }
 

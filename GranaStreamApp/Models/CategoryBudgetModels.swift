@@ -1,16 +1,11 @@
 import Foundation
 
 struct BudgetResponseDto: Decodable {
-    let id: String?
-    let categoryId: String?
-    let categoryName: String?
-    let limitAmount: Double?
-    let amount: Double?
-    let monthStart: Date?
-
-    var resolvedAmount: Double? {
-        limitAmount ?? amount
-    }
+    let id: String
+    let userId: String
+    let categoryId: String
+    let limitAmount: Double
+    let monthStart: Date
 }
 
 struct UpdateBudgetRequestDto: Encodable {

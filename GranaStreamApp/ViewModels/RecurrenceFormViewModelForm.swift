@@ -11,6 +11,6 @@ final class RecurrenceFormViewModelForm: FormViewModel {
     var isValid: Bool { true }
     func save() async throws { }
     
-    // Delegado para manter compatibilidade
-    let parentViewModel = RecurrencesViewModel()
+    // Delegado mantido para compatibilidade (inicializado dinamicamente na view)
+    var parentViewModel: Any?
 }

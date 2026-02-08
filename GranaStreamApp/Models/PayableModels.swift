@@ -35,5 +35,5 @@ struct SettlePayableResponseDto: Codable {
 struct UndoSettlePayableResponseDto: Codable {
     let payableId: String
     let status: PayableStatus
-    let transactionId: String?
+    let transactionId: String
 }

@@ -44,7 +44,7 @@ struct RecurrenceResponseDto: Codable, Identifiable {
     let startDate: Date
     let endDate: Date?
     let dayOfMonth: Int?
-    let dayOfWeek: Int?
+    let dayOfWeek: Int
     let isPaused: Bool
     let nextOccurrence: Date?
 
@@ -69,7 +69,7 @@ struct RecurrenceResponseDto: Codable, Identifiable {
         startDate: Date,
         endDate: Date?,
         dayOfMonth: Int?,
-        dayOfWeek: Int?,
+        dayOfWeek: Int,
         isPaused: Bool,
         nextOccurrence: Date?
     ) {
@@ -95,38 +95,38 @@ struct RecurrenceResponseDto: Codable, Identifiable {
         startDate = try container.decode(Date.self, forKey: .startDate)
         endDate = try container.decodeIfPresent(Date.self, forKey: .endDate)
         dayOfMonth = try container.decodeIfPresent(Int.self, forKey: .dayOfMonth)
-        dayOfWeek = Self.decodeDayOfWeek(from: container)
+        dayOfWeek = try Self.decodeDayOfWeek(from: container)
         isPaused = try container.decode(Bool.self, forKey: .isPaused)
         nextOccurrence = try container.decodeIfPresent(Date.self, forKey: .nextOccurrence)
     }
 
-    private static func decodeDayOfWeek(from container: KeyedDecodingContainer<CodingKeys>) -> Int? {
-        if let intValue = try? container.decodeIfPresent(Int.self, forKey: .dayOfWeek) {
+    private static func decodeDayOfWeek(from container: KeyedDecodingContainer<CodingKeys>) throws -> Int {
+        if let intValue = try? container.decode(Int.self, forKey: .dayOfWeek) {
             return intValue
         }
 
-        guard let rawString = (try? container.decodeIfPresent(String.self, forKey: .dayOfWeek)) ?? nil else {
-            return nil
+        if let rawString = try? container.decode(String.self, forKey: .dayOfWeek) {
+            let value = rawString.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            switch value {
+            case "0", "sunday", "domingo":
+                return 0
+            case "1", "monday", "segunda", "segunda-feira":
+                return 1
+            case "2", "tuesday", "terca", "terça", "terça-feira":
+                return 2
+            case "3", "wednesday", "quarta", "quarta-feira":
+                return 3
+            case "4", "thursday", "quinta", "quinta-feira":
+                return 4
+            case "5", "friday", "sexta", "sexta-feira":
+                return 5
+            case "6", "saturday", "sabado", "sábado":
+                return 6
+            default:
+                break
+            }
         }
-        let value = rawString.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
-        switch value {
-        case "0", "sunday", "domingo":
-            return 0
-        case "1", "monday", "segunda", "segunda-feira":
-            return 1
-        case "2", "tuesday", "terca", "terça", "terça-feira":
-            return 2
-        case "3", "wednesday", "quarta", "quarta-feira":
-            return 3
-        case "4", "thursday", "quinta", "quinta-feira":
-            return 4
-        case "5", "friday", "sexta", "sexta-feira":
-            return 5
-        case "6", "saturday", "sabado", "sábado":
-            return 6
-        default:
-            return nil
-        }
+        throw DecodingError.dataCorruptedError(forKey: .dayOfWeek, in: container, debugDescription: "Invalid dayOfWeek")
     }
 }

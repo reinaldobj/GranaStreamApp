@@ -1,6 +1,7 @@
 import Foundation
 
 /// Protocolo para gerenciar autenticação - permite injetar diferentes implementações
+@MainActor
 protocol AuthenticationProvider: AnyObject {
     func refreshTokensIfNeeded() async -> Bool
     func refreshTokens() async -> Bool
@@ -24,7 +25,7 @@ final class SessionStoreAuthenticationProvider: AuthenticationProvider {
     }
     
     func getAccessToken() async -> String? {
-        sessionStore.getAccessToken()
+        await sessionStore.getAccessToken()
     }
 }
 
@@ -33,8 +34,6 @@ final class APIClient: APIClientProtocol {
     static let shared = APIClient()
 
     private let session: URLSession
-    private let encoder: JSONEncoder
-    private let decoder: JSONDecoder
     private let authenticationProvider: AuthenticationProvider
 
     init(
@@ -43,10 +42,6 @@ final class APIClient: APIClientProtocol {
     ) {
         self.session = session
         self.authenticationProvider = authenticationProvider ?? SessionStoreAuthenticationProvider()
-        self.encoder = JSONEncoder()
-        self.encoder.dateEncodingStrategy = .custom(DateCoder.encode)
-        self.decoder = JSONDecoder()
-        self.decoder.dateDecodingStrategy = .custom(DateCoder.decode)
     }
 
     func request<T: Decodable>(
@@ -57,6 +52,9 @@ final class APIClient: APIClientProtocol {
         requiresAuth: Bool = true,
         retryOnAuthFailure: Bool = true
     ) async throws -> T {
+        let encoder = makeEncoder()
+        let decoder = makeDecoder()
+
         var url = AppConfig.baseURL
         url.append(path: path)
         if !queryItems.isEmpty {
@@ -144,6 +142,20 @@ final class APIClient: APIClientProtocol {
             #endif
             throw APIError.decodingError
         }
+    }
+
+    // MARK: - Private
+
+    private func makeEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .custom(DateCoder.encode)
+        return encoder
+    }
+
+    private func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom(DateCoder.decode)
+        return decoder
     }
 
     // MARK: - Retry Logic

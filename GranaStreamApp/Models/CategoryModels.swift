@@ -17,16 +17,16 @@ struct CategoryResponseDto: Codable, Identifiable {
 }
 
 struct CreateCategoryRequestDto: Codable {
-    let name: String
-    let description: String
+    let name: String?
+    let description: String?
     let categoryType: CategoryType
     let parentCategoryId: String?
     let sortOrder: Int
 }
 
 struct UpdateCategoryRequestDto: Codable {
-    let name: String
-    let description: String
+    let name: String?
+    let description: String?
     let categoryType: CategoryType
     let parentCategoryId: String?
     let sortOrder: Int

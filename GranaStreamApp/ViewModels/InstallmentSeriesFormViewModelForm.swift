@@ -11,6 +11,6 @@ final class InstallmentSeriesFormViewModelForm: FormViewModel {
     var isValid: Bool { true }
     func save() async throws { }
     
-    // Delegado para manter compatibilidade com view existente
-    let parentViewModel = InstallmentSeriesViewModel()
+    // Delegado mantido para compatibilidade (inicializado dinamicamente na view)
+    var parentViewModel: Any?
 }

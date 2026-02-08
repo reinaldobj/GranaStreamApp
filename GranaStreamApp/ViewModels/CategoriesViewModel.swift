@@ -4,33 +4,52 @@ import Combine
 
 @MainActor
 final class CategoriesViewModel: ObservableObject, SearchableViewModel {
-    @Published var categories: [CategoryResponseDto] = []
-    @Published var isLoading = false
+    @Published var loadingState: LoadingState<[CategoryResponseDto]> = .idle
     @Published var errorMessage: String?
     @Published private(set) var activeSearchTerm: String = ""
+    
+    var categories: [CategoryResponseDto] {
+        if case .loaded(let items) = loadingState {
+            return items
+        }
+        return []
+    }
+    
+    var isLoading: Bool {
+        if case .loading = loadingState {
+            return true
+        }
+        return false
+    }
 
     private var allCategories: [CategoryResponseDto] = []
     private let apiClient: APIClientProtocol
+    private let taskManager = TaskManager()
     
     init(apiClient: APIClientProtocol? = nil) {
         self.apiClient = apiClient ?? APIClient.shared
     }
 
     func load(syncReferenceData: Bool = false) async {
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            let response: [CategoryResponseDto] = try await apiClient.request(
-                "/api/v1/categories",
-                queryItems: [URLQueryItem(name: "includeHierarchy", value: "false")]
-            )
-            allCategories = response
-            applySearch(term: activeSearchTerm, updateActiveTerm: false)
-            if syncReferenceData {
-                ReferenceDataStore.shared.replaceCategories(response)
+        taskManager.execute(id: "load") {
+            self.loadingState = .loading
+            do {
+                let response: [CategoryResponseDto] = try await self.apiClient.request(
+                    "/api/v1/categories",
+                    queryItems: [URLQueryItem(name: "includeHierarchy", value: "false")]
+                )
+                self.allCategories = response
+                self.loadingState = .loaded(response)
+                self.applySearch(term: self.activeSearchTerm, updateActiveTerm: false)
+                if syncReferenceData {
+                    ReferenceDataStore.shared.replaceCategories(response)
+                }
+                self.errorMessage = nil
+            } catch {
+                let message = error.userMessage ?? "Erro ao carregar categorias"
+                self.errorMessage = message
+                self.loadingState = .error(message)
             }
-        } catch {
-            errorMessage = error.userMessage
         }
     }
 
@@ -165,7 +184,7 @@ final class CategoriesViewModel: ObservableObject, SearchableViewModel {
         }
 
         guard !cleaned.isEmpty else {
-            categories = allCategories
+            loadingState = .loaded(allCategories)
             return
         }
 
@@ -174,7 +193,7 @@ final class CategoriesViewModel: ObservableObject, SearchableViewModel {
         }
 
         guard !matches.isEmpty else {
-            categories = []
+            loadingState = .loaded([])
             return
         }
 
@@ -195,7 +214,8 @@ final class CategoriesViewModel: ObservableObject, SearchableViewModel {
             }
         }
 
-        categories = allCategories.filter { includedIds.contains($0.id) }
+        let filtered = allCategories.filter { includedIds.contains($0.id) }
+        loadingState = .loaded(filtered)
     }
 
     private func upsertLocalCategory(_ item: CategoryResponseDto) {

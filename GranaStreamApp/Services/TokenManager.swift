@@ -61,10 +61,9 @@ final class TokenManager {
         do {
             accessToken = try keychain.get(accessTokenKey)
             refreshToken = try keychain.get(refreshTokenKey)
-            
+
             if let expiresAtString = try keychain.get(expiresAtKey) {
-                expiresAt = DateCoder.formatterWithFraction.date(from: expiresAtString)
-                    ?? DateCoder.formatterNoFraction.date(from: expiresAtString)
+                expiresAt = DateCoder.parseDate(expiresAtString)
             }
         } catch {
             // Log erro mas continua - pode ser primeiro acesso

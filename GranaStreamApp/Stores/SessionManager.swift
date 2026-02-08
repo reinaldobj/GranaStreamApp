@@ -41,7 +41,7 @@ protocol SessionManager: AnyObject {
     
     /// Obtém o token de acesso atual
     /// - Returns: Token de acesso ou nil se não autenticado
-    func getAccessToken() -> String?
+    func getAccessToken() async -> String?
     
     /// Atualiza tokens se necessário (expiração)
     /// - Returns: true se tokens válidos, false se falhou

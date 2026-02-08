@@ -10,22 +10,25 @@ final class RecurrencesViewModel: ObservableObject {
     @Published var loadingState: LoadingState<[RecurrenceResponseDto]> = .idle
 
     private let apiClient: APIClientProtocol
+    private let taskManager = TaskManager()
     
     init(apiClient: APIClientProtocol? = nil) {
         self.apiClient = apiClient ?? APIClient.shared
     }
 
     func load() async {
-        isLoading = true
-        loadingState = .loading
-        defer { isLoading = false }
-        do {
-            let response: [RecurrenceResponseDto] = try await apiClient.request("/api/v1/recurrences")
-            recurrences = response
-            loadingState = .loaded(response)
-        } catch {
-            errorMessage = error.userMessage
-            loadingState = .error(error.userMessage ?? "Erro desconhecido")
+        taskManager.execute(id: "load") {
+            self.loadingState = .loading
+            do {
+                let response: [RecurrenceResponseDto] = try await self.apiClient.request("/api/v1/recurrences")
+                self.recurrences = response
+                self.loadingState = .loaded(response)
+                self.isLoading = false
+            } catch {
+                self.errorMessage = error.userMessage
+                self.loadingState = .error(error.userMessage ?? "Erro desconhecido")
+                self.isLoading = false
+            }
         }
     }
 

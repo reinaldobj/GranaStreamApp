@@ -32,7 +32,7 @@ final class SessionStore: NSObject, SessionManager, ObservableObject {
         }
     }
 
-    func getAccessToken() -> String? {
+    func getAccessToken() async -> String? {
         accessToken
     }
 
@@ -207,9 +207,8 @@ final class SessionStore: NSObject, SessionManager, ObservableObject {
         do {
             accessToken = try keychain.get(accessTokenKey)
             refreshToken = try keychain.get(refreshTokenKey)
-            if let expiresAtString = try keychain.get(expiresAtKey),
-               let date = DateCoder.formatterWithFraction.date(from: expiresAtString) ?? DateCoder.formatterNoFraction.date(from: expiresAtString) {
-                expiresAt = date
+            if let expiresAtString = try keychain.get(expiresAtKey) {
+                expiresAt = DateCoder.parseDate(expiresAtString)
             }
         } catch {
             // Log erro mas continua - pode ser primeiro acesso

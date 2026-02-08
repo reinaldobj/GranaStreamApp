@@ -7,8 +7,8 @@ struct AuthenticatedUserDto: Codable {
 }
 
 struct LoginRequestDto: Codable {
-    let email: String
-    let password: String
+    let email: String?
+    let password: String?
 }
 
 struct LoginResponseDto: Codable {
@@ -19,9 +19,9 @@ struct LoginResponseDto: Codable {
 }
 
 struct SignupRequestDto: Codable {
-    let name: String
-    let email: String
-    let password: String
+    let name: String?
+    let email: String?
+    let password: String?
 }
 
 struct SignupResponseDto: Codable {
@@ -31,14 +31,14 @@ struct SignupResponseDto: Codable {
 }
 
 struct RefreshTokenRequestDto: Codable {
-    let refreshToken: String
+    let refreshToken: String?
 }
 
 struct LogoutRequestDto: Codable {
-    let refreshToken: String
+    let refreshToken: String?
 }
 
 struct ChangePasswordRequestDto: Codable {
-    let currentPassword: String
-    let newPassword: String
+    let currentPassword: String?
+    let newPassword: String?
 }

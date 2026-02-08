@@ -10,11 +10,24 @@ final class AccountsViewModel: ObservableObject, SearchableViewModel {
         let detail: String
     }
 
-    @Published var accounts: [AccountResponseDto] = []
-    @Published var isLoading = false
+    @Published var loadingState: LoadingState<[AccountResponseDto]> = .idle
     @Published var errorMessage: String?
     @Published var inactiveAccount: InactiveAccountInfo?
     @Published private(set) var activeSearchTerm: String = ""
+    
+    var accounts: [AccountResponseDto] {
+        if case .loaded(let items) = loadingState {
+            return items
+        }
+        return []
+    }
+    
+    var isLoading: Bool {
+        if case .loading = loadingState {
+            return true
+        }
+        return false
+    }
 
     private var allAccounts: [AccountResponseDto] = []
     private let apiClient: APIClientProtocol
@@ -26,17 +39,20 @@ final class AccountsViewModel: ObservableObject, SearchableViewModel {
 
     func load(syncReferenceData: Bool = false) async {
         await taskManager.executeCommonAndWait(id: .initialLoad) {
-            self.isLoading = true
-            defer { self.isLoading = false }
+            self.loadingState = .loading
             do {
                 let response: [AccountResponseDto] = try await self.apiClient.request("/api/v1/accounts")
                 self.allAccounts = response
+                self.loadingState = .loaded(response)
                 self.applySearch(term: self.activeSearchTerm, updateActiveTerm: false)
                 if syncReferenceData {
                     ReferenceDataStore.shared.replaceAccounts(response)
                 }
+                self.errorMessage = nil
             } catch {
-                self.errorMessage = error.userMessage
+                let message = error.userMessage ?? "Erro ao carregar contas"
+                self.errorMessage = message
+                self.loadingState = .error(message)
             }
         }
     }
@@ -153,13 +169,14 @@ final class AccountsViewModel: ObservableObject, SearchableViewModel {
         }
 
         guard !cleaned.isEmpty else {
-            accounts = allAccounts
+            loadingState = .loaded(allAccounts)
             return
         }
 
-        accounts = allAccounts.filter { account in
+        let filtered = allAccounts.filter { account in
             SearchHelper.matches(account.name ?? "", searchTerm: cleaned)
         }
+        loadingState = .loaded(filtered)
     }
 
     private func upsertLocalAccount(_ item: AccountResponseDto) {
