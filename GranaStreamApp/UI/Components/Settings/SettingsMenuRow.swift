@@ -11,7 +11,7 @@ struct SettingsMenuRow: View {
             ZStack {
                 Circle()
                     .fill(iconBackground)
-                    .frame(width: 42, height: 42)
+                    .frame(width: DS.Spacing.iconLarge, height: DS.Spacing.iconLarge)
 
                 Image(systemName: systemImage)
                     .font(.system(size: 18, weight: .semibold))
@@ -30,8 +30,8 @@ struct SettingsMenuRow: View {
                     .foregroundColor(DS.Colors.textSecondary)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.md)
         .background(DS.Colors.surface)
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -41,7 +41,7 @@ struct SettingsMenuRow: View {
     }
 
     private var iconBackground: Color {
-        isDestructive ? DS.Colors.error.opacity(0.18) : DS.Colors.primary.opacity(0.18)
+        isDestructive ? DS.Colors.error.opacity(DS.Opacity.backgroundOverlay) : DS.Colors.primary.opacity(DS.Opacity.backgroundOverlay)
     }
 
     private var iconColor: Color {

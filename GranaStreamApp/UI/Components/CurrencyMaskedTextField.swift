@@ -118,8 +118,8 @@ struct CurrencyTextFieldHelper {
             placeholder: "R$ 0,00"
         )
         .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(8)
+        .background(Color.gray.opacity(DS.Opacity.backgroundOverlay))
+        .cornerRadius(DS.Radius.field)
         .padding()
     }
 }

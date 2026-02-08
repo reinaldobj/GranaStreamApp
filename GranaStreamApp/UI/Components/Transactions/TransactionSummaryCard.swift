@@ -5,7 +5,7 @@ struct TransactionSummaryCardLarge: View {
     let value: String
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: DS.Spacing.xs) {
             Text(title)
                 .font(AppTheme.Typography.caption)
                 .foregroundColor(DS.Colors.textSecondary)
@@ -15,10 +15,10 @@ struct TransactionSummaryCardLarge: View {
                 .foregroundColor(DS.Colors.textPrimary)
         }
         .frame(maxWidth: .infinity)
-        .padding(16)
+        .padding(DS.Spacing.lg)
         .background(DS.Colors.surface2)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: DS.Colors.border.opacity(0.25), radius: 8, x: 0, y: 4)
+        .shadow(color: DS.Colors.border.opacity(DS.Opacity.divider), radius: 8, x: 0, y: 4)
     }
 }
 
@@ -30,11 +30,11 @@ struct TransactionSummaryCardSmall: View {
     var isSelected: Bool = false
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: DS.Spacing.xs) {
             ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(accentColor.opacity(0.15))
-                    .frame(width: 32, height: 32)
+                RoundedRectangle(cornerRadius: DS.Radius.field, style: .continuous)
+                    .fill(accentColor.opacity(DS.Opacity.backgroundOverlay))
+                    .frame(width: DS.Spacing.iconMedium, height: DS.Spacing.iconMedium)
 
                 Image(systemName: icon)
                     .font(.system(size: 14, weight: .semibold))
@@ -57,6 +57,6 @@ struct TransactionSummaryCardSmall: View {
                 .stroke(isSelected ? accentColor : DS.Colors.border, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: DS.Colors.border.opacity(0.2), radius: 6, x: 0, y: 3)
+        .shadow(color: DS.Colors.border.opacity(DS.Opacity.subtle), radius: 6, x: 0, y: 3)
     }
 }

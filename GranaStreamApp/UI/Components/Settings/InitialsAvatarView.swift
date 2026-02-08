@@ -7,7 +7,7 @@ struct InitialsAvatarView: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(DS.Colors.primary.opacity(0.18))
+                .fill(DS.Colors.primary.opacity(DS.Opacity.backgroundOverlay))
 
             Text(initials)
                 .font(.system(size: size * 0.34, weight: .semibold))

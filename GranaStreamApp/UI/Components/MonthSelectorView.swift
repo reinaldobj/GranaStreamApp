@@ -5,7 +5,7 @@ struct MonthSelectorView: View {
     @EnvironmentObject private var monthStore: MonthFilterStore
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             monthButton(systemName: "chevron.left", shift: -1)
 
             Text(monthStore.selectedMonthLabel)
@@ -23,8 +23,8 @@ struct MonthSelectorView: View {
         } label: {
             Image(systemName: systemName)
                 .font(.system(size: 16, weight: .semibold))
-                .frame(width: 36, height: 36)
-                .background(DS.Colors.surface.opacity(0.28))
+                .frame(width: DS.Spacing.iconSmall, height: DS.Spacing.iconSmall)
+                .background(DS.Colors.surface.opacity(DS.Opacity.placeholderText))
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)

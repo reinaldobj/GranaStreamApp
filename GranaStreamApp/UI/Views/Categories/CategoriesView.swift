@@ -13,32 +13,13 @@ struct CategoriesView: View {
     private let sectionSpacing = AppTheme.Spacing.item
 
     var body: some View {
-        GeometryReader { proxy in
-            let topBackgroundHeight = max(240, proxy.size.height * 0.34)
+        ListViewContainer(primaryBackgroundHeight: max(240, UIScreen.main.bounds.height * 0.34)) {
+            VStack(spacing: 0) {
+                topBlock
+                    .padding(.top, DS.Spacing.sm)
 
-            ZStack(alignment: .top) {
-                VStack(spacing: 0) {
-                    DS.Colors.primary
-                        .frame(height: topBackgroundHeight)
-                        .frame(maxWidth: .infinity)
-
-                    DS.Colors.surface2
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                .ignoresSafeArea()
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        topBlock
-                            .padding(.top, 2)
-
-                        categoriesSection(viewportHeight: proxy.size.height)
-                            .padding(.top, sectionSpacing)
-                    }
-                }
-                .refreshable {
-                    await viewModel.load()
-                }
+                categoriesSection(viewportHeight: UIScreen.main.bounds.height)
+                    .padding(.top, sectionSpacing)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
@@ -48,7 +29,7 @@ struct CategoriesView: View {
             .presentationDragIndicator(.visible)
         }
         .alert(
-            "Excluir categoria?",
+            L10n.Categories.deleteConfirm,
             isPresented: Binding(
                 get: { categoryPendingDelete != nil },
                 set: { isPresented in
@@ -56,10 +37,10 @@ struct CategoriesView: View {
                 }
             )
         ) {
-            Button("Cancelar", role: .cancel) {
+            Button(L10n.Common.cancel, role: .cancel) {
                 categoryPendingDelete = nil
             }
-            Button("Excluir", role: .destructive) {
+            Button(L10n.Common.delete, role: .destructive) {
                 guard let category = categoryPendingDelete else { return }
                 categoryPendingDelete = nil
                 Task { await viewModel.delete(category: category) }
@@ -196,10 +177,10 @@ struct CategoriesView: View {
             CategoryRowView(category: category)
         }
         .contextMenu {
-            Button("Editar") {
+            Button(L10n.Common.edit) {
                 formMode = .edit(category)
             }
-            Button("Excluir", role: .destructive) {
+            Button(L10n.Common.delete, role: .destructive) {
                 categoryPendingDelete = category
             }
         }
@@ -215,10 +196,10 @@ struct CategoriesView: View {
 
             if let parent = section.parent {
                 Menu {
-                    Button("Editar") {
+                    Button(L10n.Common.edit) {
                         formMode = .edit(parent)
                     }
-                    Button("Excluir", role: .destructive) {
+                    Button(L10n.Common.delete, role: .destructive) {
                         categoryPendingDelete = parent
                     }
                 } label: {
@@ -287,7 +268,7 @@ struct CategoriesView: View {
         if typeFilter != .all {
             return "Nenhuma categoria deste tipo."
         }
-        return "Sem categorias cadastradas."
+        return L10n.Categories.empty
     }
 
     private var loadingState: some View {

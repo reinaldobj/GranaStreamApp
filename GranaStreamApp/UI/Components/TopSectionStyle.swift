@@ -18,6 +18,6 @@ extension View {
     func topSectionStyle(radius: CGFloat = 44) -> some View {
         background(DS.Colors.surface2)
             .clipShape(TopRoundedShape(radius: radius))
-            .shadow(color: DS.Colors.border.opacity(0.15), radius: 8, x: 0, y: -2)
+            .shadow(color: DS.Colors.border.opacity(DS.Opacity.backgroundOverlay), radius: 8, x: 0, y: -2)
     }
 }

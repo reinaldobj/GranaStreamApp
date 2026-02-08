@@ -11,32 +11,13 @@ struct AccountsView: View {
     private let sectionSpacing = AppTheme.Spacing.item
 
     var body: some View {
-        GeometryReader { proxy in
-            let topBackgroundHeight = max(240, proxy.size.height * 0.34)
+        ListViewContainer(primaryBackgroundHeight: max(240, UIScreen.main.bounds.height * 0.34)) {
+            VStack(spacing: 0) {
+                topBlock
+                    .padding(.top, DS.Spacing.sm)
 
-            ZStack(alignment: .top) {
-                VStack(spacing: 0) {
-                    DS.Colors.primary
-                        .frame(height: topBackgroundHeight)
-                        .frame(maxWidth: .infinity)
-
-                    DS.Colors.surface2
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                .ignoresSafeArea()
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        topBlock
-                            .padding(.top, 2)
-
-                        accountsSection(viewportHeight: proxy.size.height)
-                            .padding(.top, sectionSpacing)
-                    }
-                }
-                .refreshable {
-                    await viewModel.load()
-                }
+                accountsSection(viewportHeight: UIScreen.main.bounds.height)
+                    .padding(.top, sectionSpacing)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
@@ -46,7 +27,7 @@ struct AccountsView: View {
             .presentationDragIndicator(.visible)
         }
         .alert(
-            "Excluir conta?",
+            L10n.Accounts.deleteConfirm,
             isPresented: Binding(
                 get: { accountPendingDelete != nil },
                 set: { isPresented in
@@ -54,10 +35,10 @@ struct AccountsView: View {
                 }
             )
         ) {
-            Button("Cancelar", role: .cancel) {
+            Button(L10n.Common.cancel, role: .cancel) {
                 accountPendingDelete = nil
             }
-            Button("Excluir", role: .destructive) {
+            Button(L10n.Common.delete, role: .destructive) {
                 guard let account = accountPendingDelete else { return }
                 accountPendingDelete = nil
                 Task { await viewModel.delete(account: account) }
@@ -77,49 +58,27 @@ struct AccountsView: View {
 
     private var topBlock: some View {
         VStack(spacing: AppTheme.Spacing.item) {
-            header
+            ListHeaderView(
+                title: L10n.Accounts.title,
+                searchText: $searchText,
+                showSearch: false,
+                actions: [
+                    HeaderAction(
+                        id: "add",
+                        systemImage: "plus",
+                        action: { formMode = .new }
+                    )
+                ],
+                onDismiss: { dismiss() }
+            )
 
             AccountSearchField(text: $searchText) {
                 viewModel.applySearch(term: searchText)
             }
         }
         .padding(.horizontal, AppTheme.Spacing.screen)
-        .padding(.top, 6)
+        .padding(.top, DS.Spacing.sm)
         .padding(.bottom, 0)
-    }
-
-    private var header: some View {
-        HStack {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .background(DS.Colors.surface.opacity(0.45))
-                    .clipShape(Circle())
-            }
-            .foregroundColor(DS.Colors.onPrimary)
-
-            Spacer()
-
-            Text("Contas")
-                .font(AppTheme.Typography.title)
-                .foregroundColor(DS.Colors.onPrimary)
-
-            Spacer()
-
-            Button {
-                formMode = .new
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .background(DS.Colors.surface.opacity(0.45))
-                    .clipShape(Circle())
-            }
-            .foregroundColor(DS.Colors.onPrimary)
-        }
     }
 
     private var backSwipeGesture: some Gesture {
@@ -151,7 +110,7 @@ struct AccountsView: View {
             if shouldShowLoadingState {
                 loadingState
             } else if viewModel.accounts.isEmpty {
-                Text(viewModel.activeSearchTerm.isEmpty ? "Sem contas cadastradas." : "Nenhuma conta encontrada.")
+                Text(viewModel.activeSearchTerm.isEmpty ? L10n.Accounts.empty : "Nenhuma conta encontrada.")
                     .font(AppTheme.Typography.body)
                     .foregroundColor(DS.Colors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -173,7 +132,7 @@ struct AccountsView: View {
                         Button("Editar") {
                             formMode = .edit(account)
                         }
-                        Button("Excluir", role: .destructive) {
+                                Button(L10n.Common.delete, role: .destructive) {
                             accountPendingDelete = account
                         }
                     }
@@ -196,7 +155,7 @@ struct AccountsView: View {
         VStack(spacing: 12) {
             ProgressView()
                 .tint(DS.Colors.primary)
-            Text("Carregando contas...")
+            Text(L10n.Accounts.loading)
                 .font(AppTheme.Typography.body)
                 .foregroundColor(DS.Colors.textSecondary)
         }

@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// Formulário unificado para criar lançamentos únicos, parcelados ou recorrentes
+// TODO: [TECH-DEBT] View monolítica com 571 linhas - Extrair SingleEntryForm, InstallmentEntryForm, RecurringEntryForm como Views separadas
 struct UnifiedEntryFormView: View {
     var onComplete: (String) -> Void
 
+    @StateObject private var viewModel = UnifiedEntryFormViewModel()
     @EnvironmentObject private var referenceStore: ReferenceDataStore
     @Environment(\.dismiss) private var dismiss
 
@@ -11,8 +12,6 @@ struct UnifiedEntryFormView: View {
     @State private var single = SingleEntryState()
     @State private var installment = InstallmentEntryState()
     @State private var recurrence = RecurringEntryState()
-    @State private var isLoading = false
-    @State private var errorMessage: String?
 
     init(
         initialMode: UnifiedEntryMode = .single,
@@ -29,39 +28,60 @@ struct UnifiedEntryFormView: View {
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: AppTheme.Spacing.item) {
+                    VStack(spacing: DS.Spacing.item) {
                         formCard
                     }
-                    .padding(.horizontal, AppTheme.Spacing.screen)
-                    .padding(.top, AppTheme.Spacing.screen + 10)
-                    .padding(.bottom, AppTheme.Spacing.screen * 2)
+                    .padding(.horizontal, DS.Spacing.screen)
+                    .padding(.top, DS.Spacing.screen + 10)
+                    .padding(.bottom, DS.Spacing.screen * 2)
                 }
             }
             .task {
                 await referenceStore.loadIfNeeded()
             }
             .onChange(of: single.type) { _, newValue in
-                handleSingleTypeChange(newValue)
+                guard newValue != .transfer else {
+                    single.categoryId = ""
+                    return
+                }
+                let validIds = Set(
+                    groupCategoriesForPicker(referenceStore.categories, transactionType: newValue)
+                        .flatMap { $0.children.map(\.id) }
+                )
+                if !single.categoryId.isEmpty && !validIds.contains(single.categoryId) {
+                    single.categoryId = ""
+                }
             }
             .onChange(of: recurrence.type) { _, newValue in
-                handleRecurrenceTypeChange(newValue)
+                let validIds = Set(
+                    groupCategoriesForPicker(referenceStore.categories, transactionType: newValue)
+                        .flatMap { $0.children.map(\.id) }
+                )
+                if !recurrence.categoryId.isEmpty && !validIds.contains(recurrence.categoryId) {
+                    recurrence.categoryId = ""
+                }
             }
-            .errorAlert(message: $errorMessage)
+            .errorAlert(message: $viewModel.errorMessage)
         }
         .tint(DS.Colors.primary)
     }
 
-    // MARK: - Form Card
-
     private var formCard: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
+        VStack(spacing: DS.Spacing.item) {
             EntryModePicker(selection: $mode)
 
-            formFields
+            switch mode {
+            case .single:
+                singleFields
+            case .installment:
+                installmentFields
+            case .recurring:
+                recurringFields
+            }
 
             TransactionPrimaryButton(
-                title: isLoading ? "Salvando..." : "Salvar",
-                isDisabled: !isCurrentModeValid || isLoading
+                title: viewModel.isLoading ? "Salvando..." : "Salvar",
+                isDisabled: !isCurrentModeValid || viewModel.isLoading
             ) {
                 Task { await save() }
             }
@@ -73,31 +93,170 @@ struct UnifiedEntryFormView: View {
         .shadow(color: DS.Colors.border.opacity(0.35), radius: 12, x: 0, y: 6)
     }
 
-    @ViewBuilder
-    private var formFields: some View {
-        switch mode {
-        case .single:
-            SingleEntryFormFields(
-                state: $single,
-                accounts: referenceStore.accounts,
-                categorySections: singleCategorySections
-            )
-        case .installment:
-            InstallmentEntryFormFields(
-                state: $installment,
-                accounts: referenceStore.accounts,
-                categorySections: installmentCategorySections
-            )
-        case .recurring:
-            RecurringEntryFormFields(
-                state: $recurrence,
-                accounts: referenceStore.accounts,
-                categorySections: recurrenceCategorySections
-            )
+    private var singleFields: some View {
+        VStack(spacing: DS.Spacing.item) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Tipo")
+                    .font(DS.Typography.caption)
+                    .foregroundColor(DS.Colors.textSecondary)
+
+                Picker("Tipo", selection: $single.type) {
+                    ForEach(TransactionType.allCases) { item in
+                        Text(item.label).tag(item)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            TransactionDateRow(label: "Data", date: $single.date)
+
+            if single.type == .transfer {
+                TransactionPickerRow(
+                    label: "De",
+                    value: accountName(for: single.fromAccountId),
+                    placeholder: "Selecione"
+                ) {
+                    AccountMenuContent(accounts: referenceStore.accounts, selection: $single.fromAccountId)
+                }
+
+                TransactionPickerRow(
+                    label: "Para",
+                    value: accountName(for: single.toAccountId),
+                    placeholder: "Selecione"
+                ) {
+                    AccountMenuContent(accounts: referenceStore.accounts, selection: $single.toAccountId)
+                }
+            } else {
+                TransactionPickerRow(
+                    label: "Categoria",
+                    value: categoryName(for: single.categoryId),
+                    placeholder: "Selecione a categoria"
+                ) {
+                    CategoryMenuContent(sections: singleCategorySections, selection: $single.categoryId)
+                }
+
+                TransactionPickerRow(
+                    label: "Conta",
+                    value: accountName(for: single.accountId),
+                    placeholder: "Selecione a conta"
+                ) {
+                    AccountMenuContent(accounts: referenceStore.accounts, selection: $single.accountId)
+                }
+            }
+
+            TransactionField(label: "Valor") {
+                CurrencyMaskedTextField(text: $single.amount, placeholder: "R$ 0,00")
+            }
+
+            TransactionField(label: "Descrição") {
+                TextField("Ex: Cinema", text: $single.description)
+                    .textInputAutocapitalization(.sentences)
+            }
         }
     }
 
-    // MARK: - Category Sections
+    private var installmentFields: some View {
+        VStack(spacing: DS.Spacing.item) {
+            TransactionDateRow(label: "Primeira parcela", date: $installment.firstDueDate)
+
+            TransactionPickerRow(
+                label: "Categoria",
+                value: categoryName(for: installment.categoryId),
+                placeholder: "Selecione a categoria"
+            ) {
+                CategoryMenuContent(sections: installmentCategorySections, selection: $installment.categoryId)
+            }
+
+            TransactionPickerRow(
+                label: "Conta (opcional)",
+                value: accountName(for: installment.accountId),
+                placeholder: "Opcional"
+            ) {
+                AccountMenuContent(accounts: referenceStore.accounts, selection: $installment.accountId)
+            }
+
+            TransactionField(label: "Valor total") {
+                CurrencyMaskedTextField(text: $installment.totalAmount, placeholder: "R$ 0,00")
+            }
+
+            TransactionField(label: "Parcelas") {
+                TextField("Ex: 12", text: $installment.installments)
+                    .keyboardType(.numberPad)
+            }
+
+            TransactionField(label: "Descrição") {
+                TextField("Ex: Geladeira", text: $installment.description)
+                    .textInputAutocapitalization(.sentences)
+            }
+        }
+    }
+
+    private var recurringFields: some View {
+        VStack(spacing: DS.Spacing.item) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Tipo")
+                    .font(DS.Typography.caption)
+                    .foregroundColor(DS.Colors.textSecondary)
+
+                Picker("Tipo", selection: $recurrence.type) {
+                    ForEach(recurringTypes, id: \.rawValue) { item in
+                        Text(item.label).tag(item)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            TransactionPickerRow(
+                label: "Frequência",
+                value: recurrence.frequency.label,
+                placeholder: "Selecione"
+            ) {
+                ForEach(RecurrenceFrequency.allCases) { item in
+                    Button(item.label) {
+                        recurrence.frequency = item
+                    }
+                }
+            }
+
+            TransactionDateRow(label: "Início", date: $recurrence.startDate)
+
+            Toggle(isOn: $recurrence.hasEndDate) {
+                Text("Tem data fim")
+                    .font(DS.Typography.caption)
+                    .foregroundColor(DS.Colors.textSecondary)
+            }
+            .tint(DS.Colors.primary)
+
+            if recurrence.hasEndDate {
+                TransactionDateRow(label: "Fim", date: $recurrence.endDate)
+            }
+
+            TransactionPickerRow(
+                label: "Categoria",
+                value: categoryName(for: recurrence.categoryId),
+                placeholder: "Selecione a categoria"
+            ) {
+                CategoryMenuContent(sections: recurrenceCategorySections, selection: $recurrence.categoryId)
+            }
+
+            TransactionPickerRow(
+                label: "Conta",
+                value: accountName(for: recurrence.accountId),
+                placeholder: "Selecione a conta"
+            ) {
+                AccountMenuContent(accounts: referenceStore.accounts, selection: $recurrence.accountId)
+            }
+
+            TransactionField(label: "Valor") {
+                CurrencyMaskedTextField(text: $recurrence.amount, placeholder: "R$ 0,00")
+            }
+
+            TransactionField(label: "Descrição") {
+                TextField("Ex: Academia", text: $recurrence.description)
+                    .textInputAutocapitalization(.sentences)
+            }
+        }
+    }
 
     private var singleCategorySections: [CategorySection] {
         guard single.type != .transfer else { return [] }
@@ -112,163 +271,133 @@ struct UnifiedEntryFormView: View {
         groupCategoriesForPicker(referenceStore.categories, transactionType: recurrence.type)
     }
 
-    // MARK: - Validation
+    private var recurringTypes: [TransactionType] {
+        [.income, .expense]
+    }
 
     private var isCurrentModeValid: Bool {
         switch mode {
         case .single:
-            return single.isValid
+            return isSingleValid
         case .installment:
-            return installment.isValid
+            return isInstallmentValid
         case .recurring:
-            return recurrence.isValid
+            return isRecurringValid
         }
     }
 
-    // MARK: - Type Change Handlers
-
-    private func handleSingleTypeChange(_ newValue: TransactionType) {
-        guard newValue != .transfer else {
-            single.categoryId = ""
-            return
+    private var isSingleValid: Bool {
+        guard CurrencyTextField.value(from: single.amount) != nil else { return false }
+        if single.type == .transfer {
+            return !single.fromAccountId.isEmpty &&
+            !single.toAccountId.isEmpty &&
+            single.fromAccountId != single.toAccountId
         }
-        let validIds = Set(
-            groupCategoriesForPicker(referenceStore.categories, transactionType: newValue)
-                .flatMap { $0.children.map(\.id) }
-        )
-        if !single.categoryId.isEmpty && !validIds.contains(single.categoryId) {
-            single.categoryId = ""
-        }
+        return !single.accountId.isEmpty
     }
 
-    private func handleRecurrenceTypeChange(_ newValue: TransactionType) {
-        let validIds = Set(
-            groupCategoriesForPicker(referenceStore.categories, transactionType: newValue)
-                .flatMap { $0.children.map(\.id) }
-        )
-        if !recurrence.categoryId.isEmpty && !validIds.contains(recurrence.categoryId) {
-            recurrence.categoryId = ""
-        }
+    private var isInstallmentValid: Bool {
+        guard CurrencyTextField.value(from: installment.totalAmount) != nil else { return false }
+        guard let installments = Int(installment.installments), installments > 0 else { return false }
+        return !installment.categoryId.isEmpty
     }
 
-    // MARK: - Save Actions
+    private var isRecurringValid: Bool {
+        guard CurrencyTextField.value(from: recurrence.amount) != nil else { return false }
+        guard !recurrence.accountId.isEmpty else { return false }
+        if recurrence.hasEndDate {
+            return recurrence.endDate >= recurrence.startDate
+        }
+        return true
+    }
+
+    private func accountName(for id: String) -> String? {
+        guard !id.isEmpty else { return nil }
+        return referenceStore.accounts.first(where: { $0.id == id })?.name
+    }
+
+    private func categoryName(for id: String) -> String? {
+        guard !id.isEmpty else { return nil }
+        return referenceStore.categories.first(where: { $0.id == id })?.name
+    }
 
     private func save() async {
-        isLoading = true
-        defer { isLoading = false }
+        viewModel.isLoading = true
+        defer { viewModel.isLoading = false }
 
         do {
             switch mode {
             case .single:
-                try await saveSingle()
+                try await viewModel.saveSingle(
+                    type: single.type,
+                    date: single.date,
+                    amount: single.amount,
+                    description: single.description,
+                    accountId: single.accountId,
+                    categoryId: single.categoryId,
+                    fromAccountId: single.fromAccountId,
+                    toAccountId: single.toAccountId
+                )
                 onComplete("Lançamento salvo com sucesso.")
             case .installment:
-                try await saveInstallment()
+                try await viewModel.saveInstallment(
+                    description: installment.description,
+                    categoryId: installment.categoryId,
+                    accountId: installment.accountId,
+                    totalAmount: installment.totalAmount,
+                    installments: installment.installments,
+                    firstDueDate: installment.firstDueDate
+                )
                 onComplete("Compra parcelada salva com sucesso.")
             case .recurring:
-                try await saveRecurring()
+                try await viewModel.saveRecurring(
+                    type: recurrence.type,
+                    amount: recurrence.amount,
+                    description: recurrence.description,
+                    accountId: recurrence.accountId,
+                    categoryId: recurrence.categoryId,
+                    frequency: recurrence.frequency,
+                    startDate: recurrence.startDate,
+                    endDate: recurrence.endDate,
+                    hasEndDate: recurrence.hasEndDate
+                )
                 onComplete("Recorrência salva com sucesso.")
             }
             dismiss()
         } catch {
-            errorMessage = error.userMessage
+            viewModel.errorMessage = error.userMessage
         }
     }
+}
 
-    private func saveSingle() async throws {
-        guard let amountValue = CurrencyTextField.value(from: single.amount) else {
-            throw FormValidationError.invalidAmount
-        }
+private struct SingleEntryState {
+    var type: TransactionType = .expense
+    var date = Date()
+    var amount = ""
+    var description = ""
+    var accountId = ""
+    var categoryId = ""
+    var fromAccountId = ""
+    var toAccountId = ""
+}
 
-        if single.type == .transfer {
-            guard !single.fromAccountId.isEmpty, !single.toAccountId.isEmpty else {
-                throw FormValidationError.missingTransferAccount
-            }
-            guard single.fromAccountId != single.toAccountId else {
-                throw FormValidationError.sameTransferAccount
-            }
-        } else {
-            guard !single.accountId.isEmpty else {
-                throw FormValidationError.missingAccount
-            }
-        }
+private struct InstallmentEntryState {
+    var description = ""
+    var categoryId = ""
+    var accountId = ""
+    var totalAmount = ""
+    var installments = ""
+    var firstDueDate = Date()
+}
 
-        let request = CreateTransactionRequestDto(
-            type: single.type,
-            date: single.date,
-            amount: amountValue,
-            description: single.description.nilIfBlank,
-            accountId: single.type == .transfer ? nil : single.accountId.nilIfBlank,
-            categoryId: single.type == .transfer ? nil : single.categoryId.nilIfBlank,
-            fromAccountId: single.type == .transfer ? single.fromAccountId.nilIfBlank : nil,
-            toAccountId: single.type == .transfer ? single.toAccountId.nilIfBlank : nil
-        )
-        let _: CreateTransactionResponseDto = try await APIClient.shared.request(
-            "/api/v1/transactions",
-            method: "POST",
-            body: AnyEncodable(request)
-        )
-    }
-
-    private func saveInstallment() async throws {
-        guard let totalAmount = CurrencyTextField.value(from: installment.totalAmount) else {
-            throw FormValidationError.invalidAmount
-        }
-        guard let installmentCount = Int(installment.installments), installmentCount > 0 else {
-            throw FormValidationError.invalidInstallments
-        }
-        guard !installment.categoryId.isEmpty else {
-            throw FormValidationError.missingCategory
-        }
-
-        let request = CreateInstallmentSeriesRequestDto(
-            description: installment.description.nilIfBlank,
-            categoryId: installment.categoryId,
-            accountDefaultId: installment.accountId.nilIfBlank,
-            totalAmount: totalAmount,
-            installmentsPlanned: installmentCount,
-            firstDueDate: installment.firstDueDate
-        )
-        let _: CreateInstallmentSeriesResponseDto = try await APIClient.shared.request(
-            "/api/v1/installment-series",
-            method: "POST",
-            body: AnyEncodable(request)
-        )
-    }
-
-    private func saveRecurring() async throws {
-        guard let amountValue = CurrencyTextField.value(from: recurrence.amount) else {
-            throw FormValidationError.invalidAmount
-        }
-        guard !recurrence.accountId.isEmpty else {
-            throw FormValidationError.missingAccount
-        }
-        if recurrence.hasEndDate, recurrence.endDate < recurrence.startDate {
-            throw FormValidationError.invalidDateRange
-        }
-
-        let template = RecurrenceTemplateTransactionRequestDto(
-            type: recurrence.type,
-            amount: amountValue,
-            description: recurrence.description.nilIfBlank,
-            accountId: recurrence.accountId.nilIfBlank,
-            categoryId: recurrence.categoryId.nilIfBlank
-        )
-        let dayOfMonth = recurrence.frequency == .monthly
-            ? Calendar.current.component(.day, from: recurrence.startDate)
-            : nil
-
-        let request = CreateRecurrenceRequestDto(
-            templateTransaction: template,
-            frequency: recurrence.frequency,
-            startDate: recurrence.startDate,
-            endDate: recurrence.hasEndDate ? recurrence.endDate : nil,
-            dayOfMonth: dayOfMonth
-        )
-        let _: CreateRecurrenceResponseDto = try await APIClient.shared.request(
-            "/api/v1/recurrences",
-            method: "POST",
-            body: AnyEncodable(request)
-        )
-    }
+private struct RecurringEntryState {
+    var type: TransactionType = .expense
+    var amount = ""
+    var description = ""
+    var accountId = ""
+    var categoryId = ""
+    var frequency: RecurrenceFrequency = .monthly
+    var startDate = Date()
+    var endDate = Date()
+    var hasEndDate = false
 }

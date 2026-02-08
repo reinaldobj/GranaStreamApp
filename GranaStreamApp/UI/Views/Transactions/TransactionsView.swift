@@ -17,39 +17,34 @@ struct TransactionsView: View {
     @State private var deleteTask: Task<Void, Never>?
     @State private var loadMoreTask: Task<Void, Never>?
     @State private var successBannerTask: Task<Void, Never>?
-    
-    private let sectionSpacing = AppTheme.Spacing.item
-    private let shortcutColumns = [
-        GridItem(.flexible(), spacing: AppTheme.Spacing.item),
-        GridItem(.flexible(), spacing: AppTheme.Spacing.item),
-        GridItem(.flexible(), spacing: AppTheme.Spacing.item)
-    ]
 
     var body: some View {
         NavigationStack {
-            GeometryReader { proxy in
-                let topBackgroundHeight = max(380, proxy.size.height * 0.56)
+            ListViewContainer {
+                VStack(spacing: 0) {
+                    TransactionsTopBarView(
+                        totalBalance: viewModel.totalBalance,
+                        incomeTotal: viewModel.incomeTotal,
+                        expenseTotal: viewModel.expenseTotal,
+                        quickFilter: quickFilter,
+                        onShowFilters: { showFilters = true },
+                        onAddTransaction: { showUnifiedEntryForm = true },
+                        onToggleFilter: toggleQuickFilter
+                    )
+                    .padding(.top, DS.Spacing.sm)
 
-                ZStack(alignment: .top) {
-                    VStack(spacing: 0) {
-                        DS.Colors.primary
-                            .frame(height: topBackgroundHeight)
-                            .frame(maxWidth: .infinity)
-
-                        DS.Colors.surface2
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                    .ignoresSafeArea()
-
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 0) {
-                            topBlock
-                                .padding(.top, 2)
-
-                            transactionsSection(viewportHeight: proxy.size.height)
-                                .padding(.top, sectionSpacing)
-                        }
-                    }
+                    TransactionListSection(
+                        monthSections: viewModel.monthSections,
+                        isLoading: !hasFinishedInitialLoad || (viewModel.isLoading && viewModel.transactions.isEmpty),
+                        canLoadMore: viewModel.canLoadMore,
+                        isLoadingMore: viewModel.isLoadingMore,
+                        onTransactionTap: { selectedTransactionForDetail = $0 },
+                        onEdit: { transactionToEdit = $0 },
+                        onDelete: { transactionPendingDelete = $0 },
+                        onLoadMore: requestLoadMore,
+                        viewportHeight: UIScreen.main.bounds.height
+                    )
+                    .padding(.top, AppTheme.Spacing.item)
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -83,7 +78,7 @@ struct TransactionsView: View {
             .task { startInitialLoad() }
             .onDisappear { cancelAllTasks() }
             .alert(
-                "Excluir lançamento?",
+                L10n.Transactions.deleteConfirm,
                 isPresented: Binding(
                     get: { transactionPendingDelete != nil },
                     set: { isPresented in
@@ -91,10 +86,10 @@ struct TransactionsView: View {
                     }
                 )
             ) {
-                Button("Cancelar", role: .cancel) {
+                Button(L10n.Common.cancel, role: .cancel) {
                     transactionPendingDelete = nil
                 }
-                Button("Excluir", role: .destructive) {
+                Button(L10n.Common.delete, role: .destructive) {
                     guard let transaction = transactionPendingDelete else { return }
                     transactionPendingDelete = nil
                     startDelete(transaction)
@@ -106,7 +101,7 @@ struct TransactionsView: View {
             .overlay(alignment: .top) {
                 if let successMessage {
                     successBanner(text: successMessage)
-                        .padding(.top, 8)
+                        .padding(.top, DS.Spacing.sm)
                         .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
@@ -114,203 +109,7 @@ struct TransactionsView: View {
         .tint(DS.Colors.primary)
     }
 
-    private var topBlock: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
-            TransactionsHeaderView(
-                onShowFilters: { showFilters = true },
-                onAddTransaction: { showUnifiedEntryForm = true }
-            )
-            
-            TransactionsSummaryCardsView(
-                totalBalance: viewModel.totalBalance,
-                incomeTotal: viewModel.incomeTotal,
-                expenseTotal: viewModel.expenseTotal,
-                quickFilter: quickFilter,
-                onToggleFilter: toggleQuickFilter
-            )
-            
-            managementShortcuts
-        }
-        .padding(.horizontal, AppTheme.Spacing.screen)
-        .padding(.top, 6)
-        .padding(.bottom, 0)
-    }
-
-    private var managementShortcuts: some View {
-        LazyVGrid(columns: shortcutColumns, spacing: AppTheme.Spacing.item) {
-            NavigationLink {
-                PayablesView()
-            } label: {
-                Image(systemName: "checklist")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(DS.Colors.primary)
-                    .frame(width: 44, height: 44)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
-                            .fill(DS.Colors.surface)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
-                            .stroke(DS.Colors.border, lineWidth: 1)
-                    )
-            }
-            .buttonStyle(.plain)
-
-            NavigationLink {
-                RecurrencesView()
-            } label: {
-                Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(DS.Colors.primary)
-                    .frame(width: 44, height: 44)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
-                            .fill(DS.Colors.surface)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
-                            .stroke(DS.Colors.border, lineWidth: 1)
-                    )
-            }
-            .buttonStyle(.plain)
-
-            NavigationLink {
-                InstallmentSeriesView()
-            } label: {
-                Image(systemName: "creditcard")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(DS.Colors.primary)
-                    .frame(width: 44, height: 44)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
-                            .fill(DS.Colors.surface)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
-                            .stroke(DS.Colors.border, lineWidth: 1)
-                    )
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private func managementShortcutCard(title: String, systemImage: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemImage)
-                .font(.system(size: 14, weight: .semibold))
-            Text(title)
-                .font(AppTheme.Typography.caption)
-                .lineLimit(1)
-        }
-        .foregroundColor(DS.Colors.primary)
-        .frame(maxWidth: .infinity, minHeight: 36)
-        .padding(.horizontal, 8)
-        .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.field)
-                .fill(DS.Colors.surface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.field)
-                .stroke(DS.Colors.border, lineWidth: 1)
-        )
-    }
-
-    private func transactionsSection(viewportHeight: CGFloat) -> some View {
-        let emptyMinHeight = max(320, viewportHeight * 0.52)
-
-        return transactionsCard
-            .padding(.horizontal, AppTheme.Spacing.screen)
-            .padding(.top, 6)
-            .padding(.bottom, 0)
-            .frame(
-                maxWidth: .infinity,
-                minHeight: viewModel.monthSections.isEmpty ? emptyMinHeight : nil,
-                alignment: .top
-            )
-            .topSectionStyle()
-    }
-
-    private var transactionsCard: some View {
-        LazyVStack(alignment: .leading, spacing: 16) {
-            if shouldShowLoadingState {
-                loadingState
-            } else if viewModel.monthSections.isEmpty {
-                Text("Sem transações neste período.")
-                    .font(AppTheme.Typography.body)
-                    .foregroundColor(DS.Colors.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 24)
-            } else {
-                ForEach(Array(viewModel.monthSections.enumerated()), id: \.element.id) { index, section in
-                    TransactionMonthHeader(title: section.title)
-                        .padding(.leading, 4)
-                        .padding(.top, index == 0 ? 14 : 0)
-
-                    LazyVStack(spacing: 12) {
-                        ForEach(Array(section.items.enumerated()), id: \.element.id) { rowIndex, transaction in
-                            TransactionSwipeRow(
-                                onTap: { selectedTransactionForDetail = transaction },
-                                onEdit: {
-                                    transactionToEdit = transaction
-                                },
-                                onDelete: {
-                                    transactionPendingDelete = transaction
-                                }
-                            ) {
-                                TransactionRow(transaction: transaction)
-                            }
-                            .contextMenu {
-                                Button("Editar") {
-                                    transactionToEdit = transaction
-                                }
-                                Button("Excluir", role: .destructive) {
-                                    transactionPendingDelete = transaction
-                                }
-                            }
-
-                            if rowIndex < section.items.count - 1 {
-                                Divider()
-                                    .overlay(DS.Colors.border)
-                            }
-                        }
-                    }
-                }
-
-                if viewModel.canLoadMore {
-                    HStack {
-                        Spacer()
-                        if viewModel.isLoadingMore {
-                            ProgressView()
-                                .tint(DS.Colors.primary)
-                        } else {
-                            ProgressView()
-                                .tint(DS.Colors.primary)
-                                .onAppear {
-                                    requestLoadMore()
-                                }
-                        }
-                        Spacer()
-                    }
-                }
-            }
-        }
-    }
-
-    private var shouldShowLoadingState: Bool {
-        !hasFinishedInitialLoad || (viewModel.isLoading && viewModel.transactions.isEmpty)
-    }
-
-    private var loadingState: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-                .tint(DS.Colors.primary)
-            Text("Carregando lançamentos...")
-                .font(AppTheme.Typography.body)
-                .foregroundColor(DS.Colors.textSecondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.vertical, 24)
-    }
+    // MARK: - Private Methods
 
     private func toggleQuickFilter(_ type: TransactionType) {
         if quickFilter == type {
@@ -335,9 +134,9 @@ struct TransactionsView: View {
     private var deleteMessage: String {
         let label = transactionPendingDelete?.description?.trimmingCharacters(in: .whitespacesAndNewlines)
         if let label, !label.isEmpty {
-            return "Você realmente quer excluir \"\(label)\"?"
+            return L10n.Transactions.deleteConfirmMessage(label)
         }
-        return "Você realmente quer excluir este lançamento?"
+        return L10n.Transactions.deleteDefault
     }
 
     private func startInitialLoad() {
@@ -424,7 +223,7 @@ struct TransactionsView: View {
     }
 
     private func successBanner(text: String) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: DS.Spacing.sm) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(DS.Colors.success)
@@ -432,15 +231,19 @@ struct TransactionsView: View {
                 .font(AppTheme.Typography.caption)
                 .foregroundColor(DS.Colors.textPrimary)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.sm)
         .background(DS.Colors.surface)
         .overlay(
             Capsule()
                 .stroke(DS.Colors.border, lineWidth: 1)
         )
         .clipShape(Capsule())
-        .shadow(color: DS.Colors.border.opacity(0.25), radius: 6, x: 0, y: 3)
+        .shadow(color: DS.Colors.border.opacity(DS.Opacity.divider), radius: 6, x: 0, y: 3)
     }
 }
 
+#Preview {
+    TransactionsView()
+        .environmentObject(ReferenceDataStore())
+}

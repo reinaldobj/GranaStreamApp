@@ -57,7 +57,7 @@ struct AuthScreenContainer<Content: View>: View {
             if let subtitle {
                 Text(subtitle)
                     .font(AppTheme.Typography.body)
-                    .foregroundColor(DS.Colors.onPrimary.opacity(0.9))
+                    .foregroundColor(DS.Colors.onPrimary.opacity(DS.Opacity.emphasisTextStrong))
             }
         }
         .multilineTextAlignment(.center)
@@ -73,10 +73,10 @@ struct AuthCard<Content: View>: View {
 
     var body: some View {
         content
-            .padding(20)
+            .padding(DS.Spacing.xl)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(DS.Colors.surface)
             .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-            .shadow(color: DS.Colors.border.opacity(0.35), radius: 10, x: 0, y: 6)
+            .shadow(color: DS.Colors.border.opacity(DS.Opacity.hoverState), radius: 10, x: 0, y: 6)
     }
 }

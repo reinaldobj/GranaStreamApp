@@ -57,11 +57,59 @@ enum DS {
     // MARK: - Spacing
     
     enum Spacing {
+        // Base units
+        static let xs: CGFloat = 4
+        static let sm: CGFloat = 8
         static let base: CGFloat = 8
+        static let md: CGFloat = 12
         static let item: CGFloat = 12
+        static let lg: CGFloat = 16
         static let screen: CGFloat = 16
-        static let controlHeight: CGFloat = 48
+        static let xl: CGFloat = 20
+        static let xxl: CGFloat = 24
+        
+        // Specific usages
         static let cardPadding: CGFloat = 16
+        static let formFieldSpacing: CGFloat = 12
+        static let formTopPadding: CGFloat = 10
+        static let buttonPadding: CGFloat = 16
+        static let sectionSpacing: CGFloat = 24
+        static let controlHeight: CGFloat = 48
+        static let navigationBarHeight: CGFloat = 56
+        
+        // Icon sizes
+        static let iconSmall: CGFloat = 20
+        static let iconMedium: CGFloat = 24
+        static let iconLarge: CGFloat = 32
+        static let iconExtraLarge: CGFloat = 44
+        
+        // Avatar/Profile sizes
+        static let avatarSmall: CGFloat = 32
+        static let avatarMedium: CGFloat = 48
+        static let avatarLarge: CGFloat = 64
+    }
+    
+    // MARK: - Opacity
+    
+    enum Opacity {
+        // Standard levels
+        static let disabled: Double = 0.5
+        static let subtle: Double = 0.25
+        static let medium: Double = 0.45
+        static let strong: Double = 0.75
+        static let full: Double = 1.0
+        
+        // Specific UI usages
+        static let backgroundOverlay: Double = 0.18
+        static let buttonHover: Double = 0.32
+        static let divider: Double = 0.25
+        static let placeholderText: Double = 0.28
+        static let selectedState: Double = 0.30
+        static let hoverState: Double = 0.45
+        static let disabledText: Double = 0.55
+        static let secondaryText: Double = 0.70
+        static let emphasisText: Double = 0.85
+        static let emphasisTextStrong: Double = 0.88
     }
 
     // MARK: - Radius

@@ -4,18 +4,18 @@ struct AccountRowView: View {
     let account: AccountResponseDto
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
             ZStack {
                 Circle()
-                    .fill(DS.Colors.primary.opacity(0.15))
-                    .frame(width: 44, height: 44)
+                    .fill(DS.Colors.primary.opacity(DS.Opacity.backgroundOverlay))
+                    .frame(width: DS.Spacing.iconLarge, height: DS.Spacing.iconLarge)
 
                 Image(systemName: iconName)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(DS.Colors.primary)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(account.name ?? "Conta")
                     .font(AppTheme.Typography.section)
                     .foregroundColor(DS.Colors.textPrimary)
@@ -25,7 +25,7 @@ struct AccountRowView: View {
                     .foregroundColor(DS.Colors.textSecondary)
             }
 
-            Spacer(minLength: 12)
+            Spacer(minLength: DS.Spacing.md)
 
             Text(CurrencyFormatter.string(from: account.initialBalance))
                 .font(AppTheme.Typography.section)
@@ -34,7 +34,7 @@ struct AccountRowView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
-        .padding(.trailing, 8)
+        .padding(.trailing, DS.Spacing.sm)
     }
 
     private var iconName: String {

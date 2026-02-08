@@ -15,32 +15,13 @@ struct PayablesView: View {
     private let sectionSpacing = AppTheme.Spacing.item
 
     var body: some View {
-        GeometryReader { proxy in
-            let topBackgroundHeight = max(260, proxy.size.height * 0.36)
+        ListViewContainer(primaryBackgroundHeight: max(260, UIScreen.main.bounds.height * 0.36)) {
+            VStack(spacing: 0) {
+                topBlock
+                    .padding(.top, DS.Spacing.sm)
 
-            ZStack(alignment: .top) {
-                VStack(spacing: 0) {
-                    DS.Colors.primary
-                        .frame(height: topBackgroundHeight)
-                        .frame(maxWidth: .infinity)
-
-                    DS.Colors.surface2
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                .ignoresSafeArea()
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        topBlock
-                            .padding(.top, 2)
-
-                        payablesSection(viewportHeight: proxy.size.height)
-                            .padding(.top, sectionSpacing)
-                    }
-                }
-                .refreshable {
-                    await loadData()
-                }
+                payablesSection(viewportHeight: UIScreen.main.bounds.height)
+                    .padding(.top, sectionSpacing)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
@@ -254,7 +235,7 @@ struct PayablesView: View {
         VStack(spacing: 12) {
             ProgressView()
                 .tint(DS.Colors.primary)
-            Text("Carregando pendências...")
+            Text(L10n.Payables.loading)
                 .font(AppTheme.Typography.body)
                 .foregroundColor(DS.Colors.textSecondary)
         }

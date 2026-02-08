@@ -10,15 +10,15 @@ struct PayablesFilterButton: View {
         Button(action: action) {
             Text(title)
                 .font(AppTheme.Typography.body)
-                .foregroundColor(isSelected ? DS.Colors.onPrimary : DS.Colors.onPrimary.opacity(0.7))
+                .foregroundColor(isSelected ? DS.Colors.onPrimary : DS.Colors.onPrimary.opacity(DS.Opacity.secondaryText))
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
+                .padding(.vertical, DS.Spacing.md)
                 .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(isSelected ? DS.Colors.surface.opacity(0.32) : Color.clear)
+                    RoundedRectangle(cornerRadius: DS.Radius.field)
+                        .fill(isSelected ? DS.Colors.surface.opacity(DS.Opacity.buttonHover) : Color.clear)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .strokeBorder(DS.Colors.surface.opacity(isSelected ? 0 : 0.28), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: DS.Radius.field)
+                                .strokeBorder(DS.Colors.surface.opacity(isSelected ? 0 : DS.Opacity.placeholderText), lineWidth: 1)
                         )
                 )
         }
@@ -37,12 +37,12 @@ struct DualSelectorView: View {
     let onSecondTap: () -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(title)
                 .font(AppTheme.Typography.caption)
-                .foregroundColor(DS.Colors.onPrimary.opacity(0.88))
+                .foregroundColor(DS.Colors.onPrimary.opacity(DS.Opacity.emphasisTextStrong))
 
-            HStack(spacing: 10) {
+            HStack(spacing: DS.Spacing.md) {
                 PayablesFilterButton(
                     title: firstLabel,
                     isSelected: firstSelected,

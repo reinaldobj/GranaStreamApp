@@ -1,0 +1,137 @@
+/* Common Actions */
+"common.save" = "Salvar";
+"common.cancel" = "Cancelar";
+"common.delete" = "Excluir";
+"common.edit" = "Editar";
+"common.loading" = "Carregando...";
+"common.ok" = "OK";
+"common.close" = "Fechar";
+
+/* Transactions */
+"transactions.title" = "Transações";
+"transactions.empty" = "Sem transações neste período.";
+"transactions.loading" = "Carregando lançamentos...";
+"transactions.add" = "Adicionar transação";
+"transactions.edit" = "Editar lançamento";
+"transactions.delete.confirm" = "Excluir lançamento?";
+"transactions.delete.confirm.message" = "Você realmente quer excluir \"%@\"?";
+"transactions.delete.default" = "Você realmente quer excluir este lançamento?";
+"transactions.saving" = "Salvando...";
+"transactions.filters" = "Filtros";
+"transactions.summary.income" = "Receita";
+"transactions.summary.expense" = "Despesa";
+"transactions.summary.total" = "Total";
+
+/* Accounts */
+"accounts.title" = "Contas";
+"accounts.empty" = "Nenhuma conta registrada.";
+"accounts.add" = "Adicionar conta";
+"accounts.edit" = "Editar conta";
+"accounts.delete.confirm" = "Excluir conta?";
+"accounts.loading" = "Carregando contas...";
+"accounts.new" = "Nova conta";
+
+/* Categories */
+"categories.title" = "Categorias";
+"categories.empty" = "Nenhuma categoria registrada.";
+"categories.add" = "Adicionar categoria";
+"categories.edit" = "Editar categoria";
+"categories.delete.confirm" = "Excluir categoria?";
+"categories.loading" = "Carregando categorias...";
+"categories.seed" = "Categorias padrão";
+"categories.income" = "Receita";
+"categories.expense" = "Despesa";
+
+/* Payables */
+"payables.title" = "Pendências";
+"payables.empty" = "Nenhuma pendência.";
+"payables.loading" = "Carregando pendências...";
+"payables.pending" = "Pendente";
+"payables.settled" = "Quitado";
+"payables.payable" = "Pagar";
+"payables.receivable" = "Receber";
+"payables.settle" = "Quitar";
+"payables.settle.confirm" = "Quitar pendência?";
+
+/* Recurrences */
+"recurrences.title" = "Recorrências";
+"recurrences.empty" = "Nenhuma recorrência registrada.";
+"recurrences.add" = "Adicionar recorrência";
+"recurrences.edit" = "Editar recorrência";
+"recurrences.delete.confirm" = "Excluir recorrência?";
+"recurrences.loading" = "Carregando recorrências...";
+
+/* Installments */
+"installments.title" = "Parceladas";
+"installments.empty" = "Nenhuma série de parcelas registrada.";
+"installments.add" = "Adicionar série";
+"installments.edit" = "Editar série";
+"installments.delete.confirm" = "Excluir série?";
+"installments.loading" = "Carregando séries...";
+
+/* Budget */
+"budget.title" = "Orçamento";
+"budget.month" = "Mês";
+"budget.save" = "Salvar orçamento";
+"budget.saving" = "Salvando orçamento...";
+"budget.copy.previous" = "Copiar mês anterior";
+"budget.coming.soon" = "Em breve";
+"budget.success" = "Orçamento";
+"budget.not.found" = "Orçamento não encontrado para esse usuário";
+
+/* Settings */
+"settings.title" = "Configurações";
+"settings.profile" = "Perfil";
+"settings.password" = "Alterar senha";
+"settings.logout" = "Sair";
+"settings.logout.confirm" = "Tem certeza?";
+"settings.logout.message" = "Você será desconectado da sua conta.";
+"settings.security" = "Segurança";
+"settings.biometric" = "Biometria";
+"settings.app.lock" = "Bloqueio de app";
+
+/* Profile */
+"profile.title" = "Perfil";
+"profile.name" = "Nome";
+"profile.email" = "Email";
+"profile.edit" = "Editar perfil";
+
+/* Password */
+"password.title" = "Alterar senha";
+"password.current" = "Senha atual";
+"password.new" = "Nova senha";
+"password.confirm" = "Confirmar senha";
+"password.change" = "Alterar senha";
+"password.changing" = "Alterando...";
+
+/* Alerts & Messages */
+"alert.success" = "Sucesso!";
+"alert.error" = "Erro";
+"alert.warning" = "Aviso";
+"alert.info" = "Informação";
+"alert.delete.success" = "Excluído com sucesso";
+"alert.save.success" = "Salvo com sucesso";
+"alert.update.success" = "Atualizado com sucesso";
+
+/* Form Validation */
+"validation.required" = "Campo obrigatório";
+"validation.invalid.email" = "Email inválido";
+"validation.invalid.amount" = "Valor inválido";
+"validation.passwords.mismatch" = "As senhas não coincidem";
+"validation.weak.password" = "Senha fraca";
+
+/* Date & Time */
+"date.today" = "Hoje";
+"date.yesterday" = "Ontem";
+"date.tomorrow" = "Amanhã";
+"date.this.week" = "Esta semana";
+"date.last.week" = "Semana passada";
+"date.this.month" = "Este mês";
+"date.last.month" = "Mês passado";
+
+/* Navigation */
+"nav.back" = "Voltar";
+"nav.next" = "Próximo";
+"nav.previous" = "Anterior";
+"nav.skip" = "Pular";
+"nav.done" = "Concluído";

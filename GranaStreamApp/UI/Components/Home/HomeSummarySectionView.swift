@@ -29,7 +29,7 @@ struct MetricMiniCard: View {
                 .font(AppTheme.Typography.body)
                 .foregroundColor(valueColor)
         }
-        .padding(8)
+        .padding(DS.Spacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(DS.Colors.background)
         .overlay(

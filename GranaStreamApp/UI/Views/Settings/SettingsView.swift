@@ -10,40 +10,24 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            GeometryReader { proxy in
-                let topBackgroundHeight = max(260, proxy.size.height * 0.35)
+            ListViewContainer(primaryBackgroundHeight: max(260, UIScreen.main.bounds.height * 0.35)) {
+                VStack(spacing: 0) {
+                    topBlock
+                        .padding(.top, DS.Spacing.sm)
 
-                ZStack(alignment: .top) {
-                    VStack(spacing: 0) {
-                        DS.Colors.primary
-                            .frame(height: topBackgroundHeight)
-                            .frame(maxWidth: .infinity)
-
-                        DS.Colors.surface2
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                    .ignoresSafeArea()
-
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 0) {
-                            topBlock
-                                .padding(.top, 2)
-
-                            settingsSection(viewportHeight: proxy.size.height)
-                                .padding(.top, sectionSpacing)
-                        }
-                    }
+                    settingsSection(viewportHeight: UIScreen.main.bounds.height)
+                        .padding(.top, sectionSpacing)
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
         }
-        .alert("Tem certeza?", isPresented: $showLogoutConfirm) {
-            Button("Cancelar", role: .cancel) {}
-            Button("Sair", role: .destructive) {
+        .alert(L10n.Settings.logoutConfirm, isPresented: $showLogoutConfirm) {
+            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Settings.logout, role: .destructive) {
                 Task { await session.logout() }
             }
         } message: {
-            Text("Você será desconectado da sua conta.")
+            Text(L10n.Settings.logoutMessage)
         }
         .sheet(isPresented: $showProfileSheet) {
             ProfileView()
@@ -149,7 +133,7 @@ struct SettingsView: View {
                 showLogoutConfirm = true
             } label: {
                 SettingsMenuRow(
-                    title: "Sair",
+                    title: L10n.Settings.logout,
                     systemImage: "rectangle.portrait.and.arrow.right",
                     isDestructive: true,
                     showsChevron: false

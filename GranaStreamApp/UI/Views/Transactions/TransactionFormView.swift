@@ -5,6 +5,7 @@ struct TransactionFormView: View {
     let existing: TransactionSummaryDto?
     var onComplete: () -> Void
 
+    @StateObject private var viewModel = TransactionFormViewModel()
     @EnvironmentObject private var referenceStore: ReferenceDataStore
     @Environment(\.dismiss) private var dismiss
 
@@ -17,9 +18,6 @@ struct TransactionFormView: View {
     @State private var fromAccountId: String = ""
     @State private var toAccountId: String = ""
 
-    @State private var isLoading = false
-    @State private var errorMessage: String?
-
     var body: some View {
         NavigationStack {
             ZStack {
@@ -27,12 +25,12 @@ struct TransactionFormView: View {
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: AppTheme.Spacing.item) {
+                    VStack(spacing: DS.Spacing.item) {
                         transactionCard
                     }
-                    .padding(.horizontal, AppTheme.Spacing.screen)
-                    .padding(.top, AppTheme.Spacing.screen + 10)
-                    .padding(.bottom, AppTheme.Spacing.screen * 2)
+                    .padding(.horizontal, DS.Spacing.screen)
+                    .padding(.top, DS.Spacing.screen + 10)
+                    .padding(.bottom, DS.Spacing.screen * 2)
                 }
             }
             .task(id: existing?.id) { prefill() }
@@ -49,16 +47,16 @@ struct TransactionFormView: View {
                     categoryId = ""
                 }
             }
-            .errorAlert(message: $errorMessage)
+            .errorAlert(message: $viewModel.errorMessage)
         }
         .tint(DS.Colors.primary)
     }
 
     private var transactionCard: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
+        VStack(spacing: DS.Spacing.item) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Tipo")
-                    .font(AppTheme.Typography.caption)
+                    .font(DS.Typography.caption)
                     .foregroundColor(DS.Colors.textSecondary)
 
                 Picker("Tipo", selection: $type) {
@@ -116,8 +114,8 @@ struct TransactionFormView: View {
             }
 
             TransactionPrimaryButton(
-                title: isLoading ? "Salvando..." : "Salvar",
-                isDisabled: !isValid || isLoading
+                title: viewModel.isLoading ? "Salvando..." : "Salvar",
+                isDisabled: !isValid || viewModel.isLoading
             ) {
                 Task { await save() }
             }
@@ -194,49 +192,36 @@ struct TransactionFormView: View {
     }
 
     private func save() async {
-        isLoading = true
-        defer { isLoading = false }
-        guard let amountValue else {
-            errorMessage = "Informe um valor válido."
-            return
-        }
+        viewModel.isLoading = true
+        defer { viewModel.isLoading = false }
 
         do {
             if let existing {
-                let request = UpdateTransactionRequestDto(
-                    amount: amountValue,
+                try await viewModel.updateTransaction(
+                    id: existing.id,
+                    amount: amount,
                     date: date,
-                    description: description.isEmpty ? nil : description,
-                    categoryId: categoryId.isEmpty ? nil : categoryId,
-                    fromAccountId: fromAccountId.isEmpty ? nil : fromAccountId,
-                    toAccountId: toAccountId.isEmpty ? nil : toAccountId
-                )
-                let _: TransactionResponseDto = try await APIClient.shared.request(
-                    "/api/v1/transactions/\(existing.id)",
-                    method: "PATCH",
-                    body: AnyEncodable(request)
+                    description: description,
+                    categoryId: categoryId,
+                    fromAccountId: fromAccountId,
+                    toAccountId: toAccountId
                 )
             } else {
-                let request = CreateTransactionRequestDto(
+                try await viewModel.createTransaction(
                     type: type,
                     date: date,
-                    amount: amountValue,
-                    description: description.isEmpty ? nil : description,
-                    accountId: type == .transfer ? nil : (accountId.isEmpty ? nil : accountId),
-                    categoryId: type == .transfer ? nil : (categoryId.isEmpty ? nil : categoryId),
-                    fromAccountId: type == .transfer ? (fromAccountId.isEmpty ? nil : fromAccountId) : nil,
-                    toAccountId: type == .transfer ? (toAccountId.isEmpty ? nil : toAccountId) : nil
-                )
-                let _: CreateTransactionResponseDto = try await APIClient.shared.request(
-                    "/api/v1/transactions",
-                    method: "POST",
-                    body: AnyEncodable(request)
+                    amount: amount,
+                    description: description,
+                    accountId: accountId,
+                    categoryId: categoryId,
+                    fromAccountId: fromAccountId,
+                    toAccountId: toAccountId
                 )
             }
             onComplete()
             dismiss()
         } catch {
-            errorMessage = error.userMessage
+            viewModel.errorMessage = error.userMessage
         }
     }
 }

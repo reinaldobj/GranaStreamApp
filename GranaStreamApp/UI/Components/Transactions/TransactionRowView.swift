@@ -4,18 +4,18 @@ struct TransactionRow: View {
     let transaction: TransactionSummaryDto
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
             ZStack {
                 Circle()
-                    .fill(amountColor.opacity(0.15))
-                    .frame(width: 44, height: 44)
+                    .fill(amountColor.opacity(DS.Opacity.backgroundOverlay))
+                    .frame(width: DS.Spacing.iconLarge, height: DS.Spacing.iconLarge)
 
                 Image(systemName: iconName)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(amountColor)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 HStack {
                     Text(transaction.description ?? transaction.summary ?? "Sem descrição")
                         .font(AppTheme.Typography.section)
@@ -23,7 +23,7 @@ struct TransactionRow: View {
                     Spacer()
                 }
 
-                HStack(spacing: 6) {
+                HStack(spacing: DS.Spacing.xs) {
                     Text(dateText)
                         .font(AppTheme.Typography.caption)
                         .foregroundColor(DS.Colors.textSecondary)

@@ -19,14 +19,14 @@ struct BudgetHeaderView: View {
     }
     
     private var planningMonthSelector: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: DS.Spacing.lg) {
             Button {
                 onMonthShift(-1)
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 36, height: 36)
-                    .background(DS.Colors.surface.opacity(0.28))
+                    .frame(width: DS.Spacing.iconSmall, height: DS.Spacing.iconSmall)
+                    .background(DS.Colors.surface.opacity(DS.Opacity.placeholderText))
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
@@ -43,8 +43,8 @@ struct BudgetHeaderView: View {
             } label: {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 36, height: 36)
-                    .background(DS.Colors.surface.opacity(0.28))
+                    .frame(width: DS.Spacing.iconSmall, height: DS.Spacing.iconSmall)
+                    .background(DS.Colors.surface.opacity(DS.Opacity.placeholderText))
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
@@ -58,8 +58,8 @@ struct BudgetHeaderView: View {
             Button(action: onDismiss) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .background(DS.Colors.surface.opacity(0.45))
+                    .frame(width: DS.Spacing.iconMedium, height: DS.Spacing.iconMedium)
+                    .background(DS.Colors.surface.opacity(DS.Opacity.medium))
                     .clipShape(Circle())
             }
             .foregroundColor(DS.Colors.onPrimary)
@@ -73,12 +73,12 @@ struct BudgetHeaderView: View {
             Spacer()
 
             Color.clear
-                .frame(width: 40, height: 40)
+                .frame(width: DS.Spacing.iconMedium, height: DS.Spacing.iconMedium)
         }
     }
     
     private var monthIndicator: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: DS.Spacing.sm) {
             Image(systemName: "calendar")
                 .foregroundColor(DS.Colors.onPrimary)
             Text(monthLabel)

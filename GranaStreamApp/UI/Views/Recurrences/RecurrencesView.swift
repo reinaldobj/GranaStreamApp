@@ -14,32 +14,13 @@ struct RecurrencesView: View {
     private let sectionSpacing = AppTheme.Spacing.item
 
     var body: some View {
-        GeometryReader { proxy in
-            let topBackgroundHeight = max(240, proxy.size.height * 0.34)
+        ListViewContainer(primaryBackgroundHeight: max(240, UIScreen.main.bounds.height * 0.34)) {
+            VStack(spacing: 0) {
+                topBlock
+                    .padding(.top, DS.Spacing.sm)
 
-            ZStack(alignment: .top) {
-                VStack(spacing: 0) {
-                    DS.Colors.primary
-                        .frame(height: topBackgroundHeight)
-                        .frame(maxWidth: .infinity)
-
-                    DS.Colors.surface2
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                .ignoresSafeArea()
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        topBlock
-                            .padding(.top, 2)
-
-                        recurrencesSection(viewportHeight: proxy.size.height)
-                            .padding(.top, sectionSpacing)
-                    }
-                }
-                .refreshable {
-                    await viewModel.load()
-                }
+                recurrencesSection(viewportHeight: UIScreen.main.bounds.height)
+                    .padding(.top, sectionSpacing)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
@@ -51,7 +32,7 @@ struct RecurrencesView: View {
             .presentationDragIndicator(.visible)
         }
         .alert(
-            "Excluir recorrência?",
+            L10n.Recurrences.deleteConfirm,
             isPresented: Binding(
                 get: { recurrencePendingDelete != nil },
                 set: { isPresented in
@@ -59,10 +40,10 @@ struct RecurrencesView: View {
                 }
             )
         ) {
-            Button("Cancelar", role: .cancel) {
+            Button(L10n.Common.cancel, role: .cancel) {
                 recurrencePendingDelete = nil
             }
-            Button("Excluir", role: .destructive) {
+            Button(L10n.Common.delete, role: .destructive) {
                 guard let recurrence = recurrencePendingDelete else { return }
                 recurrencePendingDelete = nil
                 Task { await viewModel.delete(id: recurrence.id) }
@@ -84,7 +65,22 @@ struct RecurrencesView: View {
 
     private var topBlock: some View {
         VStack(spacing: AppTheme.Spacing.item) {
-            header
+            ListHeaderView(
+                title: L10n.Recurrences.title,
+                searchText: $searchText,
+                showSearch: false,
+                actions: [
+                    HeaderAction(
+                        id: "add",
+                        systemImage: "plus",
+                        action: { 
+                            selectedRecurrence = nil
+                            showForm = true 
+                        }
+                    )
+                ],
+                onDismiss: { dismiss() }
+            )
             AppSearchField(
                 placeholder: "Buscar recorrência por nome",
                 text: $searchText
@@ -100,44 +96,11 @@ struct RecurrencesView: View {
             }
         }
         .padding(.horizontal, AppTheme.Spacing.screen)
-        .padding(.top, 6)
+        .padding(.top, DS.Spacing.sm)
         .padding(.bottom, 0)
     }
 
-    private var header: some View {
-        HStack {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .background(DS.Colors.surface.opacity(0.45))
-                    .clipShape(Circle())
-            }
-            .foregroundColor(DS.Colors.onPrimary)
-
-            Spacer()
-
-            Text("Recorrências")
-                .font(AppTheme.Typography.title)
-                .foregroundColor(DS.Colors.onPrimary)
-
-            Spacer()
-
-            Button {
-                selectedRecurrence = nil
-                showForm = true
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .background(DS.Colors.surface.opacity(0.45))
-                    .clipShape(Circle())
-            }
-            .foregroundColor(DS.Colors.onPrimary)
-        }
-    }
+    // ...existing code...
 
     private var backSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 16, coordinateSpace: .local)
@@ -168,7 +131,7 @@ struct RecurrencesView: View {
             if shouldShowLoadingState {
                 loadingState
             } else if filteredRecurrences.isEmpty {
-                Text(activeSearchTerm.isEmpty ? "Sem recorrências cadastradas." : "Nenhuma recorrência encontrada.")
+                Text(activeSearchTerm.isEmpty ? L10n.Recurrences.empty : "Nenhuma recorrência encontrada.")
                     .font(AppTheme.Typography.body)
                     .foregroundColor(DS.Colors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -188,7 +151,7 @@ struct RecurrencesView: View {
                         recurrenceRow(recurrence: recurrence)
                     }
                     .contextMenu {
-                        Button("Editar") {
+                        Button(L10n.Common.edit) {
                             selectedRecurrence = recurrence
                             showForm = true
                         }
@@ -201,7 +164,7 @@ struct RecurrencesView: View {
                                 Task { await viewModel.pause(id: recurrence.id) }
                             }
                         }
-                        Button("Excluir", role: .destructive) {
+                        Button(L10n.Common.delete, role: .destructive) {
                             recurrencePendingDelete = recurrence
                         }
                     }
@@ -254,7 +217,7 @@ struct RecurrencesView: View {
         VStack(spacing: 12) {
             ProgressView()
                 .tint(DS.Colors.primary)
-            Text("Carregando recorrências...")
+            Text(L10n.Recurrences.loading)
                 .font(AppTheme.Typography.body)
                 .foregroundColor(DS.Colors.textSecondary)
         }

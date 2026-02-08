@@ -8,7 +8,7 @@ struct BudgetItemRow: View {
     let onValueChange: (String) -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             categoryInfo
             
             CurrencyMaskedTextField(text: .init(
@@ -17,13 +17,13 @@ struct BudgetItemRow: View {
             ), placeholder: "R$ 0,00")
                 .keyboardType(.decimalPad)
                 .font(DS.Typography.body)
-                .padding(8)
+                .padding(DS.Spacing.sm)
                 .background(
-                    RoundedRectangle(cornerRadius: 10)
+                    RoundedRectangle(cornerRadius: DS.Radius.field)
                         .fill(DS.Colors.surface)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10)
+                    RoundedRectangle(cornerRadius: DS.Radius.field)
                         .stroke(DS.Colors.border, lineWidth: 1)
                 )
 
