@@ -18,17 +18,17 @@ struct AppFormField<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.textSecondary)
 
             HStack(spacing: 8) {
                 content
             }
-            .font(AppTheme.Typography.body)
+            .font(DS.Typography.body)
             .foregroundColor(DS.Colors.textPrimary)
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .frame(minHeight: AppTheme.Spacing.controlHeight)
+            .frame(minHeight: DS.Spacing.controlHeight)
             .background(DS.Colors.surface2)
             .overlay(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)

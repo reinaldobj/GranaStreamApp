@@ -18,23 +18,26 @@ final class AccountsViewModel: ObservableObject, SearchableViewModel {
 
     private var allAccounts: [AccountResponseDto] = []
     private let apiClient: APIClientProtocol
+    private let taskManager = TaskManager()
     
     init(apiClient: APIClientProtocol? = nil) {
         self.apiClient = apiClient ?? APIClient.shared
     }
 
     func load(syncReferenceData: Bool = false) async {
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            let response: [AccountResponseDto] = try await apiClient.request("/api/v1/accounts")
-            allAccounts = response
-            applySearch(term: activeSearchTerm, updateActiveTerm: false)
-            if syncReferenceData {
-                ReferenceDataStore.shared.replaceAccounts(response)
+        await taskManager.executeCommonAndWait(id: .initialLoad) {
+            self.isLoading = true
+            defer { self.isLoading = false }
+            do {
+                let response: [AccountResponseDto] = try await self.apiClient.request("/api/v1/accounts")
+                self.allAccounts = response
+                self.applySearch(term: self.activeSearchTerm, updateActiveTerm: false)
+                if syncReferenceData {
+                    ReferenceDataStore.shared.replaceAccounts(response)
+                }
+            } catch {
+                self.errorMessage = error.userMessage
             }
-        } catch {
-            errorMessage = error.userMessage
         }
     }
 
@@ -48,6 +51,7 @@ final class AccountsViewModel: ObservableObject, SearchableViewModel {
         initialBalance: Double,
         reloadAfterChange: Bool = false
     ) async -> Bool {
+        // ...existing code...
         do {
             inactiveAccount = nil
             let request = CreateAccountRequestDto(name: name, accountType: type, initialBalance: initialBalance)

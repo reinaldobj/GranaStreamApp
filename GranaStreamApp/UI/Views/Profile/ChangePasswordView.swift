@@ -18,14 +18,14 @@ struct ChangePasswordView: View {
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: AppTheme.Spacing.item) {
+                    VStack(spacing: DS.Spacing.item) {
                         VStack(spacing: 6) {
                             Text("Alterar senha")
-                                .font(AppTheme.Typography.title)
+                                .font(DS.Typography.title)
                                 .foregroundColor(DS.Colors.textPrimary)
 
                             Text("Atualize sua senha com segurança")
-                                .font(AppTheme.Typography.body)
+                                .font(DS.Typography.body)
                                 .foregroundColor(DS.Colors.textSecondary)
                         }
                         .frame(maxWidth: .infinity)
@@ -62,13 +62,13 @@ struct ChangePasswordView: View {
                             )
 
                             Text("A nova senha deve ser diferente da senha atual.")
-                                .font(AppTheme.Typography.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundColor(DS.Colors.textSecondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
                             if let inlineValidationMessage {
                                 Text(inlineValidationMessage)
-                                    .font(AppTheme.Typography.caption)
+                                    .font(DS.Typography.caption)
                                     .foregroundColor(DS.Colors.error)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -81,9 +81,9 @@ struct ChangePasswordView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, AppTheme.Spacing.screen)
-                    .padding(.top, AppTheme.Spacing.screen + 10)
-                    .padding(.bottom, AppTheme.Spacing.screen * 2)
+                    .padding(.horizontal, DS.Spacing.screen)
+                    .padding(.top, DS.Spacing.screen + 10)
+                    .padding(.bottom, DS.Spacing.screen * 2)
                 }
             }
         }

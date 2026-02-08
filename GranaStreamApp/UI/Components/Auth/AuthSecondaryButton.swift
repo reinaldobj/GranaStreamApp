@@ -8,8 +8,8 @@ struct AuthSecondaryButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(AppTheme.Typography.section)
-                .frame(maxWidth: .infinity, minHeight: AppTheme.Spacing.controlHeight)
+                .font(DS.Typography.section)
+                .frame(maxWidth: .infinity, minHeight: DS.Spacing.controlHeight)
         }
         .buttonStyle(AuthSecondaryButtonStyle())
         .disabled(isDisabled)

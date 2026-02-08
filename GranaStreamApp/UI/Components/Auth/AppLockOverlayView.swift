@@ -13,20 +13,20 @@ struct AppLockOverlayView: View {
             DS.Colors.background
                 .ignoresSafeArea()
 
-            VStack(spacing: AppTheme.Spacing.screen) {
+            VStack(spacing: DS.Spacing.screen) {
                 Spacer()
 
-                VStack(spacing: AppTheme.Spacing.item) {
+                VStack(spacing: DS.Spacing.item) {
                     Image(systemName: iconSystemName)
                         .font(.system(size: 54, weight: .semibold))
                         .foregroundColor(DS.Colors.primary)
 
                     Text("App protegido")
-                        .font(AppTheme.Typography.title)
+                        .font(DS.Typography.title)
                         .foregroundColor(DS.Colors.textPrimary)
 
                     Text(subtitle)
-                        .font(AppTheme.Typography.body)
+                        .font(DS.Typography.body)
                         .foregroundColor(DS.Colors.textSecondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
@@ -35,15 +35,15 @@ struct AppLockOverlayView: View {
 
                 if let errorMessage, !errorMessage.isEmpty {
                     Text(errorMessage)
-                        .font(AppTheme.Typography.caption)
+                        .font(DS.Typography.caption)
                         .foregroundColor(DS.Colors.error)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, AppTheme.Spacing.screen * 2)
+                        .padding(.horizontal, DS.Spacing.screen * 2)
                 }
 
                 Spacer()
 
-                VStack(spacing: AppTheme.Spacing.item) {
+                VStack(spacing: DS.Spacing.item) {
                     AppPrimaryButton(
                         title: isUnlocking ? "Verificando..." : "Desbloquear",
                         isDisabled: isUnlocking
@@ -54,11 +54,11 @@ struct AppLockOverlayView: View {
                     Button("Sair da conta", role: .destructive) {
                         onLogout()
                     }
-                    .font(AppTheme.Typography.body)
+                    .font(DS.Typography.body)
                     .foregroundColor(DS.Colors.error)
                 }
-                .padding(.horizontal, AppTheme.Spacing.screen)
-                .padding(.bottom, AppTheme.Spacing.screen * 2)
+                .padding(.horizontal, DS.Spacing.screen)
+                .padding(.bottom, DS.Spacing.screen * 2)
             }
         }
     }
@@ -76,7 +76,7 @@ struct AppPrivacyMaskView: View {
                     .foregroundColor(DS.Colors.primary)
 
                 Text("GranaStream")
-                    .font(AppTheme.Typography.section)
+                    .font(DS.Typography.section)
                     .foregroundColor(DS.Colors.textPrimary)
             }
         }

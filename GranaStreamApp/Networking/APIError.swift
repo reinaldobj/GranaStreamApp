@@ -20,6 +20,21 @@ enum APIError: Error, LocalizedError {
     case requestCancelled
     case network
 
+    // MARK: - Retry Logic
+    
+    /// Indica se este erro é retentável (network-related)
+    var isRetryable: Bool {
+        switch self {
+        case .timeout, .offline, .network:
+            return true
+        case .server(let status, _):
+            // Retry em erros 5xx (server error) e 429 (too many requests)
+            return (500...599).contains(status) || status == 429
+        default:
+            return false
+        }
+    }
+
     var errorDescription: String? {
         switch self {
         case .invalidResponse:

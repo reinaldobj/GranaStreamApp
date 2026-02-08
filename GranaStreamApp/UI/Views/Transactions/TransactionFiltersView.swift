@@ -18,14 +18,14 @@ struct TransactionFiltersView: View {
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: AppTheme.Spacing.item) {
+                    VStack(spacing: DS.Spacing.item) {
                         header
                         searchField
                         filterCard
                     }
-                    .padding(.horizontal, AppTheme.Spacing.screen)
-                    .padding(.top, AppTheme.Spacing.screen)
-                    .padding(.bottom, AppTheme.Spacing.screen * 2)
+                    .padding(.horizontal, DS.Spacing.screen)
+                    .padding(.top, DS.Spacing.screen)
+                    .padding(.bottom, DS.Spacing.screen * 2)
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -50,7 +50,7 @@ struct TransactionFiltersView: View {
         HStack {
             Spacer()
             Text("Filtros")
-                .font(AppTheme.Typography.title)
+                .font(DS.Typography.title)
                 .foregroundColor(DS.Colors.textPrimary)
             Spacer()
         }
@@ -67,7 +67,7 @@ struct TransactionFiltersView: View {
     }
 
     private var filterCard: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
+        VStack(spacing: DS.Spacing.item) {
             TransactionDateRow(label: "De", date: $selectedStartDate)
             TransactionDateRow(label: "Ate", date: $selectedEndDate)
 
@@ -104,7 +104,7 @@ struct TransactionFiltersView: View {
     private var filterTypeSelector: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Tipo")
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.textSecondary)
 
             HStack(spacing: 12) {
@@ -158,9 +158,9 @@ private struct FilterPillButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(AppTheme.Typography.body)
+                .font(DS.Typography.body)
                 .foregroundColor(isSelected ? DS.Colors.onPrimary : DS.Colors.textPrimary)
-                .frame(maxWidth: .infinity, minHeight: AppTheme.Spacing.controlHeight)
+                .frame(maxWidth: .infinity, minHeight: DS.Spacing.controlHeight)
                 .background(
                     Capsule()
                         .fill(isSelected ? DS.Colors.primary : DS.Colors.surface2)

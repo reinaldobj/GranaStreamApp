@@ -7,29 +7,29 @@ struct AppHeaderView: View {
 
     var body: some View {
         AppCard {
-            HStack(alignment: .center, spacing: AppTheme.Spacing.item) {
+            HStack(alignment: .center, spacing: DS.Spacing.item) {
                 Button {
                     showProfileSheet = true
                 } label: {
-                    HStack(spacing: AppTheme.Spacing.item) {
+                    HStack(spacing: DS.Spacing.item) {
                         Image(systemName: "person.crop.circle")
                             .font(.system(size: 36))
                             .foregroundColor(DS.Colors.primary)
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text(greetingText)
-                                .font(AppTheme.Typography.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundColor(DS.Colors.textSecondary)
 
                             Text(displayName)
-                                .font(AppTheme.Typography.title)
+                                .font(DS.Typography.title)
                                 .foregroundColor(DS.Colors.textPrimary)
                         }
                     }
                 }
                 .buttonStyle(.plain)
 
-                Spacer(minLength: AppTheme.Spacing.base)
+                Spacer(minLength: DS.Spacing.base)
 
                 Menu {
                     ForEach(monthStore.monthsInYear, id: \.self) { month in
@@ -42,7 +42,7 @@ struct AppHeaderView: View {
                         Text(monthStore.selectedMonthLabel)
                         Image(systemName: "chevron.down")
                     }
-                    .font(AppTheme.Typography.caption)
+                    .font(DS.Typography.caption)
                     .foregroundColor(DS.Colors.textPrimary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)

@@ -45,7 +45,7 @@ struct TransactionListSection: View {
 
     private var emptyState: some View {
         Text("Sem transações neste período.")
-            .font(AppTheme.Typography.body)
+            .font(DS.Typography.body)
             .foregroundColor(DS.Colors.textSecondary)
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.vertical, DS.Spacing.xxl)
@@ -56,7 +56,7 @@ struct TransactionListSection: View {
             ProgressView()
                 .tint(DS.Colors.primary)
             Text("Carregando lançamentos...")
-                .font(AppTheme.Typography.body)
+                .font(DS.Typography.body)
                 .foregroundColor(DS.Colors.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .center)

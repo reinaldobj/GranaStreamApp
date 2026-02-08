@@ -11,6 +11,16 @@ protocol APIClientProtocol {
         retryOnAuthFailure: Bool
     ) async throws -> T
     
+    func requestWithRetry<T: Decodable>(
+        _ path: String,
+        method: String,
+        queryItems: [URLQueryItem],
+        body: AnyEncodable?,
+        requiresAuth: Bool,
+        retryOnAuthFailure: Bool,
+        maxRetries: Int
+    ) async throws -> T
+    
     func requestNoResponse(
         _ path: String,
         method: String,
@@ -37,6 +47,26 @@ extension APIClientProtocol {
             body: body,
             requiresAuth: requiresAuth,
             retryOnAuthFailure: retryOnAuthFailure
+        )
+    }
+    
+    func requestWithRetry<T: Decodable>(
+        _ path: String,
+        method: String = "GET",
+        queryItems: [URLQueryItem] = [],
+        body: AnyEncodable? = nil,
+        requiresAuth: Bool = true,
+        retryOnAuthFailure: Bool = true,
+        maxRetries: Int = 3
+    ) async throws -> T {
+        try await requestWithRetry(
+            path,
+            method: method,
+            queryItems: queryItems,
+            body: body,
+            requiresAuth: requiresAuth,
+            retryOnAuthFailure: retryOnAuthFailure,
+            maxRetries: maxRetries
         )
     }
     

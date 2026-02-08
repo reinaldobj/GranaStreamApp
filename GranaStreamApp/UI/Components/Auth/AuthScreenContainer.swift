@@ -32,16 +32,16 @@ struct AuthScreenContainer<Content: View>: View {
                 }
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: AppTheme.Spacing.item) {
+                    VStack(spacing: DS.Spacing.item) {
                         header
 
                         AuthCard {
                             content
                         }
                     }
-                    .padding(.horizontal, AppTheme.Spacing.screen)
+                    .padding(.horizontal, DS.Spacing.screen)
                     .padding(.top, contentTopPadding)
-                    .padding(.bottom, AppTheme.Spacing.screen * 2)
+                    .padding(.bottom, DS.Spacing.screen * 2)
                 }
             }
             .ignoresSafeArea(edges: .top)
@@ -56,7 +56,7 @@ struct AuthScreenContainer<Content: View>: View {
 
             if let subtitle {
                 Text(subtitle)
-                    .font(AppTheme.Typography.body)
+                    .font(DS.Typography.body)
                     .foregroundColor(DS.Colors.onPrimary.opacity(DS.Opacity.emphasisTextStrong))
             }
         }

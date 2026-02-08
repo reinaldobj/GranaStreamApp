@@ -10,7 +10,7 @@ struct TransactionDetailView: View {
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: AppTheme.Spacing.item) {
+                    VStack(spacing: DS.Spacing.item) {
                         detailSection(
                             title: "Resumo",
                             rows: [
@@ -31,9 +31,9 @@ struct TransactionDetailView: View {
                             ]
                         )
                     }
-                    .padding(.horizontal, AppTheme.Spacing.screen)
-                    .padding(.top, AppTheme.Spacing.screen + 10)
-                    .padding(.bottom, AppTheme.Spacing.screen * 2)
+                    .padding(.horizontal, DS.Spacing.screen)
+                    .padding(.top, DS.Spacing.screen + 10)
+                    .padding(.bottom, DS.Spacing.screen * 2)
                 }
             }
         }
@@ -43,7 +43,7 @@ struct TransactionDetailView: View {
     private func detailSection(title: String, rows: [DetailRow]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(AppTheme.Typography.section)
+                .font(DS.Typography.section)
                 .foregroundColor(DS.Colors.textPrimary)
 
             VStack(spacing: 0) {
@@ -66,13 +66,13 @@ struct TransactionDetailView: View {
     private func detailRow(label: String, value: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(label)
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.textSecondary)
 
             Spacer(minLength: 8)
 
             Text(value)
-                .font(AppTheme.Typography.body)
+                .font(DS.Typography.body)
                 .foregroundColor(DS.Colors.textPrimary)
                 .multilineTextAlignment(.trailing)
         }

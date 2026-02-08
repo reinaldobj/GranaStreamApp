@@ -11,7 +11,7 @@ struct RecurrencesView: View {
     @State private var activeSearchTerm = ""
     @State private var hasFinishedInitialLoad = false
 
-    private let sectionSpacing = AppTheme.Spacing.item
+    private let sectionSpacing = DS.Spacing.item
 
     var body: some View {
         ListViewContainer(primaryBackgroundHeight: max(240, UIScreen.main.bounds.height * 0.34)) {
@@ -64,7 +64,7 @@ struct RecurrencesView: View {
     }
 
     private var topBlock: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
+        VStack(spacing: DS.Spacing.item) {
             ListHeaderView(
                 title: L10n.Recurrences.title,
                 searchText: $searchText,
@@ -95,7 +95,7 @@ struct RecurrencesView: View {
                 }
             }
         }
-        .padding(.horizontal, AppTheme.Spacing.screen)
+        .padding(.horizontal, DS.Spacing.screen)
         .padding(.top, DS.Spacing.sm)
         .padding(.bottom, 0)
     }
@@ -116,7 +116,7 @@ struct RecurrencesView: View {
         let emptyMinHeight = max(320, viewportHeight * 0.52)
 
         return recurrencesCard
-            .padding(.horizontal, AppTheme.Spacing.screen)
+            .padding(.horizontal, DS.Spacing.screen)
             .padding(.top, 6)
             .frame(
                 maxWidth: .infinity,
@@ -132,7 +132,7 @@ struct RecurrencesView: View {
                 loadingState
             } else if filteredRecurrences.isEmpty {
                 Text(activeSearchTerm.isEmpty ? L10n.Recurrences.empty : "Nenhuma recorrência encontrada.")
-                    .font(AppTheme.Typography.body)
+                    .font(DS.Typography.body)
                     .foregroundColor(DS.Colors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 24)
@@ -181,18 +181,18 @@ struct RecurrencesView: View {
 
     private func recurrenceRow(recurrence: RecurrenceResponseDto) -> some View {
         AppCard {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.base) {
+            VStack(alignment: .leading, spacing: DS.Spacing.base) {
                 Text(recurrence.templateTransaction.description ?? "Recorrência")
-                    .font(AppTheme.Typography.section)
+                    .font(DS.Typography.section)
                     .foregroundColor(DS.Colors.textPrimary)
 
                 HStack(spacing: 8) {
                     Text("Próxima: \(recurrence.nextOccurrence?.formattedDate() ?? "-")")
-                        .font(AppTheme.Typography.caption)
+                        .font(DS.Typography.caption)
                         .foregroundColor(DS.Colors.textSecondary)
                     Spacer(minLength: 8)
                     Text(recurrence.isPaused ? "Pausada" : "Ativa")
-                        .font(AppTheme.Typography.caption)
+                        .font(DS.Typography.caption)
                         .foregroundColor(recurrence.isPaused ? DS.Colors.warning : DS.Colors.success)
                 }
             }
@@ -218,7 +218,7 @@ struct RecurrencesView: View {
             ProgressView()
                 .tint(DS.Colors.primary)
             Text(L10n.Recurrences.loading)
-                .font(AppTheme.Typography.body)
+                .font(DS.Typography.body)
                 .foregroundColor(DS.Colors.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .center)

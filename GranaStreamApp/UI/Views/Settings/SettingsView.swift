@@ -6,7 +6,7 @@ struct SettingsView: View {
     @State private var showLogoutConfirm = false
     @State private var showProfileSheet = false
 
-    private let sectionSpacing = AppTheme.Spacing.item
+    private let sectionSpacing = DS.Spacing.item
 
     var body: some View {
         NavigationStack {
@@ -39,11 +39,11 @@ struct SettingsView: View {
     }
 
     private var topBlock: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
+        VStack(spacing: DS.Spacing.item) {
             header
             profileLinkCard
         }
-        .padding(.horizontal, AppTheme.Spacing.screen)
+        .padding(.horizontal, DS.Spacing.screen)
         .padding(.top, 6)
     }
 
@@ -55,7 +55,7 @@ struct SettingsView: View {
             Spacer()
 
             Text("Configurações")
-                .font(AppTheme.Typography.title)
+                .font(DS.Typography.title)
                 .foregroundColor(DS.Colors.onPrimary)
 
             Spacer()
@@ -69,17 +69,17 @@ struct SettingsView: View {
         Button {
             showProfileSheet = true
         } label: {
-            HStack(spacing: AppTheme.Spacing.item) {
+            HStack(spacing: DS.Spacing.item) {
                 InitialsAvatarView(name: profileNameRaw, size: 66)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(displayName)
-                        .font(AppTheme.Typography.section)
+                        .font(DS.Typography.section)
                         .foregroundColor(DS.Colors.textPrimary)
                         .lineLimit(1)
 
                     Text(displayEmail)
-                        .font(AppTheme.Typography.caption)
+                        .font(DS.Typography.caption)
                         .foregroundColor(DS.Colors.textSecondary)
                         .lineLimit(1)
                 }
@@ -105,14 +105,14 @@ struct SettingsView: View {
         let minHeight = max(300, viewportHeight * 0.52)
 
         return settingsCard
-            .padding(.horizontal, AppTheme.Spacing.screen)
+            .padding(.horizontal, DS.Spacing.screen)
             .padding(.top, 6)
             .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .top)
             .topSectionStyle()
     }
 
     private var settingsCard: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
+        VStack(spacing: DS.Spacing.item) {
             NavigationLink {
                 AccountsView()
             } label: {
@@ -149,7 +149,7 @@ struct SettingsView: View {
     private var biometricProtectionCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Toggle(isOn: biometricToggleBinding) {
-                HStack(spacing: AppTheme.Spacing.item) {
+                HStack(spacing: DS.Spacing.item) {
                     ZStack {
                         Circle()
                             .fill(DS.Colors.primary.opacity(0.18))
@@ -161,7 +161,7 @@ struct SettingsView: View {
                     }
 
                     Text("Proteção por \(appLock.biometricDisplayName)")
-                        .font(AppTheme.Typography.section)
+                        .font(DS.Typography.section)
                         .foregroundColor(DS.Colors.textPrimary)
                 }
             }
@@ -169,7 +169,7 @@ struct SettingsView: View {
             .disabled(!appLock.isBiometricOptionAvailable && !appLock.isBiometricLockEnabled)
 
             Text(biometricHelpText)
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.textSecondary)
                 .padding(.leading, 2)
         }

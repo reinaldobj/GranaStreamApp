@@ -17,18 +17,18 @@ struct AccountRowView: View {
 
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(account.name ?? "Conta")
-                    .font(AppTheme.Typography.section)
+                    .font(DS.Typography.section)
                     .foregroundColor(DS.Colors.textPrimary)
 
                 Text(account.accountType.label)
-                    .font(AppTheme.Typography.caption)
+                    .font(DS.Typography.caption)
                     .foregroundColor(DS.Colors.textSecondary)
             }
 
             Spacer(minLength: DS.Spacing.md)
 
             Text(CurrencyFormatter.string(from: account.initialBalance))
-                .font(AppTheme.Typography.section)
+                .font(DS.Typography.section)
                 .foregroundColor(DS.Colors.textPrimary)
                 .frame(width: 112, alignment: .trailing)
                 .lineLimit(1)

@@ -12,7 +12,7 @@ struct PayablesView: View {
     @State private var hasFinishedInitialLoad = false
     @State private var infoMessage: String?
 
-    private let sectionSpacing = AppTheme.Spacing.item
+    private let sectionSpacing = DS.Spacing.item
 
     var body: some View {
         ListViewContainer(primaryBackgroundHeight: max(260, UIScreen.main.bounds.height * 0.36)) {
@@ -69,7 +69,7 @@ struct PayablesView: View {
     }
 
     private var topBlock: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
+        VStack(spacing: DS.Spacing.item) {
             ListHeaderView(
                 title: L10n.Payables.title,
                 searchText: .constant(""),
@@ -108,7 +108,7 @@ struct PayablesView: View {
                 }
             }
         }
-        .padding(.horizontal, AppTheme.Spacing.screen)
+        .padding(.horizontal, DS.Spacing.screen)
         .padding(.top, 6)
         .padding(.bottom, 0)
     }
@@ -117,7 +117,7 @@ struct PayablesView: View {
         let emptyMinHeight = max(320, viewportHeight * 0.52)
 
         return payablesCard
-            .padding(.horizontal, AppTheme.Spacing.screen)
+            .padding(.horizontal, DS.Spacing.screen)
             .padding(.top, 6)
             .frame(
                 maxWidth: .infinity,
@@ -133,7 +133,7 @@ struct PayablesView: View {
                 loadingState
             } else if filteredItems.isEmpty {
                 Text(emptyMessage)
-                    .font(AppTheme.Typography.body)
+                    .font(DS.Typography.body)
                     .foregroundColor(DS.Colors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 24)
@@ -153,24 +153,24 @@ struct PayablesView: View {
 
     private func payableRow(item: PayableListItemDto) -> some View {
         AppCard {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.base) {
+            VStack(alignment: .leading, spacing: DS.Spacing.base) {
                 HStack(alignment: .top, spacing: 8) {
                     Text(displayDescription(for: item))
-                        .font(AppTheme.Typography.section)
+                        .font(DS.Typography.section)
                         .foregroundColor(DS.Colors.textPrimary)
                         .lineLimit(2)
 
                     Spacer(minLength: 8)
 
                     Text(CurrencyFormatter.string(from: item.amount))
-                        .font(AppTheme.Typography.section)
+                        .font(DS.Typography.section)
                         .foregroundColor(amountColor(for: item.kind))
                         .multilineTextAlignment(.trailing)
                 }
 
                 HStack(spacing: 8) {
                     Text("Vencimento: \(item.dueDate.formattedDate())")
-                        .font(AppTheme.Typography.caption)
+                        .font(DS.Typography.caption)
                         .foregroundColor(DS.Colors.textSecondary)
 
                     if let origin = originLabel(for: item) {
@@ -184,7 +184,7 @@ struct PayablesView: View {
                             selectedPayableForAction = item
                         } label: {
                             Text(viewModel.isSettling(payableId: item.id) ? "Processando..." : actionTitle(for: item.kind))
-                                .font(AppTheme.Typography.caption.weight(.semibold))
+                                .font(DS.Typography.caption.weight(.semibold))
                                 .foregroundColor(DS.Colors.onPrimary)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
@@ -200,7 +200,7 @@ struct PayablesView: View {
                             Task { await undo(payable: item) }
                         } label: {
                             Text(viewModel.isUndoing(payableId: item.id) ? "Processando..." : "Desfazer")
-                                .font(AppTheme.Typography.caption.weight(.semibold))
+                                .font(DS.Typography.caption.weight(.semibold))
                                 .foregroundColor(DS.Colors.primary)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
@@ -223,7 +223,7 @@ struct PayablesView: View {
 
     private func statusBadge(text: String, color: Color) -> some View {
         Text(text)
-            .font(AppTheme.Typography.caption.weight(.semibold))
+            .font(DS.Typography.caption.weight(.semibold))
             .foregroundColor(color)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
@@ -242,7 +242,7 @@ struct PayablesView: View {
             ProgressView()
                 .tint(DS.Colors.primary)
             Text(L10n.Payables.loading)
-                .font(AppTheme.Typography.body)
+                .font(DS.Typography.body)
                 .foregroundColor(DS.Colors.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .center)

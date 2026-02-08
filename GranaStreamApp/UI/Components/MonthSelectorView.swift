@@ -9,7 +9,7 @@ struct MonthSelectorView: View {
             monthButton(systemName: "chevron.left", shift: -1)
 
             Text(monthStore.selectedMonthLabel)
-                .font(AppTheme.Typography.section)
+                .font(DS.Typography.section)
                 .foregroundColor(DS.Colors.onPrimary)
                 .frame(maxWidth: .infinity)
 

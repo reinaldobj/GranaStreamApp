@@ -49,6 +49,27 @@ final class MockAPIClient: APIClientProtocol {
         return response
     }
     
+    func requestWithRetry<T: Decodable>(
+        _ path: String,
+        method: String = "GET",
+        queryItems: [URLQueryItem] = [],
+        body: AnyEncodable? = nil,
+        requiresAuth: Bool = true,
+        retryOnAuthFailure: Bool = true,
+        maxRetries: Int = 3
+    ) async throws -> T {
+        // Para testes, usar same behavior que request()
+        // (não fazer retry de verdade para evitar delays nos testes)
+        try await request(
+            path,
+            method: method,
+            queryItems: queryItems,
+            body: body,
+            requiresAuth: requiresAuth,
+            retryOnAuthFailure: retryOnAuthFailure
+        )
+    }
+    
     func requestNoResponse(
         _ path: String,
         method: String,

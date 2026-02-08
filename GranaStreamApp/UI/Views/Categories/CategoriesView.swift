@@ -10,7 +10,7 @@ struct CategoriesView: View {
     @State private var categoryPendingDelete: CategoryResponseDto?
     @State private var typeFilter: CategoryListTypeFilter = .all
 
-    private let sectionSpacing = AppTheme.Spacing.item
+    private let sectionSpacing = DS.Spacing.item
 
     var body: some View {
         ListViewContainer(primaryBackgroundHeight: max(240, UIScreen.main.bounds.height * 0.34)) {
@@ -59,7 +59,7 @@ struct CategoriesView: View {
     }
 
     private var topBlock: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
+        VStack(spacing: DS.Spacing.item) {
             ListHeaderView(
                 title: L10n.Categories.title,
                 searchText: $searchText,
@@ -86,7 +86,7 @@ struct CategoriesView: View {
                 viewModel.applySearch(term: searchText)
             }
         }
-        .padding(.horizontal, AppTheme.Spacing.screen)
+        .padding(.horizontal, DS.Spacing.screen)
         .padding(.top, 6)
         .padding(.bottom, 0)
     }
@@ -114,7 +114,7 @@ struct CategoriesView: View {
         let emptyMinHeight = max(320, viewportHeight * 0.52)
 
         return categoriesCard
-            .padding(.horizontal, AppTheme.Spacing.screen)
+            .padding(.horizontal, DS.Spacing.screen)
             .padding(.top, 6)
             .frame(
                 maxWidth: .infinity,
@@ -130,7 +130,7 @@ struct CategoriesView: View {
                 loadingState
             } else if !hasRows {
                 Text(emptyMessage)
-                    .font(AppTheme.Typography.body)
+                    .font(DS.Typography.body)
                     .foregroundColor(DS.Colors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 24)
@@ -203,7 +203,7 @@ struct CategoriesView: View {
     private func sectionHeader(for section: CategorySection) -> some View {
         HStack(spacing: 8) {
             Text(section.title)
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.textSecondary)
 
             Spacer()
@@ -290,7 +290,7 @@ struct CategoriesView: View {
             ProgressView()
                 .tint(DS.Colors.primary)
             Text("Carregando categorias...")
-                .font(AppTheme.Typography.body)
+                .font(DS.Typography.body)
                 .foregroundColor(DS.Colors.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .center)

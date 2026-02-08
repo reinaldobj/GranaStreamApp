@@ -25,7 +25,7 @@ struct EntryModePicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Tipo de cadastro")
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.textSecondary)
 
             Picker("Tipo de cadastro", selection: $selection) {

@@ -17,13 +17,13 @@ struct CategoryRowView: View {
 
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(category.name ?? "Categoria")
-                    .font(AppTheme.Typography.section)
+                    .font(DS.Typography.section)
                     .foregroundColor(DS.Colors.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
 
                 Text(secondaryText)
-                    .font(AppTheme.Typography.caption)
+                    .font(DS.Typography.caption)
                     .foregroundColor(DS.Colors.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.tail)

@@ -30,7 +30,7 @@ struct HomeView: View {
                     .ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: AppTheme.Spacing.item) {
+                    VStack(spacing: DS.Spacing.item) {
                         AppHeaderView()
                         HomeSummarySectionView()
                         AccountsCarouselView(accounts: accounts)
@@ -38,7 +38,7 @@ struct HomeView: View {
                         RecentTransactionsSectionView(transactions: transactions)
                         QuickActionsView()
                     }
-                    .padding(AppTheme.Spacing.screen)
+                    .padding(DS.Spacing.screen)
                 }
             }
         }

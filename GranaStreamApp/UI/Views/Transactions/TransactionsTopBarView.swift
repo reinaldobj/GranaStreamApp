@@ -10,7 +10,7 @@ struct TransactionsTopBarView: View {
     let onAddTransaction: () -> Void
     let onToggleFilter: (TransactionType) -> Void
 
-    private let sectionSpacing = AppTheme.Spacing.item
+    private let sectionSpacing = DS.Spacing.item
 
     var body: some View {
         VStack(spacing: sectionSpacing) {

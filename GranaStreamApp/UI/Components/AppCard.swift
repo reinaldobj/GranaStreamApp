@@ -10,22 +10,22 @@ struct AppCard<Content: View>: View {
 
     var body: some View {
         content
-            .padding(AppTheme.Spacing.cardPadding)
+            .padding(DS.Spacing.cardPadding)
             .background(DS.Colors.surface)
             .overlay(
-                RoundedRectangle(cornerRadius: AppTheme.Radius.card)
+                RoundedRectangle(cornerRadius: DS.Radius.card)
                     .stroke(DS.Colors.border, lineWidth: 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
             .shadow(
-                color: AppTheme.Shadow.cardColor.opacity(shadowOpacity),
-                radius: AppTheme.Shadow.cardRadius,
-                x: AppTheme.Shadow.cardX,
-                y: AppTheme.Shadow.cardY
+                color: DS.Shadow.cardColor.opacity(shadowOpacity),
+                radius: DS.Shadow.cardRadius,
+                x: DS.Shadow.cardX,
+                y: DS.Shadow.cardY
             )
     }
 
     private var shadowOpacity: Double {
-        colorScheme == .dark ? AppTheme.Shadow.cardOpacityDark : AppTheme.Shadow.cardOpacityLight
+        colorScheme == .dark ? DS.Shadow.cardOpacityDark : DS.Shadow.cardOpacityLight
     }
 }

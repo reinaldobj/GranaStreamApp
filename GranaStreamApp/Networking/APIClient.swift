@@ -146,6 +146,62 @@ final class APIClient: APIClientProtocol {
         }
     }
 
+    // MARK: - Retry Logic
+
+    /// Executa uma requisição com retry automático para erros de rede
+    /// Usa exponential backoff: 1s, 2s, 4s para 3 tentativas
+    func requestWithRetry<T: Decodable>(
+        _ path: String,
+        method: String = "GET",
+        queryItems: [URLQueryItem] = [],
+        body: AnyEncodable? = nil,
+        requiresAuth: Bool = true,
+        retryOnAuthFailure: Bool = true,
+        maxRetries: Int = 3
+    ) async throws -> T {
+        var lastError: Error?
+        
+        for attempt in 0..<maxRetries {
+            do {
+                return try await request(
+                    path,
+                    method: method,
+                    queryItems: queryItems,
+                    body: body,
+                    requiresAuth: requiresAuth,
+                    retryOnAuthFailure: retryOnAuthFailure
+                )
+            } catch let error as APIError where error.isRetryable {
+                lastError = error
+                
+                // Não fazer retry na última tentativa
+                if attempt < maxRetries - 1 {
+                    // Exponential backoff: 1s, 2s, 4s
+                    let delaySeconds = pow(2.0, Double(attempt))
+                    let delayNanoseconds = UInt64(delaySeconds * 1_000_000_000)
+                    
+                    #if DEBUG
+                    print("⚠️ [APIClient] Erro retentável (\(error.localizedDescription)). Tentativa \(attempt + 1)/\(maxRetries). Aguardando \(delaySeconds)s...")
+                    #endif
+                    
+                    try await Task.sleep(nanoseconds: delayNanoseconds)
+                } else {
+                    #if DEBUG
+                    print("❌ [APIClient] Erro após \(maxRetries) tentativas: \(error.localizedDescription)")
+                    #endif
+                }
+            } catch {
+                // Erros não-retentáveis são lançados imediatamente
+                throw error
+            }
+        }
+        
+        // Lançar o último erro ou erro genérico se não houver último erro
+        throw lastError ?? APIError.network
+    }
+
+    // MARK: - Request Methods
+
     func requestNoResponse(
         _ path: String,
         method: String,

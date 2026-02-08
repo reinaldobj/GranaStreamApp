@@ -11,7 +11,7 @@ struct AppSearchField: View {
                 .foregroundColor(DS.Colors.textSecondary)
 
             TextField(placeholder, text: $text)
-                .font(AppTheme.Typography.body)
+                .font(DS.Typography.body)
                 .foregroundColor(DS.Colors.textPrimary)
                 .textInputAutocapitalization(.words)
                 .submitLabel(.search)
@@ -19,7 +19,7 @@ struct AppSearchField: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .frame(minHeight: AppTheme.Spacing.controlHeight)
+        .frame(minHeight: DS.Spacing.controlHeight)
         .background(DS.Colors.surface)
         .clipShape(Capsule())
     }

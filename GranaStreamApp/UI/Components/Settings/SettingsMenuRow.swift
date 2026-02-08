@@ -7,7 +7,7 @@ struct SettingsMenuRow: View {
     var showsChevron: Bool = true
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.item) {
+        HStack(spacing: DS.Spacing.item) {
             ZStack {
                 Circle()
                     .fill(iconBackground)
@@ -19,7 +19,7 @@ struct SettingsMenuRow: View {
             }
 
             Text(title)
-                .font(AppTheme.Typography.section)
+                .font(DS.Typography.section)
                 .foregroundColor(titleColor)
 
             Spacer()

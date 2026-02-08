@@ -3,8 +3,9 @@ import SwiftUI
 import Combine
 
 /// Armazena dados de referência (contas e categorias) com cache local
+/// Implementa protocolos para permitir evolução independente dos domínios
 @MainActor
-final class ReferenceDataStore: ObservableObject {
+final class ReferenceDataStore: ObservableObject, ObservableReferenceDataProvider {
     static let shared = ReferenceDataStore()
 
     @Published private(set) var accounts: [AccountResponseDto] = []
@@ -16,50 +17,12 @@ final class ReferenceDataStore: ObservableObject {
         self.apiClient = apiClient ?? APIClient.shared
     }
 
+    // MARK: - ReferenceDataProvider
+
     func refresh() async {
         async let accountsTask: Void = loadAccounts()
         async let categoriesTask: Void = loadCategories()
         _ = await (accountsTask, categoriesTask)
-    }
-
-    func refreshAccounts() async {
-        await loadAccounts()
-    }
-
-    func refreshCategories() async {
-        await loadCategories()
-    }
-
-    func replaceAccounts(_ items: [AccountResponseDto]) {
-        accounts = items
-    }
-
-    func replaceCategories(_ items: [CategoryResponseDto]) {
-        categories = items
-    }
-
-    func upsertAccount(_ item: AccountResponseDto) {
-        if let index = accounts.firstIndex(where: { $0.id == item.id }) {
-            accounts[index] = item
-        } else {
-            accounts.append(item)
-        }
-    }
-
-    func removeAccount(id: String) {
-        accounts.removeAll { $0.id == id }
-    }
-
-    func upsertCategory(_ item: CategoryResponseDto) {
-        if let index = categories.firstIndex(where: { $0.id == item.id }) {
-            categories[index] = item
-        } else {
-            categories.append(item)
-        }
-    }
-
-    func removeCategory(id: String) {
-        categories.removeAll { $0.id == id }
     }
 
     func loadIfNeeded() async {
@@ -74,6 +37,52 @@ final class ReferenceDataStore: ObservableObject {
             await loadCategories()
         }
     }
+
+    // MARK: - AccountProvider
+
+    func refreshAccounts() async {
+        await loadAccounts()
+    }
+
+    func replaceAccounts(_ items: [AccountResponseDto]) {
+        accounts = items
+    }
+
+    func upsertAccount(_ item: AccountResponseDto) {
+        if let index = accounts.firstIndex(where: { $0.id == item.id }) {
+            accounts[index] = item
+        } else {
+            accounts.append(item)
+        }
+    }
+
+    func removeAccount(id: String) {
+        accounts.removeAll { $0.id == id }
+    }
+
+    // MARK: - CategoryProvider
+
+    func refreshCategories() async {
+        await loadCategories()
+    }
+
+    func replaceCategories(_ items: [CategoryResponseDto]) {
+        categories = items
+    }
+
+    func upsertCategory(_ item: CategoryResponseDto) {
+        if let index = categories.firstIndex(where: { $0.id == item.id }) {
+            categories[index] = item
+        } else {
+            categories.append(item)
+        }
+    }
+
+    func removeCategory(id: String) {
+        categories.removeAll { $0.id == id }
+    }
+
+    // MARK: - Private
 
     private func loadAccounts() async {
         do {

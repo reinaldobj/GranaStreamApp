@@ -20,14 +20,14 @@ struct ProfileView: View {
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: AppTheme.Spacing.item) {
+                    VStack(spacing: DS.Spacing.item) {
                         VStack(spacing: 6) {
                             Text("Perfil")
-                                .font(AppTheme.Typography.title)
+                                .font(DS.Typography.title)
                                 .foregroundColor(DS.Colors.textPrimary)
 
                             Text("Atualize suas informações")
-                                .font(AppTheme.Typography.body)
+                                .font(DS.Typography.body)
                                 .foregroundColor(DS.Colors.textSecondary)
                         }
                         .frame(maxWidth: .infinity)
@@ -53,7 +53,7 @@ struct ProfileView: View {
                             .opacity(0.75)
 
                             Text("Email não pode ser alterado.")
-                                .font(AppTheme.Typography.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundColor(DS.Colors.textSecondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -66,9 +66,9 @@ struct ProfileView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, AppTheme.Spacing.screen)
-                    .padding(.top, AppTheme.Spacing.screen + 10)
-                    .padding(.bottom, AppTheme.Spacing.screen * 2)
+                    .padding(.horizontal, DS.Spacing.screen)
+                    .padding(.top, DS.Spacing.screen + 10)
+                    .padding(.bottom, DS.Spacing.screen * 2)
                 }
             }
         }
@@ -91,18 +91,18 @@ struct ProfileView: View {
         .overlay(alignment: .bottom) {
             if showSavedToast {
                 Text("Perfil salvo")
-                    .font(AppTheme.Typography.body)
+                    .font(DS.Typography.body)
                     .foregroundColor(DS.Colors.textPrimary)
-                    .padding(.vertical, AppTheme.Spacing.base)
-                    .padding(.horizontal, AppTheme.Spacing.screen)
+                    .padding(.vertical, DS.Spacing.base)
+                    .padding(.horizontal, DS.Spacing.screen)
                     .background(DS.Colors.surface2)
                     .overlay(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.field)
+                        RoundedRectangle(cornerRadius: DS.Radius.field)
                             .stroke(DS.Colors.border, lineWidth: 1)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.field))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.field))
                     .shadow(color: DS.Colors.border.opacity(0.25), radius: 6, x: 0, y: 2)
-                    .padding(.bottom, AppTheme.Spacing.screen)
+                    .padding(.bottom, DS.Spacing.screen)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }

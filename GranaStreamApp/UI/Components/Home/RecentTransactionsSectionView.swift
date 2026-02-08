@@ -5,9 +5,9 @@ struct RecentTransactionsSectionView: View {
 
     var body: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.item) {
+            VStack(alignment: .leading, spacing: DS.Spacing.item) {
                 AppSectionHeader(text: "Últimas transações")
-                VStack(spacing: AppTheme.Spacing.base) {
+                VStack(spacing: DS.Spacing.base) {
                     ForEach(Array(transactions.enumerated()), id: \.element.id) { index, item in
                         RecentTransactionRowView(item: item)
                         if index < transactions.count - 1 {
@@ -28,15 +28,15 @@ struct RecentTransactionRowView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
-                    .font(AppTheme.Typography.body)
+                    .font(DS.Typography.body)
                     .foregroundColor(DS.Colors.textPrimary)
                 Text(item.category)
-                    .font(AppTheme.Typography.caption)
+                    .font(DS.Typography.caption)
                     .foregroundColor(DS.Colors.textSecondary)
             }
             Spacer()
             Text("R$ \(formatAmount(item.amount))")
-                .font(AppTheme.Typography.body)
+                .font(DS.Typography.body)
                 .foregroundColor(item.kind == .income ? DS.Colors.success : DS.Colors.error)
         }
     }

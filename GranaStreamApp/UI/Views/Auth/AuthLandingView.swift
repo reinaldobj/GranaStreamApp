@@ -22,7 +22,7 @@ struct AuthLandingView: View {
                         .foregroundColor(DS.Colors.textPrimary)
 
                     Text("Organize seu dinheiro com clareza.")
-                        .font(AppTheme.Typography.body)
+                        .font(DS.Typography.body)
                         .foregroundColor(DS.Colors.textSecondary)
                 }
                 .multilineTextAlignment(.center)
@@ -30,7 +30,7 @@ struct AuthLandingView: View {
 
                 Spacer()
 
-                VStack(spacing: AppTheme.Spacing.item) {
+                VStack(spacing: DS.Spacing.item) {
                     AuthPrimaryButton(title: "Entrar") {
                         onLogin()
                     }
@@ -39,8 +39,8 @@ struct AuthLandingView: View {
                         onSignup()
                     }
                 }
-                .padding(.horizontal, AppTheme.Spacing.screen)
-                .padding(.bottom, AppTheme.Spacing.screen * 2)
+                .padding(.horizontal, DS.Spacing.screen)
+                .padding(.bottom, DS.Spacing.screen * 2)
             }
         }
     }

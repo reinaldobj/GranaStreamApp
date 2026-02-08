@@ -5,9 +5,9 @@ struct UpcomingBillsSectionView: View {
 
     var body: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.item) {
+            VStack(alignment: .leading, spacing: DS.Spacing.item) {
                 AppSectionHeader(text: "Próximas contas a vencer")
-                VStack(spacing: AppTheme.Spacing.base) {
+                VStack(spacing: DS.Spacing.base) {
                     ForEach(Array(bills.enumerated()), id: \.element.id) { index, bill in
                         BillRowView(bill: bill)
                         if index < bills.count - 1 {
@@ -28,15 +28,15 @@ struct BillRowView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(bill.title)
-                    .font(AppTheme.Typography.body)
+                    .font(DS.Typography.body)
                     .foregroundColor(DS.Colors.textPrimary)
                 Text(bill.dueDateText)
-                    .font(AppTheme.Typography.caption)
+                    .font(DS.Typography.caption)
                     .foregroundColor(DS.Colors.textSecondary)
             }
             Spacer()
             Text("R$ \(formatAmount(bill.amount))")
-                .font(AppTheme.Typography.body)
+                .font(DS.Typography.body)
                 .foregroundColor(DS.Colors.error)
         }
     }

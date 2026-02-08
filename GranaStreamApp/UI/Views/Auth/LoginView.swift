@@ -14,7 +14,7 @@ struct LoginView: View {
             title: "Bem-vindo",
             subtitle: "Acesse sua conta"
         ) {
-            VStack(spacing: AppTheme.Spacing.item) {
+            VStack(spacing: DS.Spacing.item) {
                 AuthTextField(
                     label: "Email",
                     placeholder: "voce@exemplo.com",

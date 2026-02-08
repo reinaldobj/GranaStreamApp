@@ -25,12 +25,12 @@ struct InstallmentSeriesFormView: View {
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: AppTheme.Spacing.item) {
+                    VStack(spacing: DS.Spacing.item) {
                         formCard
                     }
-                    .padding(.horizontal, AppTheme.Spacing.screen)
-                    .padding(.top, AppTheme.Spacing.screen + 10)
-                    .padding(.bottom, AppTheme.Spacing.screen * 2)
+                    .padding(.horizontal, DS.Spacing.screen)
+                    .padding(.top, DS.Spacing.screen + 10)
+                    .padding(.bottom, DS.Spacing.screen * 2)
                 }
             }
             .task(id: existing?.id) {
@@ -43,7 +43,7 @@ struct InstallmentSeriesFormView: View {
     }
 
     private var formCard: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
+        VStack(spacing: DS.Spacing.item) {
             TransactionDateRow(label: "Primeiro vencimento", date: $firstDueDate)
 
             TransactionPickerRow(
@@ -114,12 +114,12 @@ struct InstallmentSeriesFormView: View {
         let sections = groupCategoriesForPicker(referenceStore.categories, transactionType: .expense)
         if sections.isEmpty {
             Text("Sem categorias")
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.textSecondary)
         } else {
             ForEach(sections) { section in
                 Text(section.title)
-                    .font(AppTheme.Typography.caption)
+                    .font(DS.Typography.caption)
                     .foregroundColor(DS.Colors.textSecondary)
                     .disabled(true)
 
@@ -141,7 +141,7 @@ struct InstallmentSeriesFormView: View {
 
         if referenceStore.accounts.isEmpty {
             Text("Sem contas")
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.textSecondary)
         } else {
             ForEach(referenceStore.accounts) { account in

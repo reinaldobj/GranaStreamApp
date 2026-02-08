@@ -74,7 +74,7 @@ struct FormViewContainer<ViewModel: FormViewModel, Content: View>: View {
                     Image(systemName: "checkmark.circle.fill")
                 }
                 Text(L10n.Common.save)
-                    .font(AppTheme.Typography.section)
+                    .font(DS.Typography.section)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.md)
@@ -95,7 +95,7 @@ struct FormViewContainer<ViewModel: FormViewModel, Content: View>: View {
                 ProgressView()
                     .tint(DS.Colors.primary)
                 Text(L10n.Common.loading)
-                    .font(AppTheme.Typography.body)
+                    .font(DS.Typography.body)
                     .foregroundColor(DS.Colors.textPrimary)
             }
             .padding(DS.Spacing.lg)
@@ -113,12 +113,12 @@ struct FormViewContainer<ViewModel: FormViewModel, Content: View>: View {
                 
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(L10n.Alerts.error)
-                        .font(AppTheme.Typography.caption)
+                        .font(DS.Typography.caption)
                         .foregroundColor(DS.Colors.error)
                         .fontWeight(.semibold)
                     
                     Text(message)
-                        .font(AppTheme.Typography.caption)
+                        .font(DS.Typography.caption)
                         .foregroundColor(DS.Colors.textSecondary)
                         .lineLimit(3)
                 }
@@ -173,7 +173,7 @@ struct FormViewContainer<ViewModel: FormViewModel, Content: View>: View {
     ) {
         VStack(spacing: DS.Spacing.md) {
             Text("Conteúdo do formulário")
-                .font(AppTheme.Typography.body)
+                .font(DS.Typography.body)
                 .foregroundColor(DS.Colors.textPrimary)
             
             TextField("Campo", text: .constant(""))

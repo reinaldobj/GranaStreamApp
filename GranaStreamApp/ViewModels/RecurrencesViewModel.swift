@@ -7,6 +7,7 @@ final class RecurrencesViewModel: ObservableObject {
     @Published var recurrences: [RecurrenceResponseDto] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var loadingState: LoadingState<[RecurrenceResponseDto]> = .idle
 
     private let apiClient: APIClientProtocol
     
@@ -16,12 +17,15 @@ final class RecurrencesViewModel: ObservableObject {
 
     func load() async {
         isLoading = true
+        loadingState = .loading
         defer { isLoading = false }
         do {
             let response: [RecurrenceResponseDto] = try await apiClient.request("/api/v1/recurrences")
             recurrences = response
+            loadingState = .loaded(response)
         } catch {
             errorMessage = error.userMessage
+            loadingState = .error(error.userMessage ?? "Erro desconhecido")
         }
     }
 

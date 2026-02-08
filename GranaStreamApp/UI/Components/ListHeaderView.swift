@@ -69,7 +69,7 @@ struct ListHeaderView: View {
                 
                 // Título
                 Text(title)
-                    .font(AppTheme.Typography.title)
+                    .font(DS.Typography.title)
                     .foregroundColor(DS.Colors.onPrimary)
                 
                 Spacer()
@@ -122,7 +122,7 @@ struct SearchBar: View {
                 .foregroundColor(DS.Colors.textSecondary)
             
             TextField(L10n.Common.loading, text: $text)
-                .font(AppTheme.Typography.body)
+                .font(DS.Typography.body)
                 .textFieldStyle(.plain)
             
             if !text.isEmpty {

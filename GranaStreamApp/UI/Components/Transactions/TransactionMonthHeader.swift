@@ -5,7 +5,7 @@ struct TransactionMonthHeader: View {
 
     var body: some View {
         Text(title)
-            .font(AppTheme.Typography.section)
+            .font(DS.Typography.section)
             .foregroundColor(DS.Colors.textPrimary)
     }
 }

@@ -9,7 +9,7 @@ struct PayablesFilterButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(AppTheme.Typography.body)
+                .font(DS.Typography.body)
                 .foregroundColor(isSelected ? DS.Colors.onPrimary : DS.Colors.onPrimary.opacity(DS.Opacity.secondaryText))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DS.Spacing.md)
@@ -39,7 +39,7 @@ struct DualSelectorView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(title)
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.onPrimary.opacity(DS.Opacity.emphasisTextStrong))
 
             HStack(spacing: DS.Spacing.md) {

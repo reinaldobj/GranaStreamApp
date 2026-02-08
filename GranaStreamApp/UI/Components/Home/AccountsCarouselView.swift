@@ -5,10 +5,10 @@ struct AccountsCarouselView: View {
 
     var body: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.item) {
+            VStack(alignment: .leading, spacing: DS.Spacing.item) {
                 AppSectionHeader(text: "Contas")
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: AppTheme.Spacing.item) {
+                    HStack(spacing: DS.Spacing.item) {
                         ForEach(accounts) { account in
                             AccountCardView(account: account)
                         }

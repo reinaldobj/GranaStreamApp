@@ -44,7 +44,7 @@ struct TransactionsView: View {
                         onLoadMore: requestLoadMore,
                         viewportHeight: UIScreen.main.bounds.height
                     )
-                    .padding(.top, AppTheme.Spacing.item)
+                    .padding(.top, DS.Spacing.item)
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -228,7 +228,7 @@ struct TransactionsView: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(DS.Colors.success)
             Text(text)
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.textPrimary)
         }
         .padding(.horizontal, DS.Spacing.md)

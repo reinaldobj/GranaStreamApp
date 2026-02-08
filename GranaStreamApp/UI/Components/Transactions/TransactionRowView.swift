@@ -18,14 +18,14 @@ struct TransactionRow: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 HStack {
                     Text(transaction.description ?? transaction.summary ?? "Sem descrição")
-                        .font(AppTheme.Typography.section)
+                        .font(DS.Typography.section)
                         .foregroundColor(DS.Colors.textPrimary)
                     Spacer()
                 }
 
                 HStack(spacing: DS.Spacing.xs) {
                     Text(dateText)
-                        .font(AppTheme.Typography.caption)
+                        .font(DS.Typography.caption)
                         .foregroundColor(DS.Colors.textSecondary)
                         .frame(width: RowSizing.dateWidth, alignment: .leading)
                         .lineLimit(1)
@@ -33,7 +33,7 @@ struct TransactionRow: View {
                     separator
 
                     Text(transaction.categoryName ?? transaction.accountName ?? "Sem categoria")
-                        .font(AppTheme.Typography.caption)
+                        .font(DS.Typography.caption)
                         .foregroundColor(DS.Colors.textSecondary)
                         .frame(width: RowSizing.categoryWidth, alignment: .leading)
                         .lineLimit(1)
@@ -41,7 +41,7 @@ struct TransactionRow: View {
                     separator
 
                     Text(amountText)
-                        .font(AppTheme.Typography.section)
+                        .font(DS.Typography.section)
                         .foregroundColor(amountColor)
                         .frame(width: RowSizing.amountWidth, alignment: .trailing)
                         .lineLimit(1)

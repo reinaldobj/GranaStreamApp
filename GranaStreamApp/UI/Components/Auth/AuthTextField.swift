@@ -18,12 +18,12 @@ struct AuthTextField: View {
             ZStack(alignment: .leading) {
                 if text.isEmpty {
                     Text(placeholder)
-                        .font(AppTheme.Typography.body)
+                        .font(DS.Typography.body)
                         .foregroundColor(DS.Colors.textSecondary)
                 }
 
                 field
-                    .font(AppTheme.Typography.body)
+                    .font(DS.Typography.body)
                     .foregroundColor(DS.Colors.textPrimary)
             }
         }

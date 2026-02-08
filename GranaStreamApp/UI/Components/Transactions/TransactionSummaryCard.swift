@@ -7,11 +7,11 @@ struct TransactionSummaryCardLarge: View {
     var body: some View {
         VStack(spacing: DS.Spacing.xs) {
             Text(title)
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.textSecondary)
 
             Text(value)
-                .font(AppTheme.Typography.metric)
+                .font(DS.Typography.metric)
                 .foregroundColor(DS.Colors.textPrimary)
         }
         .frame(maxWidth: .infinity)
@@ -42,11 +42,11 @@ struct TransactionSummaryCardSmall: View {
             }
 
             Text(title)
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.textSecondary)
 
             Text(value)
-                .font(AppTheme.Typography.section)
+                .font(DS.Typography.section)
                 .foregroundColor(DS.Colors.textPrimary)
         }
         .frame(maxWidth: .infinity)

@@ -8,9 +8,9 @@ struct QuickActionsView: View {
 
     var body: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.item) {
+            VStack(alignment: .leading, spacing: DS.Spacing.item) {
                 AppSectionHeader(text: "Atalhos rápidos")
-                HStack(spacing: AppTheme.Spacing.item) {
+                HStack(spacing: DS.Spacing.item) {
                     QuickActionButton(title: "+ Transação") {
                         Task {
                             await referenceStore.loadIfNeeded()
@@ -38,7 +38,7 @@ struct QuickActionsView: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(DS.Colors.success)
                         Text(successMessage)
-                            .font(AppTheme.Typography.caption)
+                            .font(DS.Typography.caption)
                             .foregroundColor(DS.Colors.textSecondary)
                     }
                     .transition(.opacity)
@@ -81,12 +81,12 @@ struct QuickActionLabel: View {
 
     var body: some View {
         Text(title)
-            .font(AppTheme.Typography.caption)
+            .font(DS.Typography.caption)
             .foregroundColor(DS.Colors.primary)
             .frame(maxWidth: .infinity, minHeight: 36)
             .padding(.horizontal, 8)
             .background(
-                RoundedRectangle(cornerRadius: AppTheme.Radius.field)
+                RoundedRectangle(cornerRadius: DS.Radius.field)
                     .stroke(DS.Colors.border, lineWidth: 1)
             )
     }

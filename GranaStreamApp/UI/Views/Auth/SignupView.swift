@@ -16,7 +16,7 @@ struct SignupView: View {
             title: "Criar conta",
             subtitle: "Leva poucos segundos"
         ) {
-            VStack(spacing: AppTheme.Spacing.item) {
+            VStack(spacing: DS.Spacing.item) {
                 AuthTextField(
                     label: "Nome",
                     placeholder: "Seu nome completo",
@@ -55,7 +55,7 @@ struct SignupView: View {
 
                 if showPasswordMismatch {
                     Text("As senhas não são iguais.")
-                        .font(AppTheme.Typography.caption)
+                        .font(DS.Typography.caption)
                         .foregroundColor(DS.Colors.error)
                 }
 
@@ -75,7 +75,7 @@ struct SignupView: View {
                     }
                     .foregroundColor(DS.Colors.primary)
                 }
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.top, 4)
             }

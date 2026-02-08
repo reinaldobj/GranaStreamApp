@@ -9,13 +9,13 @@ struct TransactionsSummaryCardsView: View {
     let onToggleFilter: (TransactionType) -> Void
     
     var body: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
+        VStack(spacing: DS.Spacing.item) {
             TransactionSummaryCardLarge(
                 title: "Saldo total",
                 value: CurrencyFormatter.string(from: totalBalance)
             )
 
-            HStack(spacing: AppTheme.Spacing.item) {
+            HStack(spacing: DS.Spacing.item) {
                 Button {
                     onToggleFilter(.income)
                 } label: {

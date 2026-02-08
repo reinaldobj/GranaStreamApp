@@ -31,15 +31,15 @@ struct TransactionDateRow: View {
                     Button("Ok") {
                         showPicker = false
                     }
-                    .font(AppTheme.Typography.section)
-                    .frame(maxWidth: .infinity, minHeight: AppTheme.Spacing.controlHeight)
+                    .font(DS.Typography.section)
+                    .frame(maxWidth: .infinity, minHeight: DS.Spacing.controlHeight)
                     .foregroundColor(DS.Colors.onPrimary)
                     .background(
                         Capsule()
                             .fill(DS.Colors.primary)
                     )
                 }
-                .padding(AppTheme.Spacing.screen)
+                .padding(DS.Spacing.screen)
                 .navigationTitle("Selecionar data")
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {

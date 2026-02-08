@@ -7,7 +7,7 @@ struct LoadingPillView: View {
                 .tint(DS.Colors.primary)
                 .scaleEffect(0.9)
             Text("Carregando...")
-                .font(AppTheme.Typography.caption)
+                .font(DS.Typography.caption)
                 .foregroundColor(DS.Colors.textSecondary)
         }
         .padding(.horizontal, 12)
