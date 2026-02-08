@@ -51,7 +51,6 @@ final class AccountsViewModel: ObservableObject, SearchableViewModel {
         initialBalance: Double,
         reloadAfterChange: Bool = false
     ) async -> Bool {
-        // ...existing code...
         do {
             inactiveAccount = nil
             let request = CreateAccountRequestDto(name: name, accountType: type, initialBalance: initialBalance)

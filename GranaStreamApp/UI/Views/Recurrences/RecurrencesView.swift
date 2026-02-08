@@ -73,9 +73,9 @@ struct RecurrencesView: View {
                     HeaderAction(
                         id: "add",
                         systemImage: "plus",
-                        action: { 
+                        action: {
                             selectedRecurrence = nil
-                            showForm = true 
+                            showForm = true
                         }
                     )
                 ],
@@ -100,7 +100,7 @@ struct RecurrencesView: View {
         .padding(.bottom, 0)
     }
 
-    // ...existing code...
+    // MARK: - Gestures
 
     private var backSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 16, coordinateSpace: .local)
