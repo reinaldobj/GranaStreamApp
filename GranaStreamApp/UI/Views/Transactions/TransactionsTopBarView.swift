@@ -14,9 +14,22 @@ struct TransactionsTopBarView: View {
 
     var body: some View {
         VStack(spacing: sectionSpacing) {
-            TransactionsHeaderView(
-                onShowFilters: onShowFilters,
-                onAddTransaction: onAddTransaction
+            ListHeaderView(
+                title: L10n.Transactions.title,
+                searchText: .constant(""),
+                showSearch: false,
+                actions: [
+                    HeaderAction(
+                        id: "filter",
+                        systemImage: "line.3.horizontal.decrease.circle.fill",
+                        action: onShowFilters
+                    ),
+                    HeaderAction(
+                        id: "add",
+                        systemImage: "plus",
+                        action: onAddTransaction
+                    )
+                ]
             )
 
             TransactionsSummaryCardsView(

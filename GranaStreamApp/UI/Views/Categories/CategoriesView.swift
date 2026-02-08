@@ -60,10 +60,24 @@ struct CategoriesView: View {
 
     private var topBlock: some View {
         VStack(spacing: AppTheme.Spacing.item) {
-            CategoriesHeaderView(
-                onDismiss: { dismiss() },
-                onSeed: { Task { await viewModel.seed() } },
-                onAdd: { formMode = .new }
+            ListHeaderView(
+                title: L10n.Categories.title,
+                searchText: $searchText,
+                showSearch: false,
+                actions: [
+                    HeaderAction(
+                        id: "seed",
+                        systemImage: "arrow.triangle.2.circlepath.circle.fill",
+                        accessibilityLabel: L10n.Categories.seed,
+                        action: { Task { await viewModel.seed() } }
+                    ),
+                    HeaderAction(
+                        id: "add",
+                        systemImage: "plus",
+                        action: { formMode = .new }
+                    )
+                ],
+                onDismiss: { dismiss() }
             )
             
             typeFilterRow

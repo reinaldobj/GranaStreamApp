@@ -2,110 +2,68 @@ import SwiftUI
 
 struct CategoryFormView: View {
     let existing: CategoryResponseDto?
-    @ObservedObject var viewModel: CategoriesViewModel
+    @ObservedObject var parentViewModel: CategoriesViewModel
     var onComplete: () -> Void
 
     @EnvironmentObject private var referenceStore: ReferenceDataStore
     @Environment(\.dismiss) private var dismiss
-    @State private var name = ""
-    @State private var description = ""
-    @State private var type: CategoryType = .expense
-    @State private var parentId: String = ""
-    @State private var sortOrder = "0"
-    @State private var errorMessage: String?
+    @StateObject private var viewModel: CategoryFormViewModel
+
+    init(existing: CategoryResponseDto?, viewModel: CategoriesViewModel, onComplete: @escaping () -> Void = {}) {
+        self.existing = existing
+        self.parentViewModel = viewModel
+        self.onComplete = onComplete
+        _viewModel = StateObject(wrappedValue: CategoryFormViewModel(
+            existing: existing,
+            categoriesViewModel: viewModel,
+            referenceStore: ReferenceDataStore()
+        ))
+    }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                TextField("Nome", text: $name)
-                TextField("Descrição", text: $description)
-                Picker("Tipo", selection: $type) {
+        FormViewContainer(
+            viewModel: viewModel,
+            onSaveSuccess: {
+                onComplete()
+                dismiss()
+            }
+        ) {
+            VStack(spacing: DS.Spacing.item) {
+                TextField("Nome", text: $viewModel.name)
+                    .padding()
+                    .background(DS.Colors.surface)
+                    .cornerRadius(DS.Radius.field)
+                
+                TextField("Descrição", text: $viewModel.description)
+                    .padding()
+                    .background(DS.Colors.surface)
+                    .cornerRadius(DS.Radius.field)
+                
+                Picker("Tipo", selection: $viewModel.type) {
                     ForEach(CategoryType.allCases) { item in
                         Text(item.label).tag(item)
                     }
                 }
-                Picker("Categoria pai", selection: $parentId) {
+                .pickerStyle(.segmented)
+                
+                Picker("Categoria pai", selection: $viewModel.parentId) {
                     Text("Nenhuma").tag("")
-                    ForEach(parentOptions) { category in
+                    ForEach(viewModel.parentOptions) { category in
                         Text(category.name ?? "Categoria").tag(category.id)
                     }
                 }
-                TextField("Ordem", text: $sortOrder)
+                .pickerStyle(.automatic)
+                
+                TextField("Ordem", text: $viewModel.sortOrder)
                     .keyboardType(.numberPad)
+                    .padding()
+                    .background(DS.Colors.surface)
+                    .cornerRadius(DS.Radius.field)
             }
-            .listRowBackground(DS.Colors.surface)
-            .scrollContentBackground(.hidden)
-            .background(DS.Colors.background)
-            .navigationTitle(existing == nil ? "Nova categoria" : "Editar categoria")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Salvar") {
-                        Task { await save() }
-                    }
-                    .disabled(name.isEmpty)
-                }
-            }
-            .task { prefill() }
-            .errorAlert(message: $errorMessage)
         }
         .tint(DS.Colors.primary)
-    }
-
-    private func prefill() {
-        guard let existing else { return }
-        name = existing.name ?? ""
-        description = existing.description ?? ""
-        type = existing.categoryType ?? .expense
-        parentId = existing.parentCategoryId ?? ""
-        sortOrder = String(existing.sortOrder)
-    }
-
-    private var parentOptions: [CategoryResponseDto] {
-        referenceStore.categories
-            .filter { $0.parentCategoryId == nil }
-            .filter { $0.id != existing?.id }
-            .sorted { lhs, rhs in
-                if lhs.sortOrder == rhs.sortOrder {
-                    return (lhs.name ?? "").localizedCaseInsensitiveCompare(rhs.name ?? "") == .orderedAscending
-                }
-                return lhs.sortOrder < rhs.sortOrder
-            }
-    }
-
-    private func save() async {
-        let orderValue = Int(sortOrder) ?? 0
-        let parent = parentId.isEmpty ? nil : parentId
-        if let existing {
-            let success = await viewModel.update(
-                category: existing,
-                name: name,
-                description: description,
-                type: type,
-                parentId: parent,
-                sortOrder: orderValue,
-                reloadAfterChange: false
-            )
-            if success {
-                onComplete()
-                dismiss()
-            } else {
-                errorMessage = viewModel.errorMessage
-            }
-        } else {
-            let success = await viewModel.create(
-                name: name,
-                description: description,
-                type: type,
-                parentId: parent,
-                sortOrder: orderValue,
-                reloadAfterChange: false
-            )
-            if success {
-                onComplete()
-                dismiss()
-            } else {
-                errorMessage = viewModel.errorMessage
-            }
+        .task {
+            // Atualizar referenceStore se necessário
         }
     }
 }

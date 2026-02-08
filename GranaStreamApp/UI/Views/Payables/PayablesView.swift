@@ -70,7 +70,13 @@ struct PayablesView: View {
 
     private var topBlock: some View {
         VStack(spacing: AppTheme.Spacing.item) {
-            PayablesHeaderView(onDismiss: { dismiss() })
+            ListHeaderView(
+                title: L10n.Payables.title,
+                searchText: .constant(""),
+                showSearch: false,
+                actions: [],
+                onDismiss: { dismiss() }
+            )
             
             MonthSelectorView()
             

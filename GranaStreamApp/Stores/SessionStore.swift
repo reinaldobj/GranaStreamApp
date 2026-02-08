@@ -3,8 +3,9 @@ import SwiftUI
 import Combine
 
 /// Gerencia autenticação e perfil do usuário
+/// Implementa SessionManager protocol para permitir injeção de dependência
 @MainActor
-final class SessionStore: ObservableObject {
+final class SessionStore: NSObject, SessionManager, ObservableObject {
     static let shared = SessionStore()
 
     @Published private(set) var isAuthenticated: Bool = false
@@ -22,7 +23,8 @@ final class SessionStore: ObservableObject {
     private var expiresAt: Date?
     private var refreshTask: Task<Bool, Never>?
 
-    init() {
+    override init() {
+        super.init()
         loadFromKeychain()
         isAuthenticated = accessToken != nil
         if refreshToken != nil && (accessToken == nil || isTokenExpiringSoon()) {
@@ -185,9 +187,15 @@ final class SessionStore: ObservableObject {
         self.accessToken = accessToken
         self.refreshToken = refreshToken
         self.expiresAt = expiry
-        keychain.set(accessToken, for: accessTokenKey)
-        keychain.set(refreshToken, for: refreshTokenKey)
-        keychain.set(DateCoder.string(from: expiry), for: expiresAtKey)
+        
+        do {
+            try keychain.set(accessToken, for: accessTokenKey)
+            try keychain.set(refreshToken, for: refreshTokenKey)
+            try keychain.set(DateCoder.string(from: expiry), for: expiresAtKey)
+        } catch {
+            // Log erro mas não falha - tokens ainda estão em memória
+            print("⚠️ Falha ao armazenar tokens no Keychain: \(error)")
+        }
     }
 
     private func isTokenExpiringSoon(now: Date = .init()) -> Bool {
@@ -196,11 +204,16 @@ final class SessionStore: ObservableObject {
     }
 
     private func loadFromKeychain() {
-        accessToken = keychain.get(accessTokenKey)
-        refreshToken = keychain.get(refreshTokenKey)
-        if let expiresAtString = keychain.get(expiresAtKey),
-           let date = DateCoder.formatterWithFraction.date(from: expiresAtString) ?? DateCoder.formatterNoFraction.date(from: expiresAtString) {
-            expiresAt = date
+        do {
+            accessToken = try keychain.get(accessTokenKey)
+            refreshToken = try keychain.get(refreshTokenKey)
+            if let expiresAtString = try keychain.get(expiresAtKey),
+               let date = DateCoder.formatterWithFraction.date(from: expiresAtString) ?? DateCoder.formatterNoFraction.date(from: expiresAtString) {
+                expiresAt = date
+            }
+        } catch {
+            // Log erro mas continua - pode ser primeiro acesso
+            print("ℹ️ Nenhum token armazenado no Keychain ou erro na recuperação: \(error)")
         }
     }
 
@@ -211,9 +224,16 @@ final class SessionStore: ObservableObject {
         currentUser = nil
         profile = nil
         isAuthenticated = false
-        keychain.delete(accessTokenKey)
-        keychain.delete(refreshTokenKey)
-        keychain.delete(expiresAtKey)
+        
+        do {
+            try keychain.delete(accessTokenKey)
+            try keychain.delete(refreshTokenKey)
+            try keychain.delete(expiresAtKey)
+        } catch {
+            // Log erro mas continua com logout - tokens foram limpos em memória
+            print("⚠️ Falha ao deletar tokens do Keychain durante logout: \(error)")
+        }
+        
         AppLockService.shared.resetForLogout()
     }
 }

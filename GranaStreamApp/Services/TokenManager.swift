@@ -32,9 +32,14 @@ final class TokenManager {
         self.refreshToken = refreshToken
         self.expiresAt = expiry
         
-        keychain.set(accessToken, for: accessTokenKey)
-        keychain.set(refreshToken, for: refreshTokenKey)
-        keychain.set(DateCoder.string(from: expiry), for: expiresAtKey)
+        do {
+            try keychain.set(accessToken, for: accessTokenKey)
+            try keychain.set(refreshToken, for: refreshTokenKey)
+            try keychain.set(DateCoder.string(from: expiry), for: expiresAtKey)
+        } catch {
+            // Log erro mas não falha - tokens estão em memória
+            print("⚠️ Falha ao armazenar tokens no Keychain: \(error)")
+        }
     }
     
     func clear() {
@@ -42,18 +47,28 @@ final class TokenManager {
         refreshToken = nil
         expiresAt = nil
         
-        keychain.delete(accessTokenKey)
-        keychain.delete(refreshTokenKey)
-        keychain.delete(expiresAtKey)
+        do {
+            try keychain.delete(accessTokenKey)
+            try keychain.delete(refreshTokenKey)
+            try keychain.delete(expiresAtKey)
+        } catch {
+            // Log erro mas continua - tokens foram limpos em memória
+            print("⚠️ Falha ao deletar tokens do Keychain: \(error)")
+        }
     }
     
     private func loadFromKeychain() {
-        accessToken = keychain.get(accessTokenKey)
-        refreshToken = keychain.get(refreshTokenKey)
-        
-        if let expiresAtString = keychain.get(expiresAtKey) {
-            expiresAt = DateCoder.formatterWithFraction.date(from: expiresAtString)
-                ?? DateCoder.formatterNoFraction.date(from: expiresAtString)
+        do {
+            accessToken = try keychain.get(accessTokenKey)
+            refreshToken = try keychain.get(refreshTokenKey)
+            
+            if let expiresAtString = try keychain.get(expiresAtKey) {
+                expiresAt = DateCoder.formatterWithFraction.date(from: expiresAtString)
+                    ?? DateCoder.formatterNoFraction.date(from: expiresAtString)
+            }
+        } catch {
+            // Log erro mas continua - pode ser primeiro acesso
+            print("ℹ️ Nenhum token armazenado no Keychain ou erro na recuperação: \(error)")
         }
     }
 }

@@ -3,15 +3,24 @@ import SwiftUI
 import Combine
 
 /// ViewModel para gerenciar criação e edição de transações
+/// Implementa FormViewModel para integração com FormViewContainer
 @MainActor
-final class TransactionFormViewModel: ObservableObject {
+final class TransactionFormViewModel: FormViewModel {
     @Published var isLoading = false
     @Published var errorMessage: String?
+    
+    var isValid: Bool {
+        true  // Validação delegada para a View por enquanto
+    }
     
     private let apiClient: APIClientProtocol
     
     init(apiClient: APIClientProtocol? = nil) {
         self.apiClient = apiClient ?? APIClient.shared
+    }
+    
+    func save() async throws {
+        // Implementação vazia - metodos específicos são chamados diretamente
     }
     
     func createTransaction(
