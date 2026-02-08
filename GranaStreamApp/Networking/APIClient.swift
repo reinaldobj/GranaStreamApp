@@ -10,22 +10,16 @@ protocol AuthenticationProvider: AnyObject {
 
 /// Implementação padrão usando SessionStore
 final class SessionStoreAuthenticationProvider: AuthenticationProvider {
-    private let sessionStore: SessionStore
-    
-    init(sessionStore: SessionStore = .shared) {
-        self.sessionStore = sessionStore
-    }
-    
     func refreshTokensIfNeeded() async -> Bool {
-        await sessionStore.refreshTokensIfNeeded()
+        await SessionStore.shared.refreshTokensIfNeeded()
     }
-    
+
     func refreshTokens() async -> Bool {
-        await sessionStore.refreshTokens()
+        await SessionStore.shared.refreshTokens()
     }
-    
+
     func getAccessToken() async -> String? {
-        await sessionStore.getAccessToken()
+        await SessionStore.shared.getAccessToken()
     }
 }
 

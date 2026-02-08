@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 @testable import GranaStreamApp
 
 // MARK: - Mock Account Provider
@@ -75,8 +76,14 @@ final class MockCategoryProvider: CategoryProvider {
 
 @MainActor
 final class MockObservableReferenceDataProvider: ObservableObject, ObservableReferenceDataProvider {
-    @Published var accounts: [AccountResponseDto] = []
-    @Published var categories: [CategoryResponseDto] = []
+    let objectWillChange = ObservableObjectPublisher()
+
+    var accounts: [AccountResponseDto] = [] {
+        didSet { objectWillChange.send() }
+    }
+    var categories: [CategoryResponseDto] = [] {
+        didSet { objectWillChange.send() }
+    }
     
     private(set) var refreshCalled = false
     private(set) var loadIfNeededCalled = false

@@ -12,7 +12,13 @@
 
   },
   "testTargets" : [
-
+    {
+      "target" : {
+        "containerPath" : "container:GranaStreamApp.xcodeproj",
+        "identifier" : "E8E5109A2F37F34D0098F131",
+        "name" : "GranaStreamAppTests"
+      }
+    }
   ],
   "version" : 1
 }
