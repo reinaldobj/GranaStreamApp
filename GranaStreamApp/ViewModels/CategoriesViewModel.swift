@@ -1,9 +1,9 @@
 import Foundation
-import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
+import SwiftUI
+import Combine
 
-// TODO: [TECH-DEBT] Lógica de busca duplicada com AccountsViewModel - criar protocolo SearchableViewModel
 @MainActor
-final class CategoriesViewModel: ObservableObject {
+final class CategoriesViewModel: ObservableObject, SearchableViewModel {
     @Published var categories: [CategoryResponseDto] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -12,8 +12,8 @@ final class CategoriesViewModel: ObservableObject {
     private var allCategories: [CategoryResponseDto] = []
     private let apiClient: APIClientProtocol
     
-    init(apiClient: APIClientProtocol = APIClient.shared) {
-        self.apiClient = apiClient
+    init(apiClient: APIClientProtocol? = nil) {
+        self.apiClient = apiClient ?? APIClient.shared
     }
 
     func load(syncReferenceData: Bool = false) async {
@@ -54,7 +54,7 @@ final class CategoriesViewModel: ObservableObject {
                 parentCategoryId: parentId,
                 sortOrder: sortOrder
             )
-            let response: CreateCategoryResponseDto = try await apiClientt(
+            let response: CreateCategoryResponseDto = try await apiClient.request(
                 "/api/v1/categories",
                 method: "POST",
                 body: AnyEncodable(request)
@@ -158,7 +158,7 @@ final class CategoriesViewModel: ObservableObject {
     }
 
     private func applySearch(term: String, updateActiveTerm: Bool) {
-        let cleaned = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleaned = SearchHelper.cleanSearchTerm(term)
 
         if updateActiveTerm {
             activeSearchTerm = cleaned
@@ -169,9 +169,8 @@ final class CategoriesViewModel: ObservableObject {
             return
         }
 
-        let normalizedTerm = normalized(cleaned)
         let matches = allCategories.filter { category in
-            normalized(category.name ?? "").contains(normalizedTerm)
+            SearchHelper.matches(category.name ?? "", searchTerm: cleaned)
         }
 
         guard !matches.isEmpty else {
@@ -197,12 +196,6 @@ final class CategoriesViewModel: ObservableObject {
         }
 
         categories = allCategories.filter { includedIds.contains($0.id) }
-    }
-
-    private func normalized(_ value: String) -> String {
-        value
-            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "pt_BR"))
-            .lowercased()
     }
 
     private func upsertLocalCategory(_ item: CategoryResponseDto) {

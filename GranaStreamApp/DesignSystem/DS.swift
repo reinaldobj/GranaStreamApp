@@ -1,8 +1,10 @@
 import SwiftUI
 import UIKit
 
-// TODO: [TECH-DEBT] Design tokens fragmentados entre DS.swift e AppTheme.swift - unificar em um único namespace
+/// Design System unificado - todos os tokens de design em um único namespace
 enum DS {
+    // MARK: - Colors
+    
     enum Colors {
         static let background = Color.token("Background", fallback: "F7F7FF")
         static let surface = Color.token("Surface", fallback: "FFFFFF")
@@ -18,6 +20,8 @@ enum DS {
         static let error = Color.token("Error", fallback: "DC2626")
     }
 
+    // MARK: - Brand Colors
+    
     enum Brand {
         static let brandCyan = Color.token("BrandCyan", fallback: "00D1FF")
         static let brandBlue = Color.token("BrandBlue", fallback: "0068FF")
@@ -25,6 +29,8 @@ enum DS {
         static let brandMagenta = Color.token("BrandMagenta", fallback: "FF2DB2")
     }
 
+    // MARK: - Gradients
+    
     enum Gradients {
         static let brand = LinearGradient(
             colors: [
@@ -36,6 +42,45 @@ enum DS {
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
+    }
+    
+    // MARK: - Typography
+    
+    enum Typography {
+        static let title = Font.system(size: 22, weight: .semibold)
+        static let section = Font.system(size: 17, weight: .semibold)
+        static let body = Font.system(size: 15, weight: .regular)
+        static let caption = Font.system(size: 13, weight: .regular)
+        static let metric = Font.system(size: 24, weight: .semibold)
+    }
+
+    // MARK: - Spacing
+    
+    enum Spacing {
+        static let base: CGFloat = 8
+        static let item: CGFloat = 12
+        static let screen: CGFloat = 16
+        static let controlHeight: CGFloat = 48
+        static let cardPadding: CGFloat = 16
+    }
+
+    // MARK: - Radius
+    
+    enum Radius {
+        static let card: CGFloat = 16
+        static let button: CGFloat = 14
+        static let field: CGFloat = 12
+    }
+
+    // MARK: - Shadow
+    
+    enum Shadow {
+        static let cardColor = Colors.border
+        static let cardOpacityLight: Double = 0.35
+        static let cardOpacityDark: Double = 0.2
+        static let cardRadius: CGFloat = 8
+        static let cardX: CGFloat = 0
+        static let cardY: CGFloat = 2
     }
 }
 

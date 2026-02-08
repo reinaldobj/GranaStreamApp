@@ -1,7 +1,8 @@
 import Foundation
-import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
+import SwiftUI
+import Combine
 
-// TODO: [TECH-DEBT] 218 linhas com múltiplas responsabilidades - considerar extrair TokenManager e ProfileService
+/// Gerencia autenticação e perfil do usuário
 @MainActor
 final class SessionStore: ObservableObject {
     static let shared = SessionStore()

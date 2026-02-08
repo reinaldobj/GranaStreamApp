@@ -1,15 +1,48 @@
 import Foundation
 
-// TODO: [TECH-DEBT] Singleton dificulta testes - considerar injeção de dependência via Environment ou protocolo
+/// Protocolo para gerenciar autenticação - permite injetar diferentes implementações
+protocol AuthenticationProvider: AnyObject {
+    func refreshTokensIfNeeded() async -> Bool
+    func refreshTokens() async -> Bool
+    func getAccessToken() async -> String?
+}
+
+/// Implementação padrão usando SessionStore
+final class SessionStoreAuthenticationProvider: AuthenticationProvider {
+    private let sessionStore: SessionStore
+    
+    init(sessionStore: SessionStore = .shared) {
+        self.sessionStore = sessionStore
+    }
+    
+    func refreshTokensIfNeeded() async -> Bool {
+        await sessionStore.refreshTokensIfNeeded()
+    }
+    
+    func refreshTokens() async -> Bool {
+        await sessionStore.refreshTokens()
+    }
+    
+    func getAccessToken() async -> String? {
+        sessionStore.getAccessToken()
+    }
+}
+
+/// Cliente API com injeção de dependência completa
 final class APIClient: APIClientProtocol {
     static let shared = APIClient()
 
     private let session: URLSession
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
+    private let authenticationProvider: AuthenticationProvider
 
-    init(session: URLSession = .shared) {
+    init(
+        session: URLSession = .shared,
+        authenticationProvider: AuthenticationProvider? = nil
+    ) {
         self.session = session
+        self.authenticationProvider = authenticationProvider ?? SessionStoreAuthenticationProvider()
         self.encoder = JSONEncoder()
         self.encoder.dateEncodingStrategy = .custom(DateCoder.encode)
         self.decoder = JSONDecoder()
@@ -39,11 +72,11 @@ final class APIClient: APIClientProtocol {
         urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
 
         if requiresAuth {
-            let refreshed = await SessionStore.shared.refreshTokensIfNeeded()
+            let refreshed = await authenticationProvider.refreshTokensIfNeeded()
             guard refreshed else {
                 throw APIError.unauthorized
             }
-            let token = await SessionStore.shared.getAccessToken()
+            let token = await authenticationProvider.getAccessToken()
             if let token {
                 urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             }
@@ -76,7 +109,7 @@ final class APIClient: APIClientProtocol {
         }
 
         if http.statusCode == 401, requiresAuth, retryOnAuthFailure {
-            let refreshed = await SessionStore.shared.refreshTokens()
+            let refreshed = await authenticationProvider.refreshTokens()
             if refreshed {
                 return try await self.request(
                     path,

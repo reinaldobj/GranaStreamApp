@@ -63,7 +63,7 @@ struct InstallmentSeriesFormView: View {
             }
 
             TransactionField(label: "Valor total") {
-                CurrencyMaskedTextField(text: $totalAmount, placeholder: "R$ 0,00")
+                CurrencyTextField(placeholder: "R$ 0,00", text: $totalAmount)
             }
 
             TransactionField(label: "Parcelas") {
@@ -91,7 +91,7 @@ struct InstallmentSeriesFormView: View {
     }
 
     private var isValid: Bool {
-        guard CurrencyTextFieldHelper.value(from: totalAmount) != nil else { return false }
+        guard CurrencyTextField.value(from: totalAmount) != nil else { return false }
         guard let installmentsValue = Int(installments), installmentsValue > 0 else { return false }
         return !categoryId.isEmpty
     }
@@ -164,7 +164,7 @@ struct InstallmentSeriesFormView: View {
         description = existing.description ?? ""
         categoryId = existing.categoryId
         accountId = existing.accountDefaultId ?? ""
-        totalAmount = CurrencyTextFieldHelper.initialText(from: existing.totalAmount) ?? ""
+        totalAmount = CurrencyTextField.initialText(from: existing.totalAmount)
         installments = String(existing.installmentsPlanned)
         firstDueDate = existing.firstDueDate
     }
@@ -173,7 +173,7 @@ struct InstallmentSeriesFormView: View {
         isLoading = true
         defer { isLoading = false }
 
-        guard let totalValue = CurrencyTextFieldHelper.value(from: totalAmount),
+        guard let totalValue = CurrencyTextField.value(from: totalAmount),
               let installmentsValue = Int(installments),
               installmentsValue > 0 else {
             errorMessage = "Informe valores válidos."
@@ -215,11 +215,3 @@ struct InstallmentSeriesFormView: View {
         }
     }
 }
-
-private extension String {
-    var nilIfBlank: String? {
-        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
-    }
-}
-

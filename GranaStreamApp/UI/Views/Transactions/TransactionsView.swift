@@ -1,7 +1,5 @@
 import SwiftUI
 
-// TODO: [TECH-DEBT] View com 506 linhas e 17+ @State - considerar extrair estado para um Coordinator ou usar @Observable
-// TODO: [TECH-DEBT] Múltiplas Tasks manuais - avaliar uso de .task modifiers com IDs para simplificar ciclo de vida
 struct TransactionsView: View {
     @StateObject private var viewModel = TransactionsViewModel()
     @EnvironmentObject private var referenceStore: ReferenceDataStore
@@ -19,6 +17,7 @@ struct TransactionsView: View {
     @State private var deleteTask: Task<Void, Never>?
     @State private var loadMoreTask: Task<Void, Never>?
     @State private var successBannerTask: Task<Void, Never>?
+    
     private let sectionSpacing = AppTheme.Spacing.item
     private let shortcutColumns = [
         GridItem(.flexible(), spacing: AppTheme.Spacing.item),
@@ -115,86 +114,26 @@ struct TransactionsView: View {
         .tint(DS.Colors.primary)
     }
 
-    private var header: some View {
-        HStack {
-            Button {
-                showFilters = true
-            } label: {
-                Image(systemName: "line.3.horizontal.decrease.circle.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .background(DS.Colors.surface.opacity(0.45))
-                    .clipShape(Circle())
-            }
-            .foregroundColor(DS.Colors.onPrimary)
-
-            Spacer()
-
-            Text("Transações")
-                .font(AppTheme.Typography.title)
-                .foregroundColor(DS.Colors.onPrimary)
-
-            Spacer()
-
-            Button {
-                showUnifiedEntryForm = true
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .background(DS.Colors.surface.opacity(0.45))
-                    .clipShape(Circle())
-            }
-            .foregroundColor(DS.Colors.onPrimary)
-        }
-    }
-
     private var topBlock: some View {
         VStack(spacing: AppTheme.Spacing.item) {
-            header
-            summaryCards
+            TransactionsHeaderView(
+                onShowFilters: { showFilters = true },
+                onAddTransaction: { showUnifiedEntryForm = true }
+            )
+            
+            TransactionsSummaryCardsView(
+                totalBalance: viewModel.totalBalance,
+                incomeTotal: viewModel.incomeTotal,
+                expenseTotal: viewModel.expenseTotal,
+                quickFilter: quickFilter,
+                onToggleFilter: toggleQuickFilter
+            )
+            
             managementShortcuts
         }
         .padding(.horizontal, AppTheme.Spacing.screen)
         .padding(.top, 6)
         .padding(.bottom, 0)
-    }
-
-    private var summaryCards: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
-            TransactionSummaryCardLarge(
-                title: "Saldo total",
-                value: CurrencyFormatter.string(from: viewModel.totalBalance)
-            )
-
-            HStack(spacing: AppTheme.Spacing.item) {
-                Button {
-                    toggleQuickFilter(.income)
-                } label: {
-                    TransactionSummaryCardSmall(
-                        title: "Receita",
-                        value: CurrencyFormatter.string(from: viewModel.incomeTotal),
-                        icon: "arrow.down.left",
-                        accentColor: DS.Colors.primary,
-                        isSelected: quickFilter == .income
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    toggleQuickFilter(.expense)
-                } label: {
-                    TransactionSummaryCardSmall(
-                        title: "Despesa",
-                        value: CurrencyFormatter.string(from: -abs(viewModel.expenseTotal)),
-                        icon: "arrow.up.right",
-                        accentColor: DS.Colors.error,
-                        isSelected: quickFilter == .expense
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-        }
     }
 
     private var managementShortcuts: some View {

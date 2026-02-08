@@ -1,7 +1,8 @@
 import Foundation
-import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
+import SwiftUI
+import Combine
 
-// TODO: [TECH-DEBT] Fallback complexo em fetchPayables() com try-catch aninhado - simplificar lógica
+/// Filtro de status de contas a pagar
 enum PayablesStatusFilter: String, CaseIterable, Identifiable {
     case pending
     case settled
@@ -36,6 +37,7 @@ enum PayablesStatusFilter: String, CaseIterable, Identifiable {
     }
 }
 
+/// ViewModel para gerenciar contas a pagar com fallback de requisição
 @MainActor
 final class PayablesViewModel: ObservableObject {
     @Published private(set) var items: [PayableListItemDto] = []
@@ -43,6 +45,12 @@ final class PayablesViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published private(set) var settlingIds: Set<String> = []
     @Published private(set) var undoingIds: Set<String> = []
+
+    private let apiClient: APIClientProtocol
+    
+    init(apiClient: APIClientProtocol? = nil) {
+        self.apiClient = apiClient ?? APIClient.shared
+    }
 
     func load(month: Date, statusFilter: PayablesStatusFilter) async {
         isLoading = true
@@ -64,7 +72,7 @@ final class PayablesViewModel: ObservableObject {
         defer { settlingIds.remove(payableId) }
 
         do {
-            let response: SettlePayableResponseDto = try await APIClient.shared.request(
+            let response: SettlePayableResponseDto = try await apiClient.request(
                 "/api/v1/payables/\(payableId)/settle",
                 method: "POST",
                 body: AnyEncodable(request)
@@ -87,7 +95,7 @@ final class PayablesViewModel: ObservableObject {
         defer { undoingIds.remove(payableId) }
 
         do {
-            let response: UndoSettlePayableResponseDto = try await APIClient.shared.request(
+            let response: UndoSettlePayableResponseDto = try await apiClient.request(
                 "/api/v1/payables/\(payableId)/settle/undo",
                 method: "POST"
             )
@@ -102,42 +110,53 @@ final class PayablesViewModel: ObservableObject {
         undoingIds.contains(payableId)
     }
 
+    // MARK: - Private
+
     private func fetchPayables(month: Date, statusFilter: PayablesStatusFilter) async throws -> [PayableListItemDto] {
         let monthValue = Self.monthFormatter.string(from: month)
-
+        
         do {
-            let response: ListPayablesResponseDto = try await APIClient.shared.request(
-                "/api/v1/payables",
-                queryItems: [
-                    URLQueryItem(name: "month", value: monthValue),
-                    URLQueryItem(name: "status", value: statusFilter.queryValue)
-                ]
-            )
-            return Self.sort(items: response.items ?? [])
+            // Tentar com filtro de status
+            return try await fetchWithStatus(monthValue: monthValue, statusFilter: statusFilter)
         } catch {
-            guard shouldFallbackWithoutStatus(error) else {
-                throw error
+            // Fallback: tentar sem status se requisição falhar com erro 400 ou 422
+            if shouldFallbackWithoutStatus(error) {
+                return try await fetchWithoutStatus(monthValue: monthValue, statusFilter: statusFilter)
             }
-
-            let fallbackResponse: ListPayablesResponseDto = try await APIClient.shared.request(
-                "/api/v1/payables",
-                queryItems: [
-                    URLQueryItem(name: "month", value: monthValue)
-                ]
-            )
-
-            let filtered = (fallbackResponse.items ?? []).filter { item in
-                item.status == statusFilter.payableStatus
-            }
-            return Self.sort(items: filtered)
+            throw error
         }
+    }
+
+    private func fetchWithStatus(monthValue: String, statusFilter: PayablesStatusFilter) async throws -> [PayableListItemDto] {
+        let response: ListPayablesResponseDto = try await apiClient.request(
+            "/api/v1/payables",
+            queryItems: [
+                URLQueryItem(name: "month", value: monthValue),
+                URLQueryItem(name: "status", value: statusFilter.queryValue)
+            ]
+        )
+        return Self.sort(items: response.items ?? [])
+    }
+
+    private func fetchWithoutStatus(monthValue: String, statusFilter: PayablesStatusFilter) async throws -> [PayableListItemDto] {
+        let response: ListPayablesResponseDto = try await apiClient.request(
+            "/api/v1/payables",
+            queryItems: [
+                URLQueryItem(name: "month", value: monthValue)
+            ]
+        )
+        
+        // Filtrar localmente quando API não suporta status
+        let filtered = (response.items ?? []).filter { item in
+            item.status == statusFilter.payableStatus
+        }
+        return Self.sort(items: filtered)
     }
 
     private func shouldFallbackWithoutStatus(_ error: Error) -> Bool {
         guard case let APIError.server(status, _) = error else {
             return false
         }
-
         return status == 400 || status == 422
     }
 

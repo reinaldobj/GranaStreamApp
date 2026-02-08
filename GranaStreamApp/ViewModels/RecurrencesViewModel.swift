@@ -1,5 +1,6 @@
 import Foundation
-import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
+import SwiftUI
+import Combine
 
 @MainActor
 final class RecurrencesViewModel: ObservableObject {
@@ -7,11 +8,17 @@ final class RecurrencesViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
+    private let apiClient: APIClientProtocol
+    
+    init(apiClient: APIClientProtocol? = nil) {
+        self.apiClient = apiClient ?? APIClient.shared
+    }
+
     func load() async {
         isLoading = true
         defer { isLoading = false }
         do {
-            let response: [RecurrenceResponseDto] = try await APIClient.shared.request("/api/v1/recurrences")
+            let response: [RecurrenceResponseDto] = try await apiClient.request("/api/v1/recurrences")
             recurrences = response
         } catch {
             errorMessage = error.userMessage
@@ -20,7 +27,7 @@ final class RecurrencesViewModel: ObservableObject {
 
     func create(request: CreateRecurrenceRequestDto) async -> Bool {
         do {
-            let _: CreateRecurrenceResponseDto = try await APIClient.shared.request(
+            let _: CreateRecurrenceResponseDto = try await apiClient.request(
                 "/api/v1/recurrences",
                 method: "POST",
                 body: AnyEncodable(request)
@@ -35,7 +42,7 @@ final class RecurrencesViewModel: ObservableObject {
 
     func update(id: String, request: UpdateRecurrenceRequestDto) async -> Bool {
         do {
-            let _: RecurrenceResponseDto = try await APIClient.shared.request(
+            let _: RecurrenceResponseDto = try await apiClient.request(
                 "/api/v1/recurrences/\(id)",
                 method: "PATCH",
                 body: AnyEncodable(request)
@@ -50,7 +57,7 @@ final class RecurrencesViewModel: ObservableObject {
 
     func delete(id: String) async {
         do {
-            try await APIClient.shared.requestNoResponse(
+            try await apiClient.requestNoResponse(
                 "/api/v1/recurrences/\(id)",
                 method: "DELETE"
             )
@@ -62,7 +69,7 @@ final class RecurrencesViewModel: ObservableObject {
 
     func pause(id: String) async {
         do {
-            let _: RecurrenceResponseDto = try await APIClient.shared.request(
+            let _: RecurrenceResponseDto = try await apiClient.request(
                 "/api/v1/recurrences/\(id)/pause",
                 method: "POST"
             )
@@ -74,7 +81,7 @@ final class RecurrencesViewModel: ObservableObject {
 
     func resume(id: String) async {
         do {
-            let _: RecurrenceResponseDto = try await APIClient.shared.request(
+            let _: RecurrenceResponseDto = try await apiClient.request(
                 "/api/v1/recurrences/\(id)/resume",
                 method: "POST"
             )

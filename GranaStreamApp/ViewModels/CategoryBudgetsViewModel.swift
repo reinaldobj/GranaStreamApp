@@ -1,5 +1,6 @@
 import Foundation
-import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
+import SwiftUI
+import Combine
 
 @MainActor
 final class CategoryBudgetsViewModel: ObservableObject {
@@ -93,7 +94,7 @@ final class CategoryBudgetsViewModel: ObservableObject {
             } catch {
                 failedCategoryIds.append(change.categoryId)
                 if firstErrorMessage == nil {
-                    firstErrorMessage = error.localizedDescription
+                    firstErrorMessage = error.userMessage
                 }
             }
         }

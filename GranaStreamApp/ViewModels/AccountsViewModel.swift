@@ -1,9 +1,9 @@
 import Foundation
-import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
+import SwiftUI
+import Combine
 
-// TODO: [TECH-DEBT] Lógica de busca duplicada com CategoriesViewModel - criar protocolo SearchableViewModel
 @MainActor
-final class AccountsViewModel: ObservableObject {
+final class AccountsViewModel: ObservableObject, SearchableViewModel {
     struct InactiveAccountInfo: Identifiable {
         let id: String
         let title: String
@@ -19,8 +19,8 @@ final class AccountsViewModel: ObservableObject {
     private var allAccounts: [AccountResponseDto] = []
     private let apiClient: APIClientProtocol
     
-    init(apiClient: APIClientProtocol = APIClient.shared) {
-        self.apiClient = apiClient
+    init(apiClient: APIClientProtocol? = nil) {
+        self.apiClient = apiClient ?? APIClient.shared
     }
 
     func load(syncReferenceData: Bool = false) async {
@@ -51,7 +51,7 @@ final class AccountsViewModel: ObservableObject {
         do {
             inactiveAccount = nil
             let request = CreateAccountRequestDto(name: name, accountType: type, initialBalance: initialBalance)
-            let response: CreateAccountResponseDto = try await apiClientt(
+            let response: CreateAccountResponseDto = try await apiClient.request(
                 "/api/v1/accounts",
                 method: "POST",
                 body: AnyEncodable(request)
@@ -143,7 +143,7 @@ final class AccountsViewModel: ObservableObject {
     }
 
     private func applySearch(term: String, updateActiveTerm: Bool) {
-        let cleaned = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleaned = SearchHelper.cleanSearchTerm(term)
 
         if updateActiveTerm {
             activeSearchTerm = cleaned
@@ -154,16 +154,9 @@ final class AccountsViewModel: ObservableObject {
             return
         }
 
-        let normalizedTerm = normalized(cleaned)
         accounts = allAccounts.filter { account in
-            normalized(account.name ?? "").contains(normalizedTerm)
+            SearchHelper.matches(account.name ?? "", searchTerm: cleaned)
         }
-    }
-
-    private func normalized(_ value: String) -> String {
-        value
-            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "pt_BR"))
-            .lowercased()
     }
 
     private func upsertLocalAccount(_ item: AccountResponseDto) {

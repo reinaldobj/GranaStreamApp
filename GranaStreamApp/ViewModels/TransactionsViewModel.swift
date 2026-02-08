@@ -1,5 +1,6 @@
 import Foundation
-import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine, usar apenas async/await
+import SwiftUI
+import Combine
 
 struct TransactionMonthSection: Identifiable {
     let id: String
@@ -7,7 +8,7 @@ struct TransactionMonthSection: Identifiable {
     let items: [TransactionSummaryDto]
 }
 
-// TODO: [TECH-DEBT] Código duplicado entre load() e loadMore() - extrair buildQueryItems() privado
+/// ViewModel para gerenciar transações com filtros e paginação
 @MainActor
 final class TransactionsViewModel: ObservableObject {
     @Published var transactions: [TransactionSummaryDto] = []
@@ -28,13 +29,13 @@ final class TransactionsViewModel: ObservableObject {
         incomeTotal - expenseTotal
     }
 
-    init(apiClient: APIClientProtocol = APIClient.shared) {
+    init(apiClient: APIClientProtocol? = nil) {
         let now = Date()
         let calendar = Calendar.current
         let start = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
         let end = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: start) ?? now
         self.filters = TransactionFilters(startDate: start, endDate: end)
-        self.apiClient = apiClient
+        self.apiClient = apiClient ?? APIClient.shared
     }
 
     var canLoadMore: Bool {
@@ -50,25 +51,7 @@ final class TransactionsViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            var items: [URLQueryItem] = [
-                URLQueryItem(name: "page", value: String(page)),
-                URLQueryItem(name: "size", value: String(size)),
-                URLQueryItem(name: "startDate", value: DateCoder.string(from: filters.startDate)),
-                URLQueryItem(name: "endDate", value: DateCoder.string(from: filters.endDate))
-            ]
-            if let type = filters.type {
-                items.append(URLQueryItem(name: "type", value: String(type.rawValue)))
-            }
-            if let accountId = filters.accountId {
-                items.append(URLQueryItem(name: "accountId", value: accountId))
-            }
-            if let categoryId = filters.categoryId {
-                items.append(URLQueryItem(name: "categoryId", value: categoryId))
-            }
-            if !filters.searchText.isEmpty {
-                items.append(URLQueryItem(name: "searchText", value: filters.searchText))
-            }
-
+            let items = buildQueryItems(page: page)
             let response: ListTransactionsResponseDto = try await apiClient.request(
                 "/api/v1/transactions",
                 queryItems: items
@@ -92,25 +75,7 @@ final class TransactionsViewModel: ObservableObject {
         defer { isLoadingMore = false }
 
         do {
-            var items: [URLQueryItem] = [
-                URLQueryItem(name: "page", value: String(nextPage)),
-                URLQueryItem(name: "size", value: String(size)),
-                URLQueryItem(name: "startDate", value: DateCoder.string(from: filters.startDate)),
-                URLQueryItem(name: "endDate", value: DateCoder.string(from: filters.endDate))
-            ]
-            if let type = filters.type {
-                items.append(URLQueryItem(name: "type", value: String(type.rawValue)))
-            }
-            if let accountId = filters.accountId {
-                items.append(URLQueryItem(name: "accountId", value: accountId))
-            }
-            if let categoryId = filters.categoryId {
-                items.append(URLQueryItem(name: "categoryId", value: categoryId))
-            }
-            if !filters.searchText.isEmpty {
-                items.append(URLQueryItem(name: "searchText", value: filters.searchText))
-            }
-
+            let items = buildQueryItems(page: nextPage)
             let response: ListTransactionsResponseDto = try await apiClient.request(
                 "/api/v1/transactions",
                 queryItems: items
@@ -134,6 +99,32 @@ final class TransactionsViewModel: ObservableObject {
         } catch {
             errorMessage = error.userMessage
         }
+    }
+
+    // MARK: - Private
+
+    private func buildQueryItems(page: Int) -> [URLQueryItem] {
+        var items: [URLQueryItem] = [
+            URLQueryItem(name: "page", value: String(page)),
+            URLQueryItem(name: "size", value: String(size)),
+            URLQueryItem(name: "startDate", value: DateCoder.string(from: filters.startDate)),
+            URLQueryItem(name: "endDate", value: DateCoder.string(from: filters.endDate))
+        ]
+        
+        if let type = filters.type {
+            items.append(URLQueryItem(name: "type", value: String(type.rawValue)))
+        }
+        if let accountId = filters.accountId {
+            items.append(URLQueryItem(name: "accountId", value: accountId))
+        }
+        if let categoryId = filters.categoryId {
+            items.append(URLQueryItem(name: "categoryId", value: categoryId))
+        }
+        if !filters.searchText.isEmpty {
+            items.append(URLQueryItem(name: "searchText", value: filters.searchText))
+        }
+        
+        return items
     }
 
     private func recalculateDerivedData() {

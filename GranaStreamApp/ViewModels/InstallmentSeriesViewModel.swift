@@ -1,5 +1,6 @@
 import Foundation
-import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
+import SwiftUI
+import Combine
 
 @MainActor
 final class InstallmentSeriesViewModel: ObservableObject {
@@ -7,11 +8,17 @@ final class InstallmentSeriesViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
+    private let apiClient: APIClientProtocol
+    
+    init(apiClient: APIClientProtocol? = nil) {
+        self.apiClient = apiClient ?? APIClient.shared
+    }
+
     func load() async {
         isLoading = true
         defer { isLoading = false }
         do {
-            let response: [InstallmentSeriesResponseDto] = try await APIClient.shared.request("/api/v1/installment-series")
+            let response: [InstallmentSeriesResponseDto] = try await apiClient.request("/api/v1/installment-series")
             series = response
         } catch {
             errorMessage = error.userMessage
@@ -20,7 +27,7 @@ final class InstallmentSeriesViewModel: ObservableObject {
 
     func create(request: CreateInstallmentSeriesRequestDto) async -> Bool {
         do {
-            let _: CreateInstallmentSeriesResponseDto = try await APIClient.shared.request(
+            let _: CreateInstallmentSeriesResponseDto = try await apiClient.request(
                 "/api/v1/installment-series",
                 method: "POST",
                 body: AnyEncodable(request)
@@ -35,7 +42,7 @@ final class InstallmentSeriesViewModel: ObservableObject {
 
     func update(id: String, request: UpdateInstallmentSeriesRequestDto) async -> Bool {
         do {
-            let _: InstallmentSeriesResponseDto = try await APIClient.shared.request(
+            let _: InstallmentSeriesResponseDto = try await apiClient.request(
                 "/api/v1/installment-series/\(id)",
                 method: "PATCH",
                 body: AnyEncodable(request)
@@ -50,7 +57,7 @@ final class InstallmentSeriesViewModel: ObservableObject {
 
     func delete(id: String) async {
         do {
-            try await APIClient.shared.requestNoResponse(
+            try await apiClient.requestNoResponse(
                 "/api/v1/installment-series/\(id)",
                 method: "DELETE"
             )

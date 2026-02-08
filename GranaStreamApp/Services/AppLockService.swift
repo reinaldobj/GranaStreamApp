@@ -1,94 +1,71 @@
 import SwiftUI
 import Combine
-import LocalAuthentication
 
+/// Coordena autenticação biométrica e estado de bloqueio da aplicação
 @MainActor
 final class AppLockService: ObservableObject {
     static let shared = AppLockService()
 
+    // MARK: - Published Properties
+    
     @Published private(set) var isBiometricLockEnabled: Bool
-    @Published private(set) var isLocked: Bool
-    @Published private(set) var isPrivacyMaskVisible: Bool = false
     @Published private(set) var shouldShowEnablePrompt: Bool = false
     @Published private(set) var lastUnlockErrorMessage: String?
     @Published private(set) var isUnlocking: Bool = false
+    
+    // Delegates from LockStateManager
+    var isLocked: Bool { lockStateManager.isLocked }
+    var isPrivacyMaskVisible: Bool { lockStateManager.isPrivacyMaskVisible }
+    
+    // Delegates from BiometricAuthManager
+    var biometricDisplayName: String { biometricAuthManager.biometricDisplayName }
+    var biometricSystemImage: String { biometricAuthManager.biometricSystemImage }
+    var isBiometricOptionAvailable: Bool { biometricAuthManager.isAvailable }
 
-    var biometricDisplayName: String {
-        switch currentBiometryType() {
-        case .faceID:
-            return "Face ID"
-        case .touchID:
-            return "Touch ID"
-        case .none:
-            return "Face ID"
-        @unknown default:
-            return "Face ID"
-        }
-    }
-
-    var biometricSystemImage: String {
-        switch currentBiometryType() {
-        case .faceID:
-            return "faceid"
-        case .touchID:
-            return "touchid"
-        case .none:
-            return "lock.shield"
-        @unknown default:
-            return "lock.shield"
-        }
-    }
-
-    var isBiometricOptionAvailable: Bool {
-        currentBiometryType() != .none
-    }
-
+    // MARK: - Dependencies
+    
+    private let lockStateManager: LockStateManager
+    private let biometricAuthManager: BiometricAuthManager
     private let defaults: UserDefaults
+    
     private let isBiometricLockEnabledKey = "gs_biometric_lock_enabled"
     private let biometricPromptSeenKey = "gs_biometric_prompt_seen"
-    private let lockDelay: TimeInterval = 15
-
-    private var backgroundEnteredAt: Date?
+    
     private var previousAuthenticationState: Bool
 
-    init(defaults: UserDefaults = .standard) {
+    // MARK: - Initialization
+    
+    init(
+        lockStateManager: LockStateManager? = nil,
+        biometricAuthManager: BiometricAuthManager? = nil,
+        defaults: UserDefaults = .standard
+    ) {
+        self.lockStateManager = lockStateManager ?? LockStateManager()
+        self.biometricAuthManager = biometricAuthManager ?? BiometricAuthManager()
         self.defaults = defaults
+        
         let initialBiometricEnabled = defaults.bool(forKey: isBiometricLockEnabledKey)
         self.isBiometricLockEnabled = initialBiometricEnabled
 
         let isAuthenticated = SessionStore.shared.isAuthenticated
-        self.isLocked = isAuthenticated && initialBiometricEnabled
+        
+        if isAuthenticated && initialBiometricEnabled {
+            self.lockStateManager.lock()
+        }
+        
         self.previousAuthenticationState = isAuthenticated
-
         updatePromptState(isAuthenticated: isAuthenticated)
     }
 
+    // MARK: - Public Methods
+
     func handleScenePhaseChange(_ phase: ScenePhase) {
         let isAuthenticated = SessionStore.shared.isAuthenticated
-
-        switch phase {
-        case .active:
-            isPrivacyMaskVisible = false
-            guard isAuthenticated else { return }
-
-            if isBiometricLockEnabled,
-               let backgroundEnteredAt,
-               Date().timeIntervalSince(backgroundEnteredAt) >= lockDelay {
-                isLocked = true
-            }
-            self.backgroundEnteredAt = nil
-        case .inactive:
-            if isAuthenticated {
-                isPrivacyMaskVisible = true
-            }
-        case .background:
-            if isAuthenticated {
-                backgroundEnteredAt = Date()
-                isPrivacyMaskVisible = true
-            }
-        @unknown default:
-            break
-        }
+        lockStateManager.handleScenePhaseChange(
+            phase,
+            isAuthenticated: isAuthenticated,
+            lockEnabled: isBiometricLockEnabled
+        )
     }
 
     func syncAuthenticationState(isAuthenticated: Bool) {
@@ -101,40 +78,28 @@ final class AppLockService: ObservableObject {
             return
         }
 
-        isPrivacyMaskVisible = false
+        lockStateManager.updateLockState(
+            isAuthenticated: isAuthenticated,
+            lockEnabled: isBiometricLockEnabled,
+            previouslyAuthenticated: previousAuthenticationState
+        )
+        
         lastUnlockErrorMessage = nil
-
-        if !isBiometricLockEnabled {
-            isLocked = false
-        } else if previousAuthenticationState == false {
-            isLocked = false
-        }
-
         updatePromptState(isAuthenticated: true)
     }
 
     func attemptUnlock() async {
         guard SessionStore.shared.isAuthenticated else {
-            isLocked = false
+            lockStateManager.unlock()
             return
         }
 
         guard isBiometricLockEnabled else {
-            isLocked = false
+            lockStateManager.unlock()
             return
         }
 
         guard !isUnlocking else { return }
-
-        let context = LAContext()
-        context.localizedCancelTitle = "Agora não"
-
-        var canEvaluateError: NSError?
-        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &canEvaluateError) else {
-            isLocked = true
-            lastUnlockErrorMessage = "Não foi possível pedir autenticação neste aparelho."
-            return
-        }
 
         isUnlocking = true
         lastUnlockErrorMessage = nil
@@ -144,18 +109,18 @@ final class AppLockService: ObservableObject {
         }
 
         do {
-            let success = try await context.evaluatePolicy(
-                .deviceOwnerAuthentication,
-                localizedReason: "Confirme sua identidade para acessar seus dados financeiros."
-            )
-
+            let success = try await biometricAuthManager.authenticate()
+            
             if success {
-                isLocked = false
+                lockStateManager.unlock()
                 lastUnlockErrorMessage = nil
             }
+        } catch BiometricAuthError.notAvailable {
+            lockStateManager.lock()
+            lastUnlockErrorMessage = "Não foi possível pedir autenticação neste aparelho."
         } catch {
-            isLocked = true
-            lastUnlockErrorMessage = unlockErrorMessage(for: error)
+            lockStateManager.lock()
+            lastUnlockErrorMessage = biometricAuthManager.errorMessage(for: error)
         }
     }
 
@@ -175,8 +140,7 @@ final class AppLockService: ObservableObject {
         isBiometricLockEnabled = false
         defaults.set(false, forKey: isBiometricLockEnabledKey)
 
-        isLocked = false
-        backgroundEnteredAt = nil
+        lockStateManager.unlock()
         lastUnlockErrorMessage = nil
         markPromptAsHandled()
     }
@@ -187,13 +151,13 @@ final class AppLockService: ObservableObject {
     }
 
     func resetForLogout() {
-        isLocked = false
-        isPrivacyMaskVisible = false
+        lockStateManager.reset()
         shouldShowEnablePrompt = false
         lastUnlockErrorMessage = nil
-        backgroundEnteredAt = nil
         previousAuthenticationState = false
     }
+
+    // MARK: - Private Methods
 
     private func updatePromptState(isAuthenticated: Bool) {
         let promptWasSeen = defaults.bool(forKey: biometricPromptSeenKey)
@@ -201,34 +165,5 @@ final class AppLockService: ObservableObject {
             && !promptWasSeen
             && !isBiometricLockEnabled
             && isBiometricOptionAvailable
-    }
-
-    private func currentBiometryType() -> LABiometryType {
-        let context = LAContext()
-        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
-        return context.biometryType
-    }
-
-    private func unlockErrorMessage(for error: Error) -> String? {
-        guard let localAuthError = error as? LAError else {
-            return "Não foi possível validar sua identidade. Tente novamente."
-        }
-
-        switch localAuthError.code {
-        case .userCancel, .systemCancel, .appCancel:
-            return nil
-        case .authenticationFailed:
-            return "Não foi possível confirmar sua identidade. Tente novamente."
-        case .biometryLockout:
-            return "Face ID indisponível no momento. Use o código do iPhone."
-        case .biometryNotEnrolled:
-            return "Ative o Face ID nas configurações do iPhone para usar esta proteção."
-        case .biometryNotAvailable:
-            return "Este aparelho não oferece Face ID ou Touch ID no momento."
-        case .passcodeNotSet:
-            return "Defina um código no iPhone para usar esta proteção."
-        default:
-            return "Não foi possível validar sua identidade. Tente novamente."
-        }
     }
 }

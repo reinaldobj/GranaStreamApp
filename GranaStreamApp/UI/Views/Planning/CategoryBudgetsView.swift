@@ -1,7 +1,6 @@
 import SwiftUI
 
-// TODO: [TECH-DEBT] View gigante com 587 linhas - Extrair CurrencyMaskedTextField para UI/Components/
-// TODO: [TECH-DEBT] Considerar dividir em subviews: BudgetHeaderView, BudgetListView, BudgetItemRow
+/// View principal de orçamentos por categoria - refatorada em subviews
 struct CategoryBudgetsView: View {
     let isPlanningRoot: Bool
     @StateObject private var viewModel = CategoryBudgetsViewModel()
@@ -13,8 +12,6 @@ struct CategoryBudgetsView: View {
     @State private var baselineAmounts: [String: String] = [:]
     @State private var hasFinishedInitialLoad = false
     @State private var infoMessage: String?
-
-    private let sectionSpacing = AppTheme.Spacing.item
 
     init(isPlanningRoot: Bool = false) {
         self.isPlanningRoot = isPlanningRoot
@@ -40,8 +37,18 @@ struct CategoryBudgetsView: View {
                         topBlock
                             .padding(.top, 2)
 
-                        budgetsSection(viewportHeight: proxy.size.height)
-                            .padding(.top, sectionSpacing)
+                        BudgetListView(
+                            items: viewModel.items,
+                            inputValues: inputValues,
+                            isLoading: viewModel.isLoading,
+                            hasFinishedInitialLoad: hasFinishedInitialLoad,
+                            isInvalid: { isInvalid(categoryId: $0) },
+                            onValueChange: { id, newValue in
+                                inputValues[id] = newValue
+                            },
+                            viewportHeight: proxy.size.height
+                        )
+                        .padding(.top, DS.Spacing.item)
                     }
                 }
                 .refreshable {
@@ -90,235 +97,25 @@ struct CategoryBudgetsView: View {
     }
 
     private var topBlock: some View {
-        VStack(spacing: AppTheme.Spacing.item) {
-            if isPlanningRoot {
-                planningMonthSelector
-            } else {
-                header
-                monthIndicator
-            }
-            actionsBlock
+        VStack(spacing: DS.Spacing.item) {
+            BudgetHeaderView(
+                isPlanningRoot: isPlanningRoot,
+                monthLabel: monthStore.selectedMonthLabel,
+                onDismiss: { dismiss() },
+                onMonthShift: { shiftMonth(by: $0) }
+            )
+            
+            BudgetActionsView(
+                isSaving: viewModel.isSaving,
+                isLoading: viewModel.isLoading,
+                hasInvalidValues: hasInvalidValues,
+                hasChanges: hasChanges,
+                onSave: { Task { await save() } }
+            )
         }
-        .padding(.horizontal, AppTheme.Spacing.screen)
+        .padding(.horizontal, DS.Spacing.screen)
         .padding(.top, 6)
         .padding(.bottom, 0)
-    }
-
-    private var planningMonthSelector: some View {
-        HStack(spacing: 14) {
-            Button {
-                shiftMonth(by: -1)
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 36, height: 36)
-                    .background(DS.Colors.surface.opacity(0.28))
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .foregroundColor(DS.Colors.onPrimary)
-
-            Text(monthStore.selectedMonthLabel)
-                .font(AppTheme.Typography.section.weight(.semibold))
-                .foregroundColor(DS.Colors.onPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.9)
-
-            Button {
-                shiftMonth(by: 1)
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 36, height: 36)
-                    .background(DS.Colors.surface.opacity(0.28))
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .foregroundColor(DS.Colors.onPrimary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var header: some View {
-        HStack {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .background(DS.Colors.surface.opacity(0.45))
-                    .clipShape(Circle())
-            }
-            .foregroundColor(DS.Colors.onPrimary)
-
-            Spacer()
-
-            Text("Orçamento")
-                .font(AppTheme.Typography.title)
-                .foregroundColor(DS.Colors.onPrimary)
-
-            Spacer()
-
-            Color.clear
-                .frame(width: 40, height: 40)
-        }
-    }
-
-    private var monthIndicator: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "calendar")
-                .foregroundColor(DS.Colors.onPrimary)
-            Text(monthStore.selectedMonthLabel)
-                .font(AppTheme.Typography.section)
-                .foregroundColor(DS.Colors.onPrimary)
-            Spacer()
-        }
-    }
-
-    private var actionsBlock: some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            HStack(spacing: 8) {
-                Button {
-                    Task { await save() }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "tray.and.arrow.down")
-                        Text(viewModel.isSaving ? "Salvando..." : "Salvar")
-                    }
-                    .font(AppTheme.Typography.caption.weight(.semibold))
-                    .foregroundColor(DS.Colors.onPrimary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(DS.Colors.surface.opacity(0.30))
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(viewModel.isSaving || viewModel.isLoading || hasInvalidValues || !hasChanges)
-
-                Button { } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "doc.on.doc")
-                        Text("Copiar mês anterior")
-                    }
-                    .font(AppTheme.Typography.caption.weight(.semibold))
-                    .foregroundColor(DS.Colors.onPrimary.opacity(0.55))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(DS.Colors.surface.opacity(0.18))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(DS.Colors.surface.opacity(0.25), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(true)
-            }
-
-            Text("Em breve")
-                .font(AppTheme.Typography.caption)
-                .foregroundColor(DS.Colors.onPrimary.opacity(0.85))
-        }
-    }
-
-    private func budgetsSection(viewportHeight: CGFloat) -> some View {
-        let emptyMinHeight = max(320, viewportHeight * 0.52)
-
-        return budgetsCard
-            .padding(.horizontal, AppTheme.Spacing.screen)
-            .padding(.top, 6)
-            .frame(
-                maxWidth: .infinity,
-                minHeight: viewModel.items.isEmpty ? emptyMinHeight : nil,
-                alignment: .top
-            )
-            .topSectionStyle()
-    }
-
-    private var budgetsCard: some View {
-        LazyVStack(alignment: .leading, spacing: 12) {
-            if shouldShowLoadingState {
-                loadingState
-            } else if viewModel.items.isEmpty {
-                Text("Sem categorias de despesa para este mês.")
-                    .font(AppTheme.Typography.body)
-                    .foregroundColor(DS.Colors.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 24)
-            } else {
-                ForEach(Array(viewModel.items.enumerated()), id: \.element.id) { index, item in
-                    budgetRow(item: item)
-
-                    if index < viewModel.items.count - 1 {
-                        Divider()
-                            .overlay(DS.Colors.border)
-                    }
-                }
-            }
-        }
-        .padding(.top, 14)
-    }
-
-    private func budgetRow(item: CategoryBudgetItem) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.categoryName)
-                        .font(AppTheme.Typography.section)
-                        .foregroundColor(DS.Colors.textPrimary)
-                        .lineLimit(2)
-
-                    if let parent = item.parentCategoryName?.trimmingCharacters(in: .whitespacesAndNewlines),
-                       !parent.isEmpty {
-                        Text(parent)
-                            .font(AppTheme.Typography.caption)
-                            .foregroundColor(DS.Colors.textSecondary)
-                    }
-                }
-
-                Spacer(minLength: 8)
-            }
-
-            CurrencyMaskedTextField(text: binding(for: item.id), placeholder: "R$ 0,00")
-                .keyboardType(.decimalPad)
-                .font(AppTheme.Typography.body)
-                .padding(8)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(DS.Colors.surface)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(DS.Colors.border, lineWidth: 1)
-                )
-
-            if isInvalid(categoryId: item.id) {
-                Text("Digite um valor válido, maior ou igual a zero.")
-                    .font(AppTheme.Typography.caption)
-                    .foregroundColor(DS.Colors.error)
-            }
-        }
-    }
-
-    private var shouldShowLoadingState: Bool {
-        !hasFinishedInitialLoad || (viewModel.isLoading && viewModel.items.isEmpty)
-    }
-
-    private var loadingState: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-                .tint(DS.Colors.primary)
-            Text("Carregando orçamento...")
-                .font(AppTheme.Typography.body)
-                .foregroundColor(DS.Colors.textSecondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.vertical, 24)
     }
 
     private var backSwipeGesture: some Gesture {
@@ -358,13 +155,6 @@ struct CategoryBudgetsView: View {
 
         inputValues = newValues
         baselineAmounts = newBaseline
-    }
-
-    private func binding(for categoryId: String) -> Binding<String> {
-        Binding(
-            get: { inputValues[categoryId, default: ""] },
-            set: { inputValues[categoryId] = $0 }
-        )
     }
 
     private func baselineAmount(for categoryId: String) -> Double? {
@@ -466,111 +256,6 @@ struct CategoryBudgetsView: View {
     }
 }
 
-// MARK: - CurrencyMaskedTextField
-
-struct CurrencyMaskedTextField: UIViewRepresentable {
-    @Binding var text: String
-    var placeholder: String
-
-    class Coordinator: NSObject, UITextFieldDelegate {
-        var parent: CurrencyMaskedTextField
-
-        init(_ parent: CurrencyMaskedTextField) {
-            self.parent = parent
-        }
-
-        @objc func textFieldEditingChanged(_ textField: UITextField) {
-            // Remove any character except digits
-            let digits = textField.text?.compactMap { $0.isWholeNumber ? $0 : nil } ?? []
-            let digitString = String(digits)
-
-            // Convert digits to number and format as currency
-            let number = NSDecimalNumber(string: digitString).dividing(by: 100)
-
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .currency
-            formatter.locale = Locale(identifier: "pt_BR")
-            formatter.maximumFractionDigits = 2
-            formatter.minimumFractionDigits = 2
-
-            if let formatted = formatter.string(from: number) {
-                textField.text = formatted
-                parent.text = formatted
-            } else {
-                textField.text = ""
-                parent.text = ""
-            }
-        }
-
-        func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-            // Allow only digits and decimal separator
-            let locale = Locale(identifier: "pt_BR")
-            guard let decimalSeparator = locale.decimalSeparator else {
-                return false
-            }
-
-            let allowedCharacters = CharacterSet.decimalDigits.union(CharacterSet(charactersIn: decimalSeparator))
-
-            if string.rangeOfCharacter(from: allowedCharacters.inverted) != nil {
-                return false
-            }
-
-            return true
-        }
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-
-    func makeUIView(context: Context) -> UITextField {
-        let textField = UITextField(frame: .zero)
-        textField.keyboardType = .decimalPad
-        textField.placeholder = placeholder
-        textField.delegate = context.coordinator
-        textField.text = text
-        textField.addTarget(context.coordinator, action: #selector(Coordinator.textFieldEditingChanged(_:)), for: .editingChanged)
-        textField.font = UIFont.preferredFont(forTextStyle: .body)
-        textField.borderStyle = .none
-        textField.autocorrectionType = .no
-        textField.autocapitalizationType = .none
-        textField.tintColor = UIColor.label
-        return textField
-    }
-
-    func updateUIView(_ uiView: UITextField, context: Context) {
-        if uiView.text != text {
-            uiView.text = text
-        }
-    }
-}
-
-// MARK: - CurrencyTextFieldHelper Helpers
-
-struct CurrencyTextFieldHelper {
-    static func value(from text: String) -> Double? {
-        // Remove currency symbols, spaces and dots, replace comma with dot for decimal separator
-        let cleaned = text
-            .replacingOccurrences(of: "R$", with: "")
-            .replacingOccurrences(of: " ", with: "")
-            .replacingOccurrences(of: ".", with: "")
-            .replacingOccurrences(of: ",", with: ".")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !cleaned.isEmpty else { return nil }
-        return Double(cleaned)
-    }
-
-    static func initialText(from value: Double) -> String? {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value))
-    }
-}
-
 struct CategoryBudgetsView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
@@ -585,4 +270,3 @@ struct CategoryBudgetsView_Previews: PreviewProvider {
         .environmentObject(ReferenceDataStore.shared)
     }
 }
-

@@ -1,13 +1,20 @@
 import Foundation
-import Combine // TODO: [TECH-DEBT] Import não utilizado - remover Combine
+import SwiftUI
+import Combine
 
-// TODO: [TECH-DEBT] Catch blocks vazios silenciam erros - adicionar logging ou retry mechanism
+/// Armazena dados de referência (contas e categorias) com cache local
 @MainActor
 final class ReferenceDataStore: ObservableObject {
     static let shared = ReferenceDataStore()
 
     @Published private(set) var accounts: [AccountResponseDto] = []
     @Published private(set) var categories: [CategoryResponseDto] = []
+
+    private let apiClient: APIClientProtocol
+    
+    init(apiClient: APIClientProtocol? = nil) {
+        self.apiClient = apiClient ?? APIClient.shared
+    }
 
     func refresh() async {
         async let accountsTask: Void = loadAccounts()
@@ -70,16 +77,19 @@ final class ReferenceDataStore: ObservableObject {
 
     private func loadAccounts() async {
         do {
-            let response: [AccountResponseDto] = try await APIClient.shared.request("/api/v1/accounts")
+            let response: [AccountResponseDto] = try await apiClient.request("/api/v1/accounts")
             accounts = response
         } catch {
-            // Mantém dados atuais para evitar tela vazia quando houver falha temporária de rede.
+            // Log do erro mas mantém dados atuais para evitar tela vazia em caso de falha de rede
+            #if DEBUG
+            print("⚠️ [ReferenceDataStore] Falha ao carregar contas: \(error.localizedDescription)")
+            #endif
         }
     }
 
     private func loadCategories() async {
         do {
-            let response: [CategoryResponseDto] = try await APIClient.shared.request(
+            let response: [CategoryResponseDto] = try await apiClient.request(
                 "/api/v1/categories",
                 queryItems: [
                     URLQueryItem(name: "includeHierarchy", value: "false")
@@ -87,7 +97,10 @@ final class ReferenceDataStore: ObservableObject {
             )
             categories = response
         } catch {
-            // Mantém dados atuais para evitar tela vazia quando houver falha temporária de rede.
+            // Log do erro mas mantém dados atuais para evitar tela vazia em caso de falha de rede
+            #if DEBUG
+            print("⚠️ [ReferenceDataStore] Falha ao carregar categorias: \(error.localizedDescription)")
+            #endif
         }
     }
 }

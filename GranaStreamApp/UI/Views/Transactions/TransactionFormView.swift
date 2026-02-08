@@ -1,6 +1,6 @@
 import SwiftUI
 
-// TODO: [TECH-DEBT] accountMenu e categoryMenu duplicados com UnifiedEntryFormView - extrair para componentes reutilizáveis
+/// Formulário para criar/editar transações
 struct TransactionFormView: View {
     let existing: TransactionSummaryDto?
     var onComplete: () -> Void
@@ -164,48 +164,12 @@ struct TransactionFormView: View {
 
     @ViewBuilder
     private func categoryMenu(selection: Binding<String>) -> some View {
-        Button("Limpar seleção") {
-            selection.wrappedValue = ""
-        }
-        .disabled(selection.wrappedValue.isEmpty)
-
-        if filteredCategorySections.isEmpty {
-            Text("Sem categorias")
-                .font(AppTheme.Typography.caption)
-                .foregroundColor(DS.Colors.textSecondary)
-        } else {
-            ForEach(filteredCategorySections) { section in
-                Text(section.title)
-                    .font(AppTheme.Typography.caption)
-                    .foregroundColor(DS.Colors.textSecondary)
-                    .disabled(true)
-                ForEach(section.children) { child in
-                    Button(child.name ?? "Categoria") {
-                        selection.wrappedValue = child.id
-                    }
-                }
-            }
-        }
+        CategoryMenuContent(sections: filteredCategorySections, selection: selection)
     }
 
     @ViewBuilder
     private func accountMenu(selection: Binding<String>) -> some View {
-        Button("Limpar seleção") {
-            selection.wrappedValue = ""
-        }
-        .disabled(selection.wrappedValue.isEmpty)
-
-        if referenceStore.accounts.isEmpty {
-            Text("Sem contas")
-                .font(AppTheme.Typography.caption)
-                .foregroundColor(DS.Colors.textSecondary)
-        } else {
-            ForEach(referenceStore.accounts) { account in
-                Button(account.name ?? "Conta") {
-                    selection.wrappedValue = account.id
-                }
-            }
-        }
+        AccountMenuContent(accounts: referenceStore.accounts, selection: selection)
     }
 
     private func prefill() {

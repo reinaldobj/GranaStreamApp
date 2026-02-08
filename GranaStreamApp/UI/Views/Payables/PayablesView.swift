@@ -89,10 +89,29 @@ struct PayablesView: View {
 
     private var topBlock: some View {
         VStack(spacing: AppTheme.Spacing.item) {
-            header
-            monthSelector
-            kindSelector
-            statusSelector
+            PayablesHeaderView(onDismiss: { dismiss() })
+            
+            MonthSelectorView()
+            
+            DualSelectorView(
+                title: "Tipo",
+                firstLabel: PayableKind.payable.label,
+                firstSelected: selectedKind == .payable,
+                onFirstTap: { selectedKind = .payable },
+                secondLabel: PayableKind.receivable.label,
+                secondSelected: selectedKind == .receivable,
+                onSecondTap: { selectedKind = .receivable }
+            )
+            
+            DualSelectorView(
+                title: "Status",
+                firstLabel: PayablesStatusFilter.pending.label,
+                firstSelected: selectedStatus == .pending,
+                onFirstTap: { selectedStatus = .pending },
+                secondLabel: PayablesStatusFilter.settled.label,
+                secondSelected: selectedStatus == .settled,
+                onSecondTap: { selectedStatus = .settled }
+            )
 
             if viewModel.isLoading && !viewModel.items.isEmpty {
                 HStack {
@@ -105,113 +124,6 @@ struct PayablesView: View {
         .padding(.horizontal, AppTheme.Spacing.screen)
         .padding(.top, 6)
         .padding(.bottom, 0)
-    }
-
-    private var header: some View {
-        HStack {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .background(DS.Colors.surface.opacity(0.45))
-                    .clipShape(Circle())
-            }
-            .foregroundColor(DS.Colors.onPrimary)
-
-            Spacer()
-
-            Text("Pendências")
-                .font(AppTheme.Typography.title)
-                .foregroundColor(DS.Colors.onPrimary)
-
-            Spacer()
-
-            Color.clear
-                .frame(width: 40, height: 40)
-        }
-    }
-
-    private var monthSelector: some View {
-        HStack(spacing: 12) {
-            monthButton(systemName: "chevron.left", shift: -1)
-
-            Text(monthStore.selectedMonthLabel)
-                .font(AppTheme.Typography.section)
-                .foregroundColor(DS.Colors.onPrimary)
-                .frame(maxWidth: .infinity)
-
-            monthButton(systemName: "chevron.right", shift: 1)
-        }
-    }
-
-    private func monthButton(systemName: String, shift: Int) -> some View {
-        Button {
-            moveMonth(by: shift)
-        } label: {
-            Image(systemName: systemName)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(DS.Colors.onPrimary)
-                .frame(width: 32, height: 32)
-                .background(DS.Colors.surface.opacity(0.28))
-                .clipShape(Circle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var kindSelector: some View {
-        selectorBlock(
-            title: "Tipo",
-            firstLabel: PayableKind.payable.label,
-            firstSelected: selectedKind == .payable,
-            onFirstTap: { selectedKind = .payable },
-            secondLabel: PayableKind.receivable.label,
-            secondSelected: selectedKind == .receivable,
-            onSecondTap: { selectedKind = .receivable }
-        )
-    }
-
-    private var statusSelector: some View {
-        selectorBlock(
-            title: "Status",
-            firstLabel: PayablesStatusFilter.pending.label,
-            firstSelected: selectedStatus == .pending,
-            onFirstTap: { selectedStatus = .pending },
-            secondLabel: PayablesStatusFilter.settled.label,
-            secondSelected: selectedStatus == .settled,
-            onSecondTap: { selectedStatus = .settled }
-        )
-    }
-
-    private func selectorBlock(
-        title: String,
-        firstLabel: String,
-        firstSelected: Bool,
-        onFirstTap: @escaping () -> Void,
-        secondLabel: String,
-        secondSelected: Bool,
-        onSecondTap: @escaping () -> Void
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(AppTheme.Typography.caption)
-                .foregroundColor(DS.Colors.onPrimary.opacity(0.88))
-
-            HStack(spacing: 10) {
-                PayablesFilterButton(
-                    title: firstLabel,
-                    isSelected: firstSelected,
-                    action: onFirstTap
-                )
-
-                PayablesFilterButton(
-                    title: secondLabel,
-                    isSelected: secondSelected,
-                    action: onSecondTap
-                )
-            }
-        }
     }
 
     private func payablesSection(viewportHeight: CGFloat) -> some View {
@@ -414,13 +326,6 @@ struct PayablesView: View {
         }
     }
 
-    private func moveMonth(by value: Int) {
-        guard let date = Calendar.current.date(byAdding: .month, value: value, to: monthStore.selectedMonth) else {
-            return
-        }
-        monthStore.select(month: date)
-    }
-
     private func loadData() async {
         await viewModel.load(month: monthStore.selectedMonth, statusFilter: selectedStatus)
     }
@@ -464,30 +369,6 @@ struct PayablesView: View {
                 guard fromLeftEdge && hasHorizontalIntent else { return }
                 dismiss()
             }
-    }
-}
-
-private struct PayablesFilterButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(AppTheme.Typography.caption.weight(.semibold))
-                .foregroundColor(isSelected ? DS.Colors.primary : DS.Colors.onPrimary)
-                .frame(maxWidth: .infinity, minHeight: 36)
-                .background(
-                    Capsule()
-                        .fill(isSelected ? DS.Colors.surface : DS.Colors.surface.opacity(0.22))
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(DS.Colors.surface.opacity(isSelected ? 0 : 0.28), lineWidth: 1)
-                )
-        }
-        .buttonStyle(.plain)
     }
 }
 
