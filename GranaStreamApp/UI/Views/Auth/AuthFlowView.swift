@@ -1,4 +1,4 @@
-    import SwiftUI
+import SwiftUI
 
 struct AuthFlowView: View {
     @ObservedObject var session: SessionStore
@@ -31,7 +31,7 @@ struct AuthFlowView: View {
             }
             .contentShape(Rectangle())
             .simultaneousGesture(backGesture(screenWidth: screenWidth))
-            .onChange(of: stack.count) { _ in
+            .onChange(of: stack.count) { _, _ in
                 dragOffset = 0
                 isDraggingBack = false
             }
@@ -70,7 +70,7 @@ struct AuthFlowView: View {
 
     private func push(_ screen: AuthScreen) {
         guard stack.last != screen else { return }
-        withAnimation(.easeInOut(duration: 0.2)) {
+        runAnimation(.easeInOut(duration: 0.2)) {
             stack.append(screen)
         }
     }
@@ -78,7 +78,7 @@ struct AuthFlowView: View {
     private func pop(animated: Bool = true) {
         guard stack.count > 1 else { return }
         if animated {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            runAnimation(.easeInOut(duration: 0.2)) {
                 stack.removeLast()
             }
         } else {
@@ -90,7 +90,7 @@ struct AuthFlowView: View {
         if previousScreen == .login {
             pop()
         } else {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            runAnimation(.easeInOut(duration: 0.2)) {
                 if stack.isEmpty {
                     stack = [.landing, .login]
                 } else {
@@ -98,6 +98,10 @@ struct AuthFlowView: View {
                 }
             }
         }
+    }
+
+    private func runAnimation(_ animation: Animation? = .default, _ updates: () -> Void) {
+        _ = withAnimation(animation, updates)
     }
 
     private func backGesture(screenWidth: CGFloat) -> some Gesture {

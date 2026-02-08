@@ -21,7 +21,7 @@ final class TaskManager {
 
         let task = Task { [weak self] in
             await operation()
-            await self?.finishTask(id: id, token: token)
+            self?.finishTask(id: id, token: token)
         }
 
         activeTasks[id] = task

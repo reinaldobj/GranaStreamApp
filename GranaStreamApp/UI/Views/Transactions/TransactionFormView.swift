@@ -34,7 +34,7 @@ struct TransactionFormView: View {
                 }
             }
             .task(id: existing?.id) { prefill() }
-            .onChange(of: type) { newValue in
+            .onChange(of: type) { _, newValue in
                 guard newValue != .transfer else {
                     categoryId = ""
                     return

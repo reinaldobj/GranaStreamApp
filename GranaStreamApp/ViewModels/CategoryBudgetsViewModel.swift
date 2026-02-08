@@ -46,11 +46,13 @@ final class CategoryBudgetsViewModel: ObservableObject {
             }
 
             let categoriesSnapshot = categories
+            let namesByIdSnapshot = categoryNamesById
+            let budgetsByCategorySnapshot = budgetsByCategory
             let items = await Task.detached(priority: .utility) { @Sendable in
                 CategoryBudgetBuilder.buildItems(
                     categories: categoriesSnapshot,
-                    namesById: categoryNamesById,
-                    budgetsByCategory: budgetsByCategory
+                    namesById: namesByIdSnapshot,
+                    budgetsByCategory: budgetsByCategorySnapshot
                 )
             }.value
 
@@ -152,7 +154,7 @@ final class CategoryBudgetsViewModel: ObservableObject {
 }
 
 private enum CategoryBudgetBuilder {
-    static func buildItems(
+    nonisolated static func buildItems(
         categories: [CategoryResponseDto],
         namesById: [String: String],
         budgetsByCategory: [String: Double]
@@ -169,7 +171,7 @@ private enum CategoryBudgetBuilder {
         }
     }
 
-    private static func finalExpenseCategories(from categories: [CategoryResponseDto]) -> [CategoryResponseDto] {
+    nonisolated private static func finalExpenseCategories(from categories: [CategoryResponseDto]) -> [CategoryResponseDto] {
         let activeCategories = categories.filter(\.isActive)
         let parentIdsWithChildren = Set(activeCategories.compactMap(\.parentCategoryId))
 
@@ -198,7 +200,7 @@ private enum CategoryBudgetBuilder {
             }
     }
 
-    private static func parentName(for category: CategoryResponseDto, namesById: [String: String]) -> String? {
+    nonisolated private static func parentName(for category: CategoryResponseDto, namesById: [String: String]) -> String? {
         guard let parentId = category.parentCategoryId else { return nil }
         return namesById[parentId]
     }

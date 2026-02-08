@@ -12,7 +12,7 @@ enum DS {
         static let textPrimary = Color.token("TextPrimary", fallback: "0B0B12")
         static let textSecondary = Color.token("TextSecondary", fallback: "4B5563")
         static let border = Color.token("Border", fallback: "E5E7EB")
-        static let primary = Color.token("Primary", fallback: "0068FF")
+        static let primary = Color.token("AppPrimary", fallback: "0068FF")
         static let onPrimary = Color.token("OnPrimary", fallback: "FFFFFF")
         static let accent = Color.token("Accent", fallback: "FF2DB2")
         static let success = Color.token("Success", fallback: "00DD9E")

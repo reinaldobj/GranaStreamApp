@@ -11,6 +11,8 @@ final class BiometricAuthManager {
             return "Face ID"
         case .touchID:
             return "Touch ID"
+        case .opticID:
+            return "Optic ID"
         case .none:
             return "Face ID"
         @unknown default:
@@ -24,6 +26,8 @@ final class BiometricAuthManager {
             return "faceid"
         case .touchID:
             return "touchid"
+        case .opticID:
+            return "opticid"
         case .none:
             return "lock.shield"
         @unknown default:
