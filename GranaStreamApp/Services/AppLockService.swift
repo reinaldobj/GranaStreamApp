@@ -8,14 +8,12 @@ final class AppLockService: ObservableObject {
 
     // MARK: - Published Properties
     
+    @Published private(set) var isLocked: Bool = false
+    @Published private(set) var isPrivacyMaskVisible: Bool = false
     @Published private(set) var isBiometricLockEnabled: Bool
     @Published private(set) var shouldShowEnablePrompt: Bool = false
     @Published private(set) var lastUnlockErrorMessage: String?
     @Published private(set) var isUnlocking: Bool = false
-    
-    // Delegates from LockStateManager
-    var isLocked: Bool { lockStateManager.isLocked }
-    var isPrivacyMaskVisible: Bool { lockStateManager.isPrivacyMaskVisible }
     
     // Delegates from BiometricAuthManager
     var biometricDisplayName: String { biometricAuthManager.biometricDisplayName }
@@ -32,6 +30,7 @@ final class AppLockService: ObservableObject {
     private let biometricPromptSeenKey = "gs_biometric_prompt_seen"
     
     private var previousAuthenticationState: Bool
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Initialization
     
@@ -52,8 +51,9 @@ final class AppLockService: ObservableObject {
         if isAuthenticated && initialBiometricEnabled {
             self.lockStateManager.lock()
         }
-        
+
         self.previousAuthenticationState = isAuthenticated
+        bindLockStateManager()
         updatePromptState(isAuthenticated: isAuthenticated)
     }
 
@@ -165,5 +165,24 @@ final class AppLockService: ObservableObject {
             && !promptWasSeen
             && !isBiometricLockEnabled
             && isBiometricOptionAvailable
+    }
+
+    private func bindLockStateManager() {
+        isLocked = lockStateManager.isLocked
+        isPrivacyMaskVisible = lockStateManager.isPrivacyMaskVisible
+
+        lockStateManager.$isLocked
+            .removeDuplicates()
+            .sink { [weak self] isLocked in
+                self?.isLocked = isLocked
+            }
+            .store(in: &cancellables)
+
+        lockStateManager.$isPrivacyMaskVisible
+            .removeDuplicates()
+            .sink { [weak self] isVisible in
+                self?.isPrivacyMaskVisible = isVisible
+            }
+            .store(in: &cancellables)
     }
 }

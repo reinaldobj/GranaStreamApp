@@ -4,14 +4,36 @@ struct InstallmentSeriesView: View {
     @StateObject private var viewModel = InstallmentSeriesViewModel()
     @Environment(\.dismiss) private var dismiss
 
-    @State private var showForm = false
-    @State private var selectedSeries: InstallmentSeriesResponseDto?
+    @State private var formMode: InstallmentSeriesFormMode?
     @State private var seriesPendingDelete: InstallmentSeriesResponseDto?
     @State private var searchText = ""
     @State private var activeSearchTerm = ""
     @State private var hasFinishedInitialLoad = false
 
     private let sectionSpacing = DS.Spacing.item
+
+    private enum InstallmentSeriesFormMode: Identifiable {
+        case new
+        case edit(InstallmentSeriesResponseDto)
+
+        var id: String {
+            switch self {
+            case .new:
+                return "new"
+            case .edit(let series):
+                return series.id
+            }
+        }
+
+        var existing: InstallmentSeriesResponseDto? {
+            switch self {
+            case .new:
+                return nil
+            case .edit(let series):
+                return series
+            }
+        }
+    }
 
     var body: some View {
         ListViewContainer(primaryBackgroundHeight: max(240, UIScreen.main.bounds.height * 0.34)) {
@@ -24,8 +46,8 @@ struct InstallmentSeriesView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $showForm) {
-            InstallmentSeriesFormView(existing: selectedSeries) {
+        .sheet(item: $formMode) { mode in
+            InstallmentSeriesFormView(existing: mode.existing) {
                 Task { await viewModel.load() }
             }
             .presentationDetents([.fraction(0.86)])
@@ -74,8 +96,7 @@ struct InstallmentSeriesView: View {
                         id: "add",
                         systemImage: "plus",
                         action: {
-                            selectedSeries = nil
-                            showForm = true
+                            formMode = .new
                         }
                     )
                 ],
@@ -141,8 +162,7 @@ struct InstallmentSeriesView: View {
                     TransactionSwipeRow(
                         onTap: {},
                         onEdit: {
-                            selectedSeries = series
-                            showForm = true
+                            formMode = .edit(series)
                         },
                         onDelete: {
                             seriesPendingDelete = series
@@ -152,8 +172,7 @@ struct InstallmentSeriesView: View {
                     }
                     .contextMenu {
                         Button(L10n.Common.edit) {
-                            selectedSeries = series
-                            showForm = true
+                            formMode = .edit(series)
                         }
                         Button(L10n.Common.delete, role: .destructive) {
                             seriesPendingDelete = series

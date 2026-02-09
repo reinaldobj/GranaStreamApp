@@ -17,6 +17,9 @@ struct GranaStreamAppApp: App {
         }
         .onChange(of: scenePhase) { _, phase in
             AppLockService.shared.handleScenePhaseChange(phase)
+            if phase == .active, SessionStore.shared.isAuthenticated {
+                Task { await SessionStore.shared.ensureProfileLoadedIfNeeded() }
+            }
         }
     }
 }

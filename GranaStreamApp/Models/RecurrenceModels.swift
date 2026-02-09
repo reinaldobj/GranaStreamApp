@@ -44,7 +44,7 @@ struct RecurrenceResponseDto: Codable, Identifiable {
     let startDate: Date
     let endDate: Date?
     let dayOfMonth: Int?
-    let dayOfWeek: Int
+    let dayOfWeek: Int?
     let isPaused: Bool
     let nextOccurrence: Date?
 
@@ -69,7 +69,7 @@ struct RecurrenceResponseDto: Codable, Identifiable {
         startDate: Date,
         endDate: Date?,
         dayOfMonth: Int?,
-        dayOfWeek: Int,
+        dayOfWeek: Int?,
         isPaused: Bool,
         nextOccurrence: Date?
     ) {
@@ -100,12 +100,12 @@ struct RecurrenceResponseDto: Codable, Identifiable {
         nextOccurrence = try container.decodeIfPresent(Date.self, forKey: .nextOccurrence)
     }
 
-    private static func decodeDayOfWeek(from container: KeyedDecodingContainer<CodingKeys>) throws -> Int {
-        if let intValue = try? container.decode(Int.self, forKey: .dayOfWeek) {
+    private static func decodeDayOfWeek(from container: KeyedDecodingContainer<CodingKeys>) throws -> Int? {
+        if let intValue = try container.decodeIfPresent(Int.self, forKey: .dayOfWeek) {
             return intValue
         }
 
-        if let rawString = try? container.decode(String.self, forKey: .dayOfWeek) {
+        if let rawString = try container.decodeIfPresent(String.self, forKey: .dayOfWeek) {
             let value = rawString.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
             switch value {
             case "0", "sunday", "domingo":
@@ -123,10 +123,10 @@ struct RecurrenceResponseDto: Codable, Identifiable {
             case "6", "saturday", "sabado", "sábado":
                 return 6
             default:
-                break
+                throw DecodingError.dataCorruptedError(forKey: .dayOfWeek, in: container, debugDescription: "Invalid dayOfWeek")
             }
         }
 
-        throw DecodingError.dataCorruptedError(forKey: .dayOfWeek, in: container, debugDescription: "Invalid dayOfWeek")
+        return nil
     }
 }

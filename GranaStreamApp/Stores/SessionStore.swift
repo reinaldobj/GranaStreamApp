@@ -22,11 +22,15 @@ final class SessionStore: NSObject, SessionManager, ObservableObject {
     private var refreshToken: String?
     private var expiresAt: Date?
     private var refreshTask: Task<Bool, Never>?
+    private var profileLoadTask: Task<Void, Never>?
 
     override init() {
         super.init()
         loadFromKeychain()
         isAuthenticated = accessToken != nil
+        if isAuthenticated {
+            Task { await ensureProfileLoadedIfNeeded() }
+        }
         if refreshToken != nil && (accessToken == nil || isTokenExpiringSoon()) {
             Task { _ = await refreshTokens() }
         }
@@ -58,6 +62,7 @@ final class SessionStore: NSObject, SessionManager, ObservableObject {
         try storeTokens(from: response)
         currentUser = response.user
         isAuthenticated = true
+        Task { await ensureProfileLoadedIfNeeded() }
     }
 
     func signup(name: String, email: String, password: String) async throws {
@@ -110,6 +115,7 @@ final class SessionStore: NSObject, SessionManager, ObservableObject {
                 try storeTokens(from: response)
                 currentUser = response.user
                 isAuthenticated = true
+                Task { await self.ensureProfileLoadedIfNeeded() }
                 return true
             } catch {
                 clearTokens()
@@ -179,6 +185,32 @@ final class SessionStore: NSObject, SessionManager, ObservableObject {
         )
     }
 
+    func ensureProfileLoadedIfNeeded(forceReload: Bool = false) async {
+        guard isAuthenticated else { return }
+        if !forceReload, profile != nil { return }
+
+        if let profileLoadTask {
+            await profileLoadTask.value
+            return
+        }
+
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.profileLoadTask = nil }
+
+            do {
+                try await self.loadProfile()
+            } catch {
+                #if DEBUG
+                print("⚠️ [SessionStore] Falha ao carregar perfil automaticamente: \(error.localizedDescription)")
+                #endif
+            }
+        }
+
+        profileLoadTask = task
+        await task.value
+    }
+
     private func storeTokens(from response: LoginResponseDto) throws {
         guard let accessToken = response.accessToken, let refreshToken = response.refreshToken else {
             throw APIError.decodingError
@@ -217,6 +249,8 @@ final class SessionStore: NSObject, SessionManager, ObservableObject {
     }
 
     private func clearTokens() {
+        profileLoadTask?.cancel()
+        profileLoadTask = nil
         accessToken = nil
         refreshToken = nil
         expiresAt = nil

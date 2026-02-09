@@ -11,7 +11,7 @@ struct BudgetResponseDto: Decodable {
 struct UpdateBudgetRequestDto: Encodable {
     let categoryId: String
     let limitAmount: Double
-    let monthStart: Date
+    let month: Date
 }
 
 struct CategoryBudgetItem: Identifiable, Equatable, Sendable {
