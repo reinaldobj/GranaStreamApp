@@ -4,14 +4,36 @@ struct RecurrencesView: View {
     @StateObject private var viewModel = RecurrencesViewModel()
     @Environment(\.dismiss) private var dismiss
 
-    @State private var showForm = false
-    @State private var selectedRecurrence: RecurrenceResponseDto?
+    @State private var formMode: RecurrenceFormMode?
     @State private var recurrencePendingDelete: RecurrenceResponseDto?
     @State private var searchText = ""
     @State private var activeSearchTerm = ""
     @State private var hasFinishedInitialLoad = false
 
     private let sectionSpacing = DS.Spacing.item
+
+    private enum RecurrenceFormMode: Identifiable {
+        case new
+        case edit(RecurrenceResponseDto)
+
+        var id: String {
+            switch self {
+            case .new:
+                return "new"
+            case .edit(let recurrence):
+                return recurrence.id
+            }
+        }
+
+        var existing: RecurrenceResponseDto? {
+            switch self {
+            case .new:
+                return nil
+            case .edit(let recurrence):
+                return recurrence
+            }
+        }
+    }
 
     var body: some View {
         ListViewContainer(primaryBackgroundHeight: max(240, UIScreen.main.bounds.height * 0.34)) {
@@ -24,8 +46,8 @@ struct RecurrencesView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $showForm) {
-            RecurrenceFormView(existing: selectedRecurrence) {
+        .sheet(item: $formMode) { mode in
+            RecurrenceFormView(existing: mode.existing) {
                 Task { await viewModel.load() }
             }
             .presentationDetents([.fraction(0.86)])
@@ -74,8 +96,7 @@ struct RecurrencesView: View {
                         id: "add",
                         systemImage: "plus",
                         action: {
-                            selectedRecurrence = nil
-                            showForm = true
+                            formMode = .new
                         }
                     )
                 ],
@@ -141,8 +162,7 @@ struct RecurrencesView: View {
                     TransactionSwipeRow(
                         onTap: {},
                         onEdit: {
-                            selectedRecurrence = recurrence
-                            showForm = true
+                            formMode = .edit(recurrence)
                         },
                         onDelete: {
                             recurrencePendingDelete = recurrence
@@ -152,8 +172,7 @@ struct RecurrencesView: View {
                     }
                     .contextMenu {
                         Button(L10n.Common.edit) {
-                            selectedRecurrence = recurrence
-                            showForm = true
+                            formMode = .edit(recurrence)
                         }
                         if recurrence.isPaused {
                             Button("Retomar") {

@@ -46,9 +46,15 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.2), value: appLock.isPrivacyMaskVisible)
         .onAppear {
             appLock.syncAuthenticationState(isAuthenticated: session.isAuthenticated)
+            if session.isAuthenticated {
+                Task { await session.ensureProfileLoadedIfNeeded() }
+            }
         }
         .onChange(of: session.isAuthenticated) { _, isAuthenticated in
             appLock.syncAuthenticationState(isAuthenticated: isAuthenticated)
+            if isAuthenticated {
+                Task { await session.ensureProfileLoadedIfNeeded() }
+            }
         }
         .task(id: appLock.isLocked) {
             guard session.isAuthenticated, appLock.isLocked else { return }

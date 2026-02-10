@@ -16,7 +16,7 @@ struct CategoryFormView: View {
         _viewModel = StateObject(wrappedValue: CategoryFormViewModel(
             existing: existing,
             categoriesViewModel: viewModel,
-            referenceStore: ReferenceDataStore()
+            referenceStore: ReferenceDataStore.shared
         ))
     }
 
@@ -28,42 +28,56 @@ struct CategoryFormView: View {
                 dismiss()
             }
         ) {
-            VStack(spacing: DS.Spacing.item) {
-                TextField("Nome", text: $viewModel.name)
-                    .padding()
-                    .background(DS.Colors.surface)
-                    .cornerRadius(DS.Radius.field)
-                
-                TextField("Descrição", text: $viewModel.description)
-                    .padding()
-                    .background(DS.Colors.surface)
-                    .cornerRadius(DS.Radius.field)
-                
-                Picker("Tipo", selection: $viewModel.type) {
-                    ForEach(CategoryType.allCases) { item in
-                        Text(item.label).tag(item)
+            AppCard {
+                VStack(spacing: DS.Spacing.item) {
+                    AppFormField(label: "Tipo") {
+                        Picker("Tipo", selection: $viewModel.type) {
+                            ForEach(CategoryType.allCases) { item in
+                                Text(item.label).tag(item)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                    }
+
+                    AppFormField(label: "Categoria pai") {
+                        Picker("Categoria pai", selection: $viewModel.parentId) {
+                            Text("Nenhuma").tag("")
+                            ForEach(viewModel.parentOptions) { category in
+                                Text(category.name ?? "Categoria").tag(category.id)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    AppFormField(label: "Nome") {
+                        TextField("Nome", text: $viewModel.name)
+                            .textInputAutocapitalization(.sentences)
+                    }
+
+                    AppFormField(label: "Descrição") {
+                        TextField("Descrição", text: $viewModel.description)
+                            .textInputAutocapitalization(.sentences)
+                    }
+
+                    AppFormField(label: "Ordem") {
+                        Picker("Ordem", selection: $viewModel.sortOrder) {
+                            ForEach(0...4, id: \.self) { value in
+                                Text("\(value)").tag(value)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                .pickerStyle(.segmented)
-                
-                Picker("Categoria pai", selection: $viewModel.parentId) {
-                    Text("Nenhuma").tag("")
-                    ForEach(viewModel.parentOptions) { category in
-                        Text(category.name ?? "Categoria").tag(category.id)
-                    }
-                }
-                .pickerStyle(.automatic)
-                
-                TextField("Ordem", text: $viewModel.sortOrder)
-                    .keyboardType(.numberPad)
-                    .padding()
-                    .background(DS.Colors.surface)
-                    .cornerRadius(DS.Radius.field)
             }
         }
         .tint(DS.Colors.primary)
         .task {
-            // Atualizar referenceStore se necessário
+            await viewModel.loadReferenceDataIfNeeded()
         }
     }
 }

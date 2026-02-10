@@ -20,6 +20,14 @@ enum AppEnvironment: String {
 }
 
 enum AppConfig {
+    static var enableNetworkLogging: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
+
     static var baseURL: URL {
         if let value = baseURLString(for: AppEnvironment.current), let url = URL(string: value) {
             return url

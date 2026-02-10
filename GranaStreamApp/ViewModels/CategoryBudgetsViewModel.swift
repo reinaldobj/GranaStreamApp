@@ -87,13 +87,13 @@ final class CategoryBudgetsViewModel: ObservableObject {
             let request = UpdateBudgetRequestDto(
                 categoryId: change.categoryId,
                 limitAmount: change.limitAmount,
-                monthStart: normalizedMonth
+                month: normalizedMonth
             )
 
             do {
-                try await APIClient.shared.requestNoResponse(
+                try await apiClient.requestNoResponse(
                     "/api/v1/budgets",
-                    method: "PUT",
+                    method: "POST",
                     body: AnyEncodable(request)
                 )
                 savedCategoryIds.append(change.categoryId)

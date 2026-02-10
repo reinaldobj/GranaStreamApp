@@ -84,6 +84,13 @@ final class APIClient: APIClientProtocol {
             urlRequest.httpBody = try encoder.encode(body)
         }
 
+        let startTime = Date()
+        #if DEBUG
+        if AppConfig.enableNetworkLogging, shouldLogRequest(path: path, method: method) {
+            logRequest(urlRequest, path: path)
+        }
+        #endif
+
         let data: Data
         let response: URLResponse
         do {
@@ -91,14 +98,31 @@ final class APIClient: APIClientProtocol {
         } catch is CancellationError {
             throw APIError.requestCancelled
         } catch let urlError as URLError {
+            #if DEBUG
+            if AppConfig.enableNetworkLogging, shouldLogRequest(path: path, method: method) {
+                logNetworkError(urlError, path: path)
+            }
+            #endif
             throw APIError.from(urlError: urlError)
         } catch {
+            #if DEBUG
+            if AppConfig.enableNetworkLogging, shouldLogRequest(path: path, method: method) {
+                logUnexpectedError(error, path: path)
+            }
+            #endif
             throw APIError.network
         }
 
         guard let http = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
+
+        #if DEBUG
+        if AppConfig.enableNetworkLogging, shouldLogRequest(path: path, method: method) {
+            let duration = Date().timeIntervalSince(startTime)
+            logResponse(http, data: data, duration: duration, path: path)
+        }
+        #endif
 
         if http.statusCode == 401, requiresAuth, retryOnAuthFailure {
             let refreshed = await authenticationProvider.refreshTokens()
@@ -151,6 +175,70 @@ final class APIClient: APIClientProtocol {
         decoder.dateDecodingStrategy = .custom(DateCoder.decode)
         return decoder
     }
+
+    #if DEBUG
+    private func shouldLogRequest(path: String, method: String) -> Bool {
+        let normalizedPath = path.lowercased()
+        let normalizedMethod = method.uppercased()
+        if normalizedPath == "/api/v1/budgets" {
+            return ["PUT", "POST", "PATCH"].contains(normalizedMethod)
+        }
+        return false
+    }
+
+    private func logRequest(_ request: URLRequest, path: String) {
+        let method = request.httpMethod ?? "GET"
+        let url = request.url?.absoluteString ?? path
+        let headers = sanitizedHeaders(request.allHTTPHeaderFields)
+        print("➡️ [API] \(method) \(url)")
+        if !headers.isEmpty {
+            print("➡️ [API] headers: \(headers)")
+        }
+        if let bodyData = request.httpBody, let bodyText = String(data: bodyData, encoding: .utf8) {
+            let trimmed = truncate(bodyText)
+            print("➡️ [API] body: \(trimmed)")
+        }
+    }
+
+    private func logResponse(_ response: HTTPURLResponse, data: Data, duration: TimeInterval, path: String) {
+        let url = response.url?.absoluteString ?? path
+        let durationText = String(format: "%.2f", duration)
+        print("⬅️ [API] \(response.statusCode) \(url) (\(durationText)s)")
+        if let bodyText = String(data: data, encoding: .utf8), !bodyText.isEmpty {
+            let trimmed = truncate(bodyText)
+            print("⬅️ [API] body: \(trimmed)")
+        }
+    }
+
+    private func logNetworkError(_ error: URLError, path: String) {
+        print("❌ [API] Network error on \(path): \(error.code.rawValue) \(error.localizedDescription)")
+    }
+
+    private func logUnexpectedError(_ error: Error, path: String) {
+        print("❌ [API] Unexpected error on \(path): \(error.localizedDescription)")
+    }
+
+    private func sanitizedHeaders(_ headers: [String: String]?) -> [String: String] {
+        guard let headers else { return [:] }
+        var sanitized: [String: String] = [:]
+        for (key, value) in headers {
+            if key.lowercased() == "authorization" {
+                sanitized[key] = "Bearer ***"
+            } else {
+                sanitized[key] = value
+            }
+        }
+        return sanitized
+    }
+
+    private func truncate(_ text: String, maxLength: Int = 4000) -> String {
+        if text.count <= maxLength {
+            return text
+        }
+        let index = text.index(text.startIndex, offsetBy: maxLength)
+        return String(text[..<index]) + "…"
+    }
+    #endif
 
     // MARK: - Retry Logic
 

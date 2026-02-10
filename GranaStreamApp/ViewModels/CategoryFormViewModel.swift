@@ -12,42 +12,43 @@ final class CategoryFormViewModel: FormViewModel {
     @Published var description = ""
     @Published var type: CategoryType = .expense
     @Published var parentId: String = ""
-    @Published var sortOrder = "0"
+    @Published var sortOrder = 0
+    @Published private(set) var parentOptions: [CategoryResponseDto] = []
     
     let existing: CategoryResponseDto?
     private let categoriesViewModel: CategoriesViewModel
     private let referenceStore: ReferenceDataStore
-    
+    private var cancellables: Set<AnyCancellable> = []
+
     var isValid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
-    
-    var parentOptions: [CategoryResponseDto] {
-        referenceStore.categories
-            .filter { $0.parentCategoryId == nil }
-            .filter { $0.id != existing?.id }
-            .sorted { lhs, rhs in
-                if lhs.sortOrder == rhs.sortOrder {
-                    return (lhs.name ?? "").localizedCaseInsensitiveCompare(rhs.name ?? "") == .orderedAscending
-                }
-                return lhs.sortOrder < rhs.sortOrder
-            }
-    }
-    
+
     init(existing: CategoryResponseDto?, categoriesViewModel: CategoriesViewModel, referenceStore: ReferenceDataStore) {
         self.existing = existing
         self.categoriesViewModel = categoriesViewModel
         self.referenceStore = referenceStore
+        bindCategoriesViewModel()
+        bindReferenceStore()
         prefill()
+        refreshParentOptions(from: bestAvailableCategories)
+    }
+
+    func loadReferenceDataIfNeeded() async {
+        if !categoriesViewModel.categories.isEmpty {
+            refreshParentOptions(from: categoriesViewModel.categories)
+            return
+        }
+        await referenceStore.loadIfNeeded()
+        refreshParentOptions(from: bestAvailableCategories)
     }
     
     func save() async throws {
         isLoading = true
         defer { isLoading = false }
-        
-        let orderValue = Int(sortOrder) ?? 0
+
         let parent = parentId.isEmpty ? nil : parentId
-        
+
         if let existing {
             let success = await categoriesViewModel.update(
                 category: existing,
@@ -55,7 +56,7 @@ final class CategoryFormViewModel: FormViewModel {
                 description: description,
                 type: type,
                 parentId: parent,
-                sortOrder: orderValue,
+                sortOrder: sortOrder,
                 reloadAfterChange: false
             )
             guard success else {
@@ -68,7 +69,7 @@ final class CategoryFormViewModel: FormViewModel {
                 description: description,
                 type: type,
                 parentId: parent,
-                sortOrder: orderValue,
+                sortOrder: sortOrder,
                 reloadAfterChange: false
             )
             guard success else {
@@ -84,6 +85,51 @@ final class CategoryFormViewModel: FormViewModel {
         description = existing.description ?? ""
         type = existing.categoryType ?? .expense
         parentId = existing.parentCategoryId ?? ""
-        sortOrder = String(existing.sortOrder)
+        sortOrder = min(max(existing.sortOrder, 0), 4)
+    }
+
+    private var bestAvailableCategories: [CategoryResponseDto] {
+        let screenCategories = categoriesViewModel.categories
+        if !screenCategories.isEmpty {
+            return screenCategories
+        }
+        return referenceStore.categories
+    }
+
+    private func bindCategoriesViewModel() {
+        categoriesViewModel.$loadingState
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.refreshParentOptions(from: self.bestAvailableCategories)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func bindReferenceStore() {
+        referenceStore.$categories
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.refreshParentOptions(from: self.bestAvailableCategories)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refreshParentOptions(from categories: [CategoryResponseDto]) {
+        parentOptions = categories
+            .filter(isParentCategory)
+            .filter { $0.id != existing?.id }
+            .sorted { lhs, rhs in
+                if lhs.sortOrder == rhs.sortOrder {
+                    return (lhs.name ?? "").localizedCaseInsensitiveCompare(rhs.name ?? "") == .orderedAscending
+                }
+                return lhs.sortOrder < rhs.sortOrder
+            }
+    }
+
+    private func isParentCategory(_ category: CategoryResponseDto) -> Bool {
+        let parentId = category.parentCategoryId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return parentId.isEmpty
     }
 }
