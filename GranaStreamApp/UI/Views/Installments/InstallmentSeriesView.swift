@@ -10,6 +10,7 @@ struct InstallmentSeriesView: View {
     @State private var activeSearchTerm = ""
     @State private var hasFinishedInitialLoad = false
     @State private var filteredSeriesCache: [InstallmentSeriesResponseDto] = []
+    @State private var shouldReloadAfterFormDismiss = false
 
     private let sectionSpacing = DS.Spacing.item
 
@@ -47,9 +48,16 @@ struct InstallmentSeriesView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(item: $formMode) { mode in
-            InstallmentSeriesFormView(existing: mode.existing) {
+        .sheet(
+            item: $formMode,
+            onDismiss: {
+                guard shouldReloadAfterFormDismiss else { return }
+                shouldReloadAfterFormDismiss = false
                 Task { await viewModel.load() }
+            }
+        ) { mode in
+            InstallmentSeriesFormView(existing: mode.existing) {
+                shouldReloadAfterFormDismiss = true
             }
             .presentationDetents([.fraction(0.86)])
             .presentationDragIndicator(.visible)

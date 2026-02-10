@@ -12,6 +12,8 @@ final class ReferenceDataStore: ObservableObject, ObservableReferenceDataProvide
     @Published private(set) var categories: [CategoryResponseDto] = []
 
     private let apiClient: APIClientProtocol
+    private var hasLoadedAccounts = false
+    private var hasLoadedCategories = false
     
     init(apiClient: APIClientProtocol? = nil) {
         self.apiClient = apiClient ?? APIClient.shared
@@ -26,14 +28,14 @@ final class ReferenceDataStore: ObservableObject, ObservableReferenceDataProvide
     }
 
     func loadIfNeeded() async {
-        if accounts.isEmpty && categories.isEmpty {
+        if !hasLoadedAccounts && !hasLoadedCategories {
             await refresh()
             return
         }
-        if accounts.isEmpty {
+        if !hasLoadedAccounts {
             await loadAccounts()
         }
-        if categories.isEmpty {
+        if !hasLoadedCategories {
             await loadCategories()
         }
     }
@@ -46,6 +48,7 @@ final class ReferenceDataStore: ObservableObject, ObservableReferenceDataProvide
 
     func replaceAccounts(_ items: [AccountResponseDto]) {
         accounts = items
+        hasLoadedAccounts = true
     }
 
     func upsertAccount(_ item: AccountResponseDto) {
@@ -68,6 +71,7 @@ final class ReferenceDataStore: ObservableObject, ObservableReferenceDataProvide
 
     func replaceCategories(_ items: [CategoryResponseDto]) {
         categories = items
+        hasLoadedCategories = true
     }
 
     func upsertCategory(_ item: CategoryResponseDto) {
@@ -88,6 +92,7 @@ final class ReferenceDataStore: ObservableObject, ObservableReferenceDataProvide
         do {
             let response: [AccountResponseDto] = try await apiClient.request("/api/v1/accounts")
             accounts = response
+            hasLoadedAccounts = true
         } catch {
             // Log do erro mas mantém dados atuais para evitar tela vazia em caso de falha de rede
             #if DEBUG
@@ -105,6 +110,7 @@ final class ReferenceDataStore: ObservableObject, ObservableReferenceDataProvide
                 ]
             )
             categories = response
+            hasLoadedCategories = true
         } catch {
             // Log do erro mas mantém dados atuais para evitar tela vazia em caso de falha de rede
             #if DEBUG

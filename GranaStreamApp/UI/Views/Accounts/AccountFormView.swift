@@ -29,25 +29,17 @@ struct AccountFormView: View {
                         .textInputAutocapitalization(.words)
                 }
 
-                Menu {
+                TransactionPickerRow(
+                    label: "Tipo",
+                    value: viewModel.type.label,
+                    placeholder: "Selecione"
+                ) {
                     ForEach(AccountType.allCases) { item in
                         Button(item.label) {
                             viewModel.type = item
                         }
                     }
-                } label: {
-                    AccountField(label: "Tipo") {
-                        Text(viewModel.type.label)
-                            .foregroundColor(DS.Colors.textPrimary)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(DS.Colors.textSecondary)
-                    }
                 }
-                .buttonStyle(.plain)
 
                 if existing == nil {
                     AccountField(label: "Saldo inicial") {

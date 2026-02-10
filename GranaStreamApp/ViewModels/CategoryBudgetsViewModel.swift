@@ -151,11 +151,12 @@ private enum CategoryBudgetBuilder {
         namesById: [String: String],
         budgetsByCategory: [String: Double]
     ) -> [CategoryBudgetItem] {
-        let finalCategories = finalExpenseCategories(from: categories)
-        return finalCategories.map { category in
+        let orderedCategories = orderedExpenseCategories(from: categories)
+        return orderedCategories.map { category in
             CategoryBudgetItem(
                 categoryId: category.id,
                 categoryName: category.name ?? "Categoria",
+                parentCategoryId: category.parentCategoryId,
                 parentCategoryName: parentName(for: category, namesById: namesById),
                 amount: budgetsByCategory[category.id],
                 sortOrder: category.sortOrder
@@ -163,37 +164,54 @@ private enum CategoryBudgetBuilder {
         }
     }
 
-    nonisolated private static func finalExpenseCategories(from categories: [CategoryResponseDto]) -> [CategoryResponseDto] {
-        let activeCategories = categories.filter(\.isActive)
-        let parentIdsWithChildren = Set(activeCategories.compactMap(\.parentCategoryId))
-
-        return activeCategories
+    nonisolated private static func orderedExpenseCategories(from categories: [CategoryResponseDto]) -> [CategoryResponseDto] {
+        let expenseCategories = categories
+            .filter(\.isActive)
             .filter { $0.categoryType == .expense }
-            .filter { category in
-                if category.parentCategoryId != nil {
-                    return true
-                }
-                return !parentIdsWithChildren.contains(category.id)
-            }
-            .sorted { lhs, rhs in
-                let lhsParent = lhs.parentCategoryId ?? lhs.id
-                let rhsParent = rhs.parentCategoryId ?? rhs.id
-                if lhsParent == rhsParent {
-                    if lhs.sortOrder == rhs.sortOrder {
-                        return (lhs.name ?? "").localizedCaseInsensitiveCompare(rhs.name ?? "") == .orderedAscending
-                    }
-                    return lhs.sortOrder < rhs.sortOrder
-                }
 
-                if lhs.sortOrder == rhs.sortOrder {
-                    return (lhs.name ?? "").localizedCaseInsensitiveCompare(rhs.name ?? "") == .orderedAscending
-                }
-                return lhs.sortOrder < rhs.sortOrder
+        let parents = expenseCategories
+            .filter { $0.parentCategoryId == nil }
+            .sorted(by: categorySort)
+
+        let parentsById = Dictionary(uniqueKeysWithValues: parents.map { ($0.id, $0) })
+
+        var childrenByParent: [String: [CategoryResponseDto]] = [:]
+        var orphanChildren: [CategoryResponseDto] = []
+
+        for child in expenseCategories where child.parentCategoryId != nil {
+            guard let parentId = child.parentCategoryId, parentsById[parentId] != nil else {
+                orphanChildren.append(child)
+                continue
             }
+            childrenByParent[parentId, default: []].append(child)
+        }
+
+        for key in childrenByParent.keys {
+            childrenByParent[key] = (childrenByParent[key] ?? []).sorted(by: categorySort)
+        }
+
+        var result: [CategoryResponseDto] = []
+        for parent in parents {
+            result.append(parent)
+            result.append(contentsOf: childrenByParent[parent.id] ?? [])
+        }
+
+        if !orphanChildren.isEmpty {
+            result.append(contentsOf: orphanChildren.sorted(by: categorySort))
+        }
+
+        return result
     }
 
     nonisolated private static func parentName(for category: CategoryResponseDto, namesById: [String: String]) -> String? {
         guard let parentId = category.parentCategoryId else { return nil }
         return namesById[parentId]
+    }
+
+    nonisolated private static func categorySort(lhs: CategoryResponseDto, rhs: CategoryResponseDto) -> Bool {
+        if lhs.sortOrder == rhs.sortOrder {
+            return (lhs.name ?? "").localizedCaseInsensitiveCompare(rhs.name ?? "") == .orderedAscending
+        }
+        return lhs.sortOrder < rhs.sortOrder
     }
 }

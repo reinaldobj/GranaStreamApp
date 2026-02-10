@@ -30,6 +30,7 @@ final class CategoryFormViewModel: FormViewModel {
         self.referenceStore = referenceStore
         bindCategoriesViewModel()
         bindReferenceStore()
+        bindTypeChanges()
         prefill()
         refreshParentOptions(from: bestAvailableCategories)
     }
@@ -83,7 +84,11 @@ final class CategoryFormViewModel: FormViewModel {
         guard let existing else { return }
         name = existing.name ?? ""
         description = existing.description ?? ""
-        type = existing.categoryType ?? .expense
+        if existing.categoryType == .both {
+            type = .expense
+        } else {
+            type = existing.categoryType ?? .expense
+        }
         parentId = existing.parentCategoryId ?? ""
         sortOrder = min(max(existing.sortOrder, 0), 4)
     }
@@ -114,9 +119,19 @@ final class CategoryFormViewModel: FormViewModel {
             .store(in: &cancellables)
     }
 
+    private func bindTypeChanges() {
+        $type
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.refreshParentOptions(from: self.bestAvailableCategories)
+            }
+            .store(in: &cancellables)
+    }
+
     private func refreshParentOptions(from categories: [CategoryResponseDto]) {
         parentOptions = categories
             .filter(isParentCategory)
+            .filter { $0.categoryType == type }
             .filter { $0.id != existing?.id }
             .sorted { lhs, rhs in
                 if lhs.sortOrder == rhs.sortOrder {
@@ -126,6 +141,10 @@ final class CategoryFormViewModel: FormViewModel {
                 }
                 return lhs.sortOrder < rhs.sortOrder
             }
+
+        if !parentId.isEmpty, !parentOptions.contains(where: { $0.id == parentId }) {
+            parentId = ""
+        }
     }
 
     private func isParentCategory(_ category: CategoryResponseDto) -> Bool {

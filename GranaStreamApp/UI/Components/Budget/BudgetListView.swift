@@ -3,11 +3,12 @@ import SwiftUI
 /// Lista de itens de orçamento
 struct BudgetListView: View {
     let items: [CategoryBudgetItem]
-    let inputValues: [String: String]
     let isLoading: Bool
     let hasFinishedInitialLoad: Bool
-    let isInvalid: (String) -> Bool
-    let onValueChange: (String, String) -> Void
+    let displayValue: (CategoryBudgetItem) -> String
+    let isEditable: (CategoryBudgetItem) -> Bool
+    let isInvalid: (CategoryBudgetItem) -> Bool
+    let onValueChange: (CategoryBudgetItem, String) -> Void
     let viewportHeight: CGFloat
     
     var body: some View {
@@ -40,10 +41,11 @@ struct BudgetListView: View {
                 ForEach(items) { item in
                     BudgetItemRow(
                         item: item,
-                        value: inputValues[item.id] ?? "",
-                        isInvalid: isInvalid(item.id),
+                        value: displayValue(item),
+                        isEditable: isEditable(item),
+                        isInvalid: isInvalid(item),
                         onValueChange: { newValue in
-                            onValueChange(item.id, newValue)
+                            onValueChange(item, newValue)
                         }
                     )
 

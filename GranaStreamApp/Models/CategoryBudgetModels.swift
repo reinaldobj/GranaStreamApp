@@ -17,6 +17,7 @@ struct UpdateBudgetRequestDto: Encodable {
 struct CategoryBudgetItem: Identifiable, Equatable, Sendable {
     let categoryId: String
     let categoryName: String
+    let parentCategoryId: String?
     let parentCategoryName: String?
     let amount: Double?
     let sortOrder: Int

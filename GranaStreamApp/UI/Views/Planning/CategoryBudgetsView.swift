@@ -39,12 +39,19 @@ struct CategoryBudgetsView: View {
 
                         BudgetListView(
                             items: viewModel.items,
-                            inputValues: inputValues,
                             isLoading: viewModel.isLoading,
                             hasFinishedInitialLoad: hasFinishedInitialLoad,
-                            isInvalid: { isInvalid(categoryId: $0) },
-                            onValueChange: { id, newValue in
-                                inputValues[id] = newValue
+                            displayValue: { item in
+                                displayValue(for: item)
+                            },
+                            isEditable: { item in
+                                isEditable(item)
+                            },
+                            isInvalid: { item in
+                                isInvalid(categoryId: item.id)
+                            },
+                            onValueChange: { item, newValue in
+                                inputValues[item.id] = newValue
                             },
                             viewportHeight: proxy.size.height
                         )
@@ -145,6 +152,7 @@ struct CategoryBudgetsView: View {
         var newBaseline: [String: String] = [:]
 
         for item in viewModel.items {
+            guard isEditable(item) else { continue }
             if let amount = item.amount, let initial = CurrencyTextFieldHelper.initialText(from: amount) {
                 newValues[item.id] = initial
                 newBaseline[item.id] = initial
@@ -165,13 +173,15 @@ struct CategoryBudgetsView: View {
     }
 
     private func isInvalid(categoryId: String) -> Bool {
+        guard let item = viewModel.items.first(where: { $0.id == categoryId }),
+              isEditable(item) else { return false }
         let valueString = inputValues[categoryId, default: ""]
         guard let value = CurrencyTextFieldHelper.value(from: valueString) else { return false }
         return value < 0
     }
 
     private var hasInvalidValues: Bool {
-        viewModel.items.contains { isInvalid(categoryId: $0.id) }
+        viewModel.items.filter(isEditable).contains { isInvalid(categoryId: $0.id) }
     }
 
     private func amountsAreEqual(_ lhs: Double?, _ rhs: Double?) -> Bool {
@@ -186,7 +196,7 @@ struct CategoryBudgetsView: View {
     }
 
     private var pendingChanges: [CategoryBudgetSaveChange] {
-        viewModel.items.compactMap { item in
+        viewModel.items.filter(isEditable).compactMap { item in
             let valueString = inputValues[item.id] ?? ""
             let value = CurrencyTextFieldHelper.value(from: valueString)
             let baseline = baselineAmount(for: item.id)
@@ -253,6 +263,28 @@ struct CategoryBudgetsView: View {
                 baselineAmounts[categoryId] = valueString
             }
         }
+    }
+
+    private var parentIdsWithChildren: Set<String> {
+        Set(viewModel.items.compactMap(\.parentCategoryId))
+    }
+
+    private func isEditable(_ item: CategoryBudgetItem) -> Bool {
+        !parentIdsWithChildren.contains(item.id)
+    }
+
+    private func displayValue(for item: CategoryBudgetItem) -> String {
+        if isEditable(item) {
+            return inputValues[item.id] ?? ""
+        }
+
+        let total = viewModel.items
+            .filter { $0.parentCategoryId == item.id }
+            .reduce(0.0) { partial, child in
+                partial + (CurrencyTextFieldHelper.value(from: inputValues[child.id] ?? "") ?? 0)
+            }
+
+        return CurrencyTextFieldHelper.initialText(from: total) ?? "R$ 0,00"
     }
 }
 
