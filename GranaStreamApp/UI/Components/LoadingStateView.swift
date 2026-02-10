@@ -80,7 +80,7 @@ extension LoadingStateView {
             .font(DS.Typography.section)
         
         LoadingStateView(
-            state: LoadingState<String>.loading,
+            state: LoadingState<String>.loading(previousData: nil),
             content: { data in
                 Text(data)
             },

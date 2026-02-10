@@ -9,6 +9,7 @@ struct CategoriesView: View {
     @State private var hasFinishedInitialLoad = false
     @State private var categoryPendingDelete: CategoryResponseDto?
     @State private var typeFilter: CategoryListTypeFilter = .all
+    @State private var projection = CategoryProjection.empty
 
     private let sectionSpacing = DS.Spacing.item
 
@@ -51,7 +52,14 @@ struct CategoriesView: View {
         .task {
             searchText = viewModel.activeSearchTerm
             await viewModel.load()
+            rebuildProjection()
             hasFinishedInitialLoad = true
+        }
+        .onChange(of: typeFilter) { _, _ in
+            rebuildProjection()
+        }
+        .onReceive(viewModel.$loadingState) { _ in
+            rebuildProjection()
         }
         .errorAlert(message: $viewModel.errorMessage)
         .tint(DS.Colors.primary)
@@ -84,6 +92,14 @@ struct CategoriesView: View {
 
             CategorySearchField(text: $searchText) {
                 viewModel.applySearch(term: searchText)
+            }
+
+            if viewModel.isLoading && !viewModel.categories.isEmpty {
+                HStack {
+                    Spacer()
+                    LoadingPillView()
+                    Spacer()
+                }
             }
         }
         .padding(.horizontal, DS.Spacing.screen)
@@ -135,38 +151,46 @@ struct CategoriesView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 24)
             } else {
-                ForEach(Array(orderedParents.enumerated()), id: \.element.id) { index, parent in
-                    if let section = sectionsById[parent.id] {
+                let firstParentId = projection.orderedParents.first?.id
+
+                ForEach(projection.orderedParents) { parent in
+                    if let section = projection.sectionsById[parent.id] {
+                        let lastChildId = section.children.last?.id
+
                         sectionHeader(for: section)
                             .padding(.leading, 4)
-                            .padding(.top, index == 0 ? 14 : 0)
+                            .padding(.top, parent.id == firstParentId ? 14 : 0)
 
                         LazyVStack(spacing: 12) {
-                            ForEach(Array(section.children.enumerated()), id: \.element.id) { rowIndex, child in
+                            ForEach(section.children) { child in
                                 categoryRow(for: child)
 
-                                if rowIndex < section.children.count - 1 {
+                                if child.id != lastChildId {
                                     Divider()
                                         .overlay(DS.Colors.border)
                                 }
                             }
                         }
-                    } else if leafIds.contains(parent.id) {
+                    } else if projection.leafIds.contains(parent.id) {
                         categoryRow(for: parent)
-                            .padding(.top, index == 0 ? 14 : 0)
+                            .padding(.top, parent.id == firstParentId ? 14 : 0)
                     }
                 }
 
-                ForEach(Array(otherSections.enumerated()), id: \.element.id) { sectionIndex, section in
+                let firstOtherSectionId = projection.otherSections.first?.id
+
+                ForEach(projection.otherSections) { section in
+                    let lastChildId = section.children.last?.id
+
                     sectionHeader(for: section)
                         .padding(.leading, 4)
-                        .padding(.top, orderedParents.isEmpty && sectionIndex == 0 ? 14 : 0)
+                        .padding(.top, projection.orderedParents.isEmpty && section.id == firstOtherSectionId ? 14 : 0)
 
                     LazyVStack(spacing: 12) {
-                        ForEach(Array(section.children.enumerated()), id: \.element.id) { rowIndex, child in
+                        ForEach(section.children) { child in
                             categoryRow(for: child)
 
-                            if rowIndex < section.children.count - 1 {
+                            if child.id != lastChildId {
                                 Divider()
                                     .overlay(DS.Colors.border)
                             }
@@ -225,50 +249,8 @@ struct CategoriesView: View {
         .padding(.vertical, 4)
     }
 
-    private var grouping: (sections: [CategorySection], leafParents: [CategoryResponseDto]) {
-        groupCategoriesForList(filteredCategoriesByType)
-    }
-
-    private var sectionsById: [String: CategorySection] {
-        Dictionary(uniqueKeysWithValues: grouping.sections.map { ($0.id, $0) })
-    }
-
-    private var otherSections: [CategorySection] {
-        grouping.sections.filter { $0.parent == nil }
-    }
-
-    private var leafIds: Set<String> {
-        Set(grouping.leafParents.map(\.id))
-    }
-
-    private var orderedParents: [CategoryResponseDto] {
-        filteredCategoriesByType
-            .filter { $0.parentCategoryId == nil }
-            .sorted { lhs, rhs in
-                if lhs.sortOrder == rhs.sortOrder {
-                    return (lhs.name ?? "").localizedCaseInsensitiveCompare(rhs.name ?? "") == .orderedAscending
-                }
-                return lhs.sortOrder < rhs.sortOrder
-            }
-    }
-
-    private var filteredCategoriesByType: [CategoryResponseDto] {
-        guard typeFilter != .all else { return viewModel.categories }
-
-        return viewModel.categories.filter { category in
-            switch typeFilter {
-            case .all:
-                return true
-            case .income:
-                return category.categoryType == .income || category.categoryType == .both
-            case .expense:
-                return category.categoryType == .expense || category.categoryType == .both
-            }
-        }
-    }
-
     private var hasRows: Bool {
-        !grouping.sections.isEmpty || !grouping.leafParents.isEmpty
+        projection.hasRows
     }
 
     private var shouldShowLoadingState: Bool {
@@ -303,6 +285,13 @@ struct CategoriesView: View {
             return "Você realmente quer excluir a categoria \"\(name)\"?"
         }
         return "Você realmente quer excluir esta categoria?"
+    }
+
+    private func rebuildProjection() {
+        projection = CategoryProjection.build(
+            from: viewModel.categories,
+            typeFilter: typeFilter
+        )
     }
 }
 
@@ -345,5 +334,62 @@ private enum CategoryListTypeFilter: String, CaseIterable, Identifiable {
         case .expense:
             return "Despesa"
         }
+    }
+}
+
+private struct CategoryProjection {
+    let orderedParents: [CategoryResponseDto]
+    let sectionsById: [String: CategorySection]
+    let otherSections: [CategorySection]
+    let leafIds: Set<String>
+
+    static let empty = CategoryProjection(
+        orderedParents: [],
+        sectionsById: [:],
+        otherSections: [],
+        leafIds: []
+    )
+
+    var hasRows: Bool {
+        !orderedParents.isEmpty || !otherSections.isEmpty || !leafIds.isEmpty
+    }
+
+    static func build(from categories: [CategoryResponseDto], typeFilter: CategoryListTypeFilter) -> CategoryProjection {
+        let filteredCategories: [CategoryResponseDto]
+        if typeFilter == .all {
+            filteredCategories = categories
+        } else {
+            filteredCategories = categories.filter { category in
+                switch typeFilter {
+                case .all:
+                    return true
+                case .income:
+                    return category.categoryType == .income || category.categoryType == .both
+                case .expense:
+                    return category.categoryType == .expense || category.categoryType == .both
+                }
+            }
+        }
+
+        let grouping = groupCategoriesForList(filteredCategories)
+        let sectionsById = Dictionary(uniqueKeysWithValues: grouping.sections.map { ($0.id, $0) })
+        let otherSections = grouping.sections.filter { $0.parent == nil }
+        let leafIds = Set(grouping.leafParents.map(\.id))
+
+        let orderedParents = filteredCategories
+            .filter { $0.parentCategoryId == nil }
+            .sorted { lhs, rhs in
+                if lhs.sortOrder == rhs.sortOrder {
+                    return (lhs.name ?? "").localizedCaseInsensitiveCompare(rhs.name ?? "") == .orderedAscending
+                }
+                return lhs.sortOrder < rhs.sortOrder
+            }
+
+        return CategoryProjection(
+            orderedParents: orderedParents,
+            sectionsById: sectionsById,
+            otherSections: otherSections,
+            leafIds: leafIds
+        )
     }
 }

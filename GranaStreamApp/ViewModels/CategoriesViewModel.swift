@@ -9,10 +9,7 @@ final class CategoriesViewModel: ObservableObject, SearchableViewModel {
     @Published private(set) var activeSearchTerm: String = ""
     
     var categories: [CategoryResponseDto] {
-        if case .loaded(let items) = loadingState {
-            return items
-        }
-        return []
+        loadingState.data ?? []
     }
     
     var isLoading: Bool {
@@ -23,6 +20,7 @@ final class CategoriesViewModel: ObservableObject, SearchableViewModel {
     }
 
     private var allCategories: [CategoryResponseDto] = []
+    private var latestLoadRequestId = UUID()
     private let apiClient: APIClientProtocol
     private let taskManager = TaskManager()
     
@@ -31,13 +29,19 @@ final class CategoriesViewModel: ObservableObject, SearchableViewModel {
     }
 
     func load(syncReferenceData: Bool = false) async {
-        taskManager.execute(id: "load") {
-            self.loadingState = .loading
+        let requestId = UUID()
+        latestLoadRequestId = requestId
+
+        await taskManager.executeAndWait(id: "load") {
+            let previousItems = self.categories
+            self.loadingState = .loading(previousData: previousItems.isEmpty ? nil : previousItems)
             do {
                 let response: [CategoryResponseDto] = try await self.apiClient.request(
                     "/api/v1/categories",
                     queryItems: [URLQueryItem(name: "includeHierarchy", value: "false")]
                 )
+                guard self.latestLoadRequestId == requestId else { return }
+
                 self.allCategories = response
                 self.loadingState = .loaded(response)
                 self.applySearch(term: self.activeSearchTerm, updateActiveTerm: false)
@@ -46,9 +50,18 @@ final class CategoriesViewModel: ObservableObject, SearchableViewModel {
                 }
                 self.errorMessage = nil
             } catch {
+                guard self.latestLoadRequestId == requestId else { return }
+                if error.isCancellation {
+                    return
+                }
+
                 let message = error.userMessage ?? "Erro ao carregar categorias"
                 self.errorMessage = message
-                self.loadingState = .error(message)
+                if previousItems.isEmpty {
+                    self.loadingState = .error(message)
+                } else {
+                    self.loadingState = .loaded(previousItems)
+                }
             }
         }
     }

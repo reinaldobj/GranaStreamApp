@@ -10,6 +10,7 @@ final class InstallmentSeriesViewModel: ObservableObject {
     @Published var loadingState: LoadingState<[InstallmentSeriesResponseDto]> = .idle
 
     private let apiClient: APIClientProtocol
+    private var latestLoadRequestId = UUID()
     private let taskManager = TaskManager()
     
     init(apiClient: APIClientProtocol? = nil) {
@@ -17,16 +18,35 @@ final class InstallmentSeriesViewModel: ObservableObject {
     }
 
     func load() async {
-        taskManager.execute(id: "load") {
-            self.loadingState = .loading
+        let requestId = UUID()
+        latestLoadRequestId = requestId
+
+        await taskManager.executeAndWait(id: "load") {
+            let previousItems = self.series
+            self.isLoading = true
+            self.loadingState = .loading(previousData: previousItems.isEmpty ? nil : previousItems)
             do {
                 let response: [InstallmentSeriesResponseDto] = try await self.apiClient.request("/api/v1/installment-series")
+                guard self.latestLoadRequestId == requestId else { return }
                 self.series = response
                 self.loadingState = .loaded(response)
+                self.errorMessage = nil
                 self.isLoading = false
             } catch {
-                self.errorMessage = error.userMessage
-                self.loadingState = .error(error.userMessage ?? "Erro desconhecido")
+                guard self.latestLoadRequestId == requestId else { return }
+                if error.isCancellation {
+                    self.isLoading = false
+                    return
+                }
+
+                let message = error.userMessage ?? "Erro desconhecido"
+                self.errorMessage = message
+                if previousItems.isEmpty {
+                    self.loadingState = .error(message)
+                } else {
+                    self.series = previousItems
+                    self.loadingState = .loaded(previousItems)
+                }
                 self.isLoading = false
             }
         }

@@ -17,7 +17,7 @@ final class CategoryBudgetsViewModel: ObservableObject {
     }
 
     func load(for monthStart: Date, categories: [CategoryResponseDto]) async {
-        taskManager.execute(id: "load") {
+        await taskManager.executeAndWait(id: "load") {
             self.isLoading = true
             defer { self.isLoading = false }
 
@@ -120,19 +120,11 @@ final class CategoryBudgetsViewModel: ObservableObject {
     }
 
     private func monthValue(from monthStart: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.dateFormat = "yyyy-MM"
-        return formatter.string(from: monthStart)
+        FormatterPool.monthFormatterUTC().string(from: monthStart)
     }
 
     private func monthStartValue(from monthStart: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: monthStart)
+        FormatterPool.monthStartFormatterUTC().string(from: monthStart)
     }
 
     private func isNoBudgetForMonthError(_ error: Error) -> Bool {

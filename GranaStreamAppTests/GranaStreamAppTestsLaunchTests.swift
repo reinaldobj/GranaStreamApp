@@ -6,28 +6,25 @@
 //
 
 import XCTest
+@testable import GranaStreamApp
 
 final class GranaStreamAppTestsLaunchTests: XCTestCase {
+    func testDateCoder_ParsesSupportedBackendFormats() {
+        let samples = [
+            "2026-02-10T12:30:45.1234567Z",
+            "2026-02-10T12:30:45.123456Z",
+            "2026-02-10T12:30:45.123Z",
+            "2026-02-10T12:30:45Z",
+            "2026-02-10T12:30:45.1234567"
+        ]
 
-    override class var runsForEachTargetApplicationUIConfiguration: Bool {
-        true
+        for sample in samples {
+            XCTAssertNotNil(DateCoder.parseDate(sample), "Data inválida para formato: \(sample)")
+        }
     }
 
-    override func setUpWithError() throws {
-        continueAfterFailure = false
-    }
-
-    @MainActor
-    func testLaunch() throws {
-        let app = XCUIApplication()
-        app.launch()
-
-        // Insert steps here to perform after app launch but before taking a screenshot,
-        // such as logging into a test account or navigating somewhere in the app
-
-        let attachment = XCTAttachment(screenshot: app.screenshot())
-        attachment.name = "Launch Screen"
-        attachment.lifetime = .keepAlways
-        add(attachment)
+    func testCurrencyFormatter_ReturnsFormattedText() {
+        let formatted = CurrencyFormatter.string(from: 1234.56)
+        XCTAssertFalse(formatted.isEmpty)
     }
 }

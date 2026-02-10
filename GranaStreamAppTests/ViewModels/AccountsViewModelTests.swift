@@ -44,7 +44,7 @@ final class AccountsViewModelTests: XCTestCase {
                 id: "2",
                 name: "Savings",
                 initialBalance: 5000,
-                accountType: .poupanca
+                accountType: .contaPoupanca
             )
         ]
         
@@ -174,7 +174,7 @@ final class AccountsViewModelTests: XCTestCase {
         let result = await sut.update(
             account: account,
             name: "New Name",
-            type: .poupanca
+            type: .contaPoupanca
         )
         
         // Then
@@ -199,7 +199,7 @@ final class AccountsViewModelTests: XCTestCase {
         let result = await sut.update(
             account: account,
             name: "New Name",
-            type: .poupanca
+            type: .contaPoupanca
         )
         
         // Then
@@ -257,8 +257,17 @@ final class AccountsViewModelTests: XCTestCase {
         // Then
         XCTAssertTrue(result)
         XCTAssertEqual(mockAPIClient.requestNoResponseCallCount, 1)
-        XCTAssertEqual(mockAPIClient.lastPath, "/api/v1/accounts/inactive123/reactivate")
-        XCTAssertEqual(mockAPIClient.lastMethod, "PATCH")
+        XCTAssertEqual(mockAPIClient.requestCallCount, 1) // reload after reactivate
+        XCTAssertTrue(
+            mockAPIClient.requestHistory.contains {
+                $0.path == "/api/v1/accounts/inactive123/reactivate" && $0.method == "PATCH"
+            }
+        )
+        XCTAssertTrue(
+            mockAPIClient.requestHistory.contains {
+                $0.path == "/api/v1/accounts" && $0.method == "GET"
+            }
+        )
     }
     
     func testReactivate_Failure_ReturnsFalse() async {
@@ -279,8 +288,8 @@ final class AccountsViewModelTests: XCTestCase {
         // Given
         let mockAccounts = [
             AccountResponseDto(id: "1", name: "Checking Account", initialBalance: 100, accountType: .contaCorrente),
-            AccountResponseDto(id: "2", name: "Savings", initialBalance: 200, accountType: .poupanca),
-            AccountResponseDto(id: "3", name: "Credit Card", initialBalance: 300, accountType: .cartaoCredito)
+            AccountResponseDto(id: "2", name: "Savings", initialBalance: 200, accountType: .contaPoupanca),
+            AccountResponseDto(id: "3", name: "Credit Card", initialBalance: 300, accountType: .carteira)
         ]
         mockAPIClient.mockResponse = mockAccounts
         await sut.load()

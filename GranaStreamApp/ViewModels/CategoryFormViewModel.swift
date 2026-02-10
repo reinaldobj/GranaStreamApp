@@ -98,7 +98,6 @@ final class CategoryFormViewModel: FormViewModel {
 
     private func bindCategoriesViewModel() {
         categoriesViewModel.$loadingState
-            .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.refreshParentOptions(from: self.bestAvailableCategories)
@@ -108,7 +107,6 @@ final class CategoryFormViewModel: FormViewModel {
 
     private func bindReferenceStore() {
         referenceStore.$categories
-            .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.refreshParentOptions(from: self.bestAvailableCategories)
@@ -122,7 +120,9 @@ final class CategoryFormViewModel: FormViewModel {
             .filter { $0.id != existing?.id }
             .sorted { lhs, rhs in
                 if lhs.sortOrder == rhs.sortOrder {
-                    return (lhs.name ?? "").localizedCaseInsensitiveCompare(rhs.name ?? "") == .orderedAscending
+                    let leftName = (lhs.name ?? "").lowercased()
+                    let rightName = (rhs.name ?? "").lowercased()
+                    return leftName < rightName
                 }
                 return lhs.sortOrder < rhs.sortOrder
             }

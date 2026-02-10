@@ -105,11 +105,7 @@ struct CurrencyTextField: View {
             return "R$ \(formatInteger(String(integerValue)))"
         }
 
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
+        let formatter = FormatterPool.brlDecimalTwoFormatter()
         let text = formatter.string(from: NSNumber(value: value)) ?? "0,00"
         return "R$ \(text)"
     }
@@ -129,9 +125,7 @@ struct CurrencyTextField: View {
         let number = NSDecimalNumber(string: value)
         guard number != .notANumber else { return value }
 
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.numberStyle = .decimal
+        let formatter = FormatterPool.brlDecimalIntegerFormatter()
 
         return formatter.string(from: number) ?? value
     }

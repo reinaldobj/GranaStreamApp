@@ -75,6 +75,14 @@ struct AccountsView: View {
             AccountSearchField(text: $searchText) {
                 viewModel.applySearch(term: searchText)
             }
+
+            if viewModel.isLoading && !viewModel.accounts.isEmpty {
+                HStack {
+                    Spacer()
+                    LoadingPillView()
+                    Spacer()
+                }
+            }
         }
         .padding(.horizontal, DS.Spacing.screen)
         .padding(.top, DS.Spacing.sm)
@@ -116,7 +124,9 @@ struct AccountsView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 24)
             } else {
-                ForEach(Array(viewModel.accounts.enumerated()), id: \.element.id) { index, account in
+                let lastId = viewModel.accounts.last?.id
+
+                ForEach(viewModel.accounts) { account in
                     TransactionSwipeRow(
                         onTap: {},
                         onEdit: {
@@ -137,7 +147,7 @@ struct AccountsView: View {
                         }
                     }
 
-                    if index < viewModel.accounts.count - 1 {
+                    if account.id != lastId {
                         Divider()
                             .overlay(DS.Colors.border)
                     }

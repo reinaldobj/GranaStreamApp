@@ -5,8 +5,8 @@ enum LoadingState<T> {
     /// Estado inicial - sem requisição iniciada
     case idle
     
-    /// Carregando dados
-    case loading
+    /// Carregando dados (mantendo opcionalmente o que já estava na tela)
+    case loading(previousData: T? = nil)
     
     /// Dados carregados com sucesso
     case loaded(T)
@@ -18,6 +18,14 @@ enum LoadingState<T> {
     var isLoading: Bool {
         if case .loading = self {
             return true
+        }
+        return false
+    }
+
+    /// Indica se está carregando sem dados anteriores
+    var isInitialLoading: Bool {
+        if case .loading(let previousData) = self {
+            return previousData == nil
         }
         return false
     }
@@ -42,6 +50,9 @@ enum LoadingState<T> {
     var data: T? {
         if case .loaded(let data) = self {
             return data
+        }
+        if case .loading(let previousData) = self {
+            return previousData
         }
         return nil
     }

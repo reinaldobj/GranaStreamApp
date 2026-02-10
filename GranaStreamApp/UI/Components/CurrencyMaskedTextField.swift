@@ -22,11 +22,7 @@ struct CurrencyMaskedTextField: UIViewRepresentable {
             // Convert digits to number and format as currency
             let number = NSDecimalNumber(string: digitString).dividing(by: 100)
 
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .currency
-            formatter.locale = Locale(identifier: "pt_BR")
-            formatter.maximumFractionDigits = 2
-            formatter.minimumFractionDigits = 2
+            let formatter = FormatterPool.brlCurrencyFormatter()
 
             if let formatted = formatter.string(from: number) {
                 textField.text = formatted
@@ -100,12 +96,7 @@ struct CurrencyTextFieldHelper {
     /// Converte valor Double para texto formatado como moeda
     /// Ex: 1234.56 -> "R$ 1.234,56"
     static func initialText(from value: Double) -> String? {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value))
+        FormatterPool.brlCurrencyFormatter().string(from: NSNumber(value: value))
     }
 }
 

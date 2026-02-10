@@ -5,9 +5,9 @@ enum DateCoder {
         let container = try decoder.singleValueContainer()
         let value = try container.decode(String.self)
 
-        let formatterWithFraction = makeFormatterWithFraction()
-        let formatterNoFraction = makeFormatterNoFraction()
-        let noTimeZoneFormatters = makeNoTimeZoneFormatters()
+        let formatterWithFraction = FormatterPool.iso8601WithFraction()
+        let formatterNoFraction = FormatterPool.iso8601WithoutFraction()
+        let noTimeZoneFormatters = noTimeZoneFormatters()
 
         if let date = formatterWithFraction.date(from: value) {
             return date
@@ -31,18 +31,18 @@ enum DateCoder {
 
     nonisolated static func encode(_ date: Date, encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        let value = makeFormatterWithFraction().string(from: date)
+        let value = FormatterPool.iso8601WithFraction().string(from: date)
         try container.encode(value)
     }
 
     nonisolated static func string(from date: Date) -> String {
-        makeFormatterWithFraction().string(from: date)
+        FormatterPool.iso8601WithFraction().string(from: date)
     }
 
     nonisolated static func parseDate(_ value: String) -> Date? {
-        let formatterWithFraction = makeFormatterWithFraction()
-        let formatterNoFraction = makeFormatterNoFraction()
-        let noTimeZoneFormatters = makeNoTimeZoneFormatters()
+        let formatterWithFraction = FormatterPool.iso8601WithFraction()
+        let formatterNoFraction = FormatterPool.iso8601WithoutFraction()
+        let noTimeZoneFormatters = noTimeZoneFormatters()
 
         if let date = formatterWithFraction.date(from: value) {
             return date
@@ -98,33 +98,15 @@ enum DateCoder {
         return nil
     }
 
-    nonisolated private static func makeFormatterWithFraction() -> ISO8601DateFormatter {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }
+    nonisolated private static let noTimeZoneFormats: [String] = [
+        "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS",
+        "yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
+        "yyyy-MM-dd'T'HH:mm:ss.SSS",
+        "yyyy-MM-dd'T'HH:mm:ss"
+    ]
 
-    nonisolated private static func makeFormatterNoFraction() -> ISO8601DateFormatter {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }
-
-    nonisolated private static func makeNoTimeZoneFormatters() -> [DateFormatter] {
-        func makeFormatter(_ format: String) -> DateFormatter {
-            let formatter = DateFormatter()
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.timeZone = TimeZone.current
-            formatter.dateFormat = format
-            return formatter
-        }
-
-        return [
-            makeFormatter("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS"),
-            makeFormatter("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
-            makeFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-            makeFormatter("yyyy-MM-dd'T'HH:mm:ss")
-        ]
+    nonisolated private static func noTimeZoneFormatters() -> [DateFormatter] {
+        noTimeZoneFormats.map { FormatterPool.noTimeZoneDateFormatter(format: $0) }
     }
 
     nonisolated private static func fractionDigits(for format: String) -> Int? {
