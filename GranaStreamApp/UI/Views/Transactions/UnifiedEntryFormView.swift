@@ -13,6 +13,10 @@ struct UnifiedEntryFormView: View {
     @State private var single = SingleEntryState()
     @State private var installment = InstallmentEntryState()
     @State private var recurrence = RecurringEntryState()
+    @State private var categorySectionsByType: [TransactionType: [CategorySection]] = [:]
+    @State private var validCategoryIdsByType: [TransactionType: Set<String>] = [:]
+    @State private var accountNamesById: [String: String] = [:]
+    @State private var categoryNamesById: [String: String] = [:]
 
     init(
         initialMode: UnifiedEntryMode = .single,
@@ -39,12 +43,23 @@ struct UnifiedEntryFormView: View {
             }
             .task {
                 await referenceStore.loadIfNeeded()
+                rebuildLookupCaches()
+                rebuildCategoryCaches()
+                syncSelectedCategoriesAfterReferenceUpdate()
+            }
+            .onReceive(referenceStore.$accounts) { _ in
+                rebuildLookupCaches()
+            }
+            .onReceive(referenceStore.$categories) { _ in
+                rebuildLookupCaches()
+                rebuildCategoryCaches()
+                syncSelectedCategoriesAfterReferenceUpdate()
             }
             .onChange(of: single.type) { _, newValue in
-                handleSingleTypeChange(newValue)
+                syncSingleCategory(for: newValue)
             }
             .onChange(of: recurrence.type) { _, newValue in
-                handleRecurrenceTypeChange(newValue)
+                syncRecurrenceCategory(for: newValue)
             }
             .errorAlert(message: $viewModel.errorMessage)
         }
@@ -83,7 +98,9 @@ struct UnifiedEntryFormView: View {
                 fromAccountId: $single.fromAccountId,
                 toAccountId: $single.toAccountId,
                 accounts: referenceStore.accounts,
-                categorySections: singleCategorySections
+                categorySections: singleCategorySections,
+                accountNamesById: accountNamesById,
+                categoryNamesById: categoryNamesById
             )
         case .installment:
             InstallmentEntryFormContent(
@@ -94,7 +111,9 @@ struct UnifiedEntryFormView: View {
                 installments: $installment.installments,
                 description: $installment.description,
                 accounts: referenceStore.accounts,
-                categorySections: installmentCategorySections
+                categorySections: installmentCategorySections,
+                accountNamesById: accountNamesById,
+                categoryNamesById: categoryNamesById
             )
         case .recurring:
             RecurringEntryFormContent(
@@ -108,7 +127,9 @@ struct UnifiedEntryFormView: View {
                 amount: $recurrence.amount,
                 description: $recurrence.description,
                 accounts: referenceStore.accounts,
-                categorySections: recurrenceCategorySections
+                categorySections: recurrenceCategorySections,
+                accountNamesById: accountNamesById,
+                categoryNamesById: categoryNamesById
             )
         }
     }
@@ -129,15 +150,15 @@ struct UnifiedEntryFormView: View {
 
     private var singleCategorySections: [CategorySection] {
         guard single.type != .transfer else { return [] }
-        return groupCategoriesForPicker(referenceStore.categories, transactionType: single.type)
+        return categorySectionsByType[single.type] ?? []
     }
 
     private var installmentCategorySections: [CategorySection] {
-        groupCategoriesForPicker(referenceStore.categories, transactionType: .expense)
+        categorySectionsByType[.expense] ?? []
     }
 
     private var recurrenceCategorySections: [CategorySection] {
-        groupCategoriesForPicker(referenceStore.categories, transactionType: recurrence.type)
+        categorySectionsByType[recurrence.type] ?? []
     }
 
     // MARK: - Validation
@@ -180,28 +201,48 @@ struct UnifiedEntryFormView: View {
 
     // MARK: - Type Change Handlers
 
-    private func handleSingleTypeChange(_ newValue: TransactionType) {
+    private func syncSingleCategory(for newValue: TransactionType) {
         guard newValue != .transfer else {
             single.categoryId = ""
             return
         }
-        let validIds = Set(
-            groupCategoriesForPicker(referenceStore.categories, transactionType: newValue)
-                .flatMap { $0.children.map(\.id) }
-        )
+        let validIds = validCategoryIdsByType[newValue] ?? []
         if !single.categoryId.isEmpty && !validIds.contains(single.categoryId) {
             single.categoryId = ""
         }
     }
 
-    private func handleRecurrenceTypeChange(_ newValue: TransactionType) {
-        let validIds = Set(
-            groupCategoriesForPicker(referenceStore.categories, transactionType: newValue)
-                .flatMap { $0.children.map(\.id) }
-        )
+    private func syncRecurrenceCategory(for newValue: TransactionType) {
+        let validIds = validCategoryIdsByType[newValue] ?? []
         if !recurrence.categoryId.isEmpty && !validIds.contains(recurrence.categoryId) {
             recurrence.categoryId = ""
         }
+    }
+
+    private func rebuildCategoryCaches() {
+        var sections: [TransactionType: [CategorySection]] = [:]
+        var validIds: [TransactionType: Set<String>] = [:]
+
+        for itemType in TransactionType.allCases where itemType != .transfer {
+            let grouped = groupCategoriesForPicker(referenceStore.categories, transactionType: itemType)
+            sections[itemType] = grouped
+            validIds[itemType] = Set(grouped.flatMap { $0.children.map(\.id) })
+        }
+
+        sections[.transfer] = []
+        validIds[.transfer] = []
+        categorySectionsByType = sections
+        validCategoryIdsByType = validIds
+    }
+
+    private func rebuildLookupCaches() {
+        accountNamesById = Dictionary(uniqueKeysWithValues: referenceStore.accounts.map { ($0.id, $0.name ?? "Conta") })
+        categoryNamesById = Dictionary(uniqueKeysWithValues: referenceStore.categories.map { ($0.id, $0.name ?? "Categoria") })
+    }
+
+    private func syncSelectedCategoriesAfterReferenceUpdate() {
+        syncSingleCategory(for: single.type)
+        syncRecurrenceCategory(for: recurrence.type)
     }
 
     // MARK: - Save Action

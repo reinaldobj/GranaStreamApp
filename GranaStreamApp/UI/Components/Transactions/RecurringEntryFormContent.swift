@@ -14,6 +14,8 @@ struct RecurringEntryFormContent: View {
     
     let accounts: [AccountResponseDto]
     let categorySections: [CategorySection]
+    let accountNamesById: [String: String]
+    let categoryNamesById: [String: String]
     
     /// Tipos permitidos para recorrência (exclui transferência)
     private var allowedTypes: [TransactionType] {
@@ -100,16 +102,11 @@ struct RecurringEntryFormContent: View {
     
     private func accountName(for id: String) -> String? {
         guard !id.isEmpty else { return nil }
-        return accounts.first(where: { $0.id == id })?.name
+        return accountNamesById[id]
     }
     
     private func categoryName(for id: String) -> String? {
         guard !id.isEmpty else { return nil }
-        for section in categorySections {
-            if let category = section.children.first(where: { $0.id == id }) {
-                return category.name
-            }
-        }
-        return nil
+        return categoryNamesById[id]
     }
 }

@@ -9,6 +9,8 @@ struct RecurrencesView: View {
     @State private var searchText = ""
     @State private var activeSearchTerm = ""
     @State private var hasFinishedInitialLoad = false
+    @State private var filteredRecurrencesCache: [RecurrenceResponseDto] = []
+    @State private var shouldReloadAfterFormDismiss = false
 
     private let sectionSpacing = DS.Spacing.item
 
@@ -46,9 +48,16 @@ struct RecurrencesView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(item: $formMode) { mode in
-            RecurrenceFormView(existing: mode.existing) {
+        .sheet(
+            item: $formMode,
+            onDismiss: {
+                guard shouldReloadAfterFormDismiss else { return }
+                shouldReloadAfterFormDismiss = false
                 Task { await viewModel.load() }
+            }
+        ) { mode in
+            RecurrenceFormView(existing: mode.existing) {
+                shouldReloadAfterFormDismiss = true
             }
             .presentationDetents([.fraction(0.86)])
             .presentationDragIndicator(.visible)
@@ -75,10 +84,14 @@ struct RecurrencesView: View {
         }
         .task {
             await viewModel.load()
+            rebuildFilteredRecurrences()
             hasFinishedInitialLoad = true
         }
         .onChange(of: searchText) { _, newValue in
             applySearch(term: newValue)
+        }
+        .onReceive(viewModel.$recurrences) { _ in
+            rebuildFilteredRecurrences()
         }
         .errorAlert(message: $viewModel.errorMessage)
         .tint(DS.Colors.primary)
@@ -158,7 +171,9 @@ struct RecurrencesView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 24)
             } else {
-                ForEach(Array(filteredRecurrences.enumerated()), id: \.element.id) { index, recurrence in
+                let lastId = filteredRecurrences.last?.id
+
+                ForEach(filteredRecurrences) { recurrence in
                     TransactionSwipeRow(
                         onTap: {},
                         onEdit: {
@@ -188,7 +203,7 @@ struct RecurrencesView: View {
                         }
                     }
 
-                    if index < filteredRecurrences.count - 1 {
+                    if recurrence.id != lastId {
                         Divider()
                             .overlay(DS.Colors.border)
                     }
@@ -219,13 +234,7 @@ struct RecurrencesView: View {
     }
 
     private var filteredRecurrences: [RecurrenceResponseDto] {
-        let term = activeSearchTerm.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !term.isEmpty else { return viewModel.recurrences }
-
-        return viewModel.recurrences.filter { recurrence in
-            let title = recurrence.templateTransaction.description ?? ""
-            return title.localizedCaseInsensitiveContains(term)
-        }
+        filteredRecurrencesCache
     }
 
     private var shouldShowLoadingState: Bool {
@@ -254,5 +263,19 @@ struct RecurrencesView: View {
 
     private func applySearch(term: String) {
         activeSearchTerm = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        rebuildFilteredRecurrences()
+    }
+
+    private func rebuildFilteredRecurrences() {
+        let term = activeSearchTerm.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else {
+            filteredRecurrencesCache = viewModel.recurrences
+            return
+        }
+
+        filteredRecurrencesCache = viewModel.recurrences.filter { recurrence in
+            let title = recurrence.templateTransaction.description ?? ""
+            return title.localizedCaseInsensitiveContains(term)
+        }
     }
 }

@@ -33,6 +33,15 @@ struct TransactionsView: View {
                     )
                     .padding(.top, DS.Spacing.sm)
 
+                    if viewModel.isLoading && hasFinishedInitialLoad && !viewModel.transactions.isEmpty {
+                        HStack {
+                            Spacer()
+                            LoadingPillView()
+                            Spacer()
+                        }
+                        .padding(.top, DS.Spacing.sm)
+                    }
+
                     TransactionListSection(
                         monthSections: viewModel.monthSections,
                         isLoading: !hasFinishedInitialLoad || (viewModel.isLoading && viewModel.transactions.isEmpty),

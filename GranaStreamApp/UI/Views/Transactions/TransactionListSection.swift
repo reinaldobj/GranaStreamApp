@@ -64,18 +64,26 @@ struct TransactionListSection: View {
     }
 
     private var transactionsList: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(monthSections.enumerated()), id: \.element.id) { index, section in
+        let firstMonthId = monthSections.first?.id
+        let lastTransactionId = monthSections.last?.items.last?.id
+
+        return VStack(spacing: 0) {
+            ForEach(monthSections) { section in
+                let lastRowId = section.items.last?.id
+
                 VStack(spacing: 0) {
                     TransactionMonthHeader(title: section.title)
                         .padding(.leading, DS.Spacing.sm)
-                        .padding(.top, index == 0 ? DS.Spacing.lg : 0)
+                        .padding(.top, section.id == firstMonthId ? DS.Spacing.lg : 0)
 
                     LazyVStack(spacing: DS.Spacing.md) {
-                        ForEach(Array(section.items.enumerated()), id: \.element.id) { rowIndex, transaction in
-                            transactionRow(for: transaction)
+                        ForEach(section.items) { transaction in
+                            transactionRow(
+                                for: transaction,
+                                isLastInList: transaction.id == lastTransactionId
+                            )
 
-                            if rowIndex < section.items.count - 1 {
+                            if transaction.id != lastRowId {
                                 Divider()
                                     .overlay(DS.Colors.border)
                             }
@@ -84,13 +92,13 @@ struct TransactionListSection: View {
                 }
             }
 
-            if canLoadMore {
+            if isLoadingMore {
                 loadMoreIndicator
             }
         }
     }
 
-    private func transactionRow(for transaction: TransactionSummaryDto) -> some View {
+    private func transactionRow(for transaction: TransactionSummaryDto, isLastInList: Bool) -> some View {
         TransactionSwipeRow(
             onTap: { onTransactionTap(transaction) },
             onEdit: { onEdit(transaction) },
@@ -106,21 +114,17 @@ struct TransactionListSection: View {
                 onDelete(transaction)
             }
         }
+        .onAppear {
+            guard isLastInList, canLoadMore, !isLoadingMore else { return }
+            onLoadMore()
+        }
     }
 
     private var loadMoreIndicator: some View {
         HStack {
             Spacer()
-            if isLoadingMore {
-                ProgressView()
-                    .tint(DS.Colors.primary)
-            } else {
-                ProgressView()
-                    .tint(DS.Colors.primary)
-                    .onAppear {
-                        onLoadMore()
-                    }
-            }
+            ProgressView()
+                .tint(DS.Colors.primary)
             Spacer()
         }
     }

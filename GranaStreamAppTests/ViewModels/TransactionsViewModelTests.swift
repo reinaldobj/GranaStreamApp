@@ -292,8 +292,16 @@ final class TransactionsViewModelTests: XCTestCase {
         
         // Then
         XCTAssertEqual(mockAPIClient.requestNoResponseCallCount, 1)
-        XCTAssertEqual(mockAPIClient.lastPath, "/api/v1/transactions/123")
-        XCTAssertEqual(mockAPIClient.lastMethod, "DELETE")
+        XCTAssertTrue(
+            mockAPIClient.requestHistory.contains {
+                $0.path == "/api/v1/transactions/123" && $0.method == "DELETE"
+            }
+        )
+        XCTAssertTrue(
+            mockAPIClient.requestHistory.contains {
+                $0.path == "/api/v1/transactions" && $0.method == "GET"
+            }
+        )
         XCTAssertEqual(mockAPIClient.requestCallCount, 1) // load was called
     }
     
@@ -327,15 +335,56 @@ final class TransactionsViewModelTests: XCTestCase {
     
     // MARK: - Calculation Tests
     
-    func testTotalBalance_Calculation() {
+    func testTotalBalance_Calculation() async {
         // Given
-        sut.incomeTotal = 5000
-        sut.expenseTotal = 2000
-        
-        // When
-        let balance = sut.totalBalance
-        
+        let mockTransactions = [
+            TransactionSummaryDto(
+                id: "1",
+                type: .income,
+                date: Date(),
+                description: "Receita",
+                amount: 5000,
+                accountId: "acc1",
+                accountName: "Conta",
+                categoryId: "cat1",
+                categoryName: "Salario",
+                fromAccountId: nil,
+                fromAccountName: nil,
+                toAccountId: nil,
+                toAccountName: nil,
+                summary: nil
+            ),
+            TransactionSummaryDto(
+                id: "2",
+                type: .expense,
+                date: Date(),
+                description: "Despesa",
+                amount: 2000,
+                accountId: "acc1",
+                accountName: "Conta",
+                categoryId: "cat2",
+                categoryName: "Gastos",
+                fromAccountId: nil,
+                fromAccountName: nil,
+                toAccountId: nil,
+                toAccountName: nil,
+                summary: nil
+            )
+        ]
+
+        mockAPIClient.mockResponse = ListTransactionsResponseDto(
+            items: mockTransactions,
+            page: 1,
+            size: 20,
+            total: 2,
+            links: PaginationLinksDto(first: nil, previous: nil, next: nil, last: nil)
+        )
+
+        await sut.load(reset: true)
+
         // Then
-        XCTAssertEqual(balance, 3000)
+        XCTAssertEqual(sut.incomeTotal, 5000)
+        XCTAssertEqual(sut.expenseTotal, 2000)
+        XCTAssertEqual(sut.totalBalance, 3000)
     }
 }

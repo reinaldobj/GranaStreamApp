@@ -32,7 +32,7 @@ struct CategoryFormView: View {
                 VStack(spacing: DS.Spacing.item) {
                     AppFormField(label: "Tipo") {
                         Picker("Tipo", selection: $viewModel.type) {
-                            ForEach(CategoryType.allCases) { item in
+                            ForEach(CategoryType.formSelectableCases) { item in
                                 Text(item.label).tag(item)
                             }
                         }
@@ -40,16 +40,19 @@ struct CategoryFormView: View {
                         .labelsHidden()
                     }
 
-                    AppFormField(label: "Categoria pai") {
-                        Picker("Categoria pai", selection: $viewModel.parentId) {
-                            Text("Nenhuma").tag("")
-                            ForEach(viewModel.parentOptions) { category in
-                                Text(category.name ?? "Categoria").tag(category.id)
+                    TransactionPickerRow(
+                        label: "Categoria pai",
+                        value: parentName,
+                        placeholder: "Nenhuma"
+                    ) {
+                        Button("Nenhuma") {
+                            viewModel.parentId = ""
+                        }
+                        ForEach(viewModel.parentOptions) { category in
+                            Button(category.name ?? "Categoria") {
+                                viewModel.parentId = category.id
                             }
                         }
-                        .pickerStyle(.menu)
-                        .labelsHidden()
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
                     AppFormField(label: "Nome") {
@@ -62,15 +65,16 @@ struct CategoryFormView: View {
                             .textInputAutocapitalization(.sentences)
                     }
 
-                    AppFormField(label: "Ordem") {
-                        Picker("Ordem", selection: $viewModel.sortOrder) {
-                            ForEach(0...4, id: \.self) { value in
-                                Text("\(value)").tag(value)
+                    TransactionPickerRow(
+                        label: "Ordem",
+                        value: "\(viewModel.sortOrder)",
+                        placeholder: "0"
+                    ) {
+                        ForEach(0...4, id: \.self) { value in
+                            Button("\(value)") {
+                                viewModel.sortOrder = value
                             }
                         }
-                        .pickerStyle(.menu)
-                        .labelsHidden()
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
             }
@@ -79,5 +83,18 @@ struct CategoryFormView: View {
         .task {
             await viewModel.loadReferenceDataIfNeeded()
         }
+    }
+}
+
+private extension CategoryType {
+    static var formSelectableCases: [CategoryType] {
+        [.income, .expense]
+    }
+}
+
+private extension CategoryFormView {
+    var parentName: String? {
+        guard !viewModel.parentId.isEmpty else { return nil }
+        return viewModel.parentOptions.first(where: { $0.id == viewModel.parentId })?.name ?? "Categoria"
     }
 }

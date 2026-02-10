@@ -73,7 +73,10 @@ struct CurrencyTextField: View {
     static func value(from input: String) -> Double? {
         let cleaned = input
             .replacingOccurrences(of: "R$", with: "")
-            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "\u{00A0}", with: "")
+            .replacingOccurrences(of: "\u{202F}", with: "")
+            .components(separatedBy: .whitespacesAndNewlines)
+            .joined()
 
         guard !cleaned.isEmpty else {
             return nil
@@ -100,16 +103,7 @@ struct CurrencyTextField: View {
     }
 
     static func initialText(from value: Double) -> String {
-        if value.truncatingRemainder(dividingBy: 1) == 0 {
-            let integerValue = Int(value)
-            return "R$ \(formatInteger(String(integerValue)))"
-        }
-
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
+        let formatter = FormatterPool.brlDecimalTwoFormatter()
         let text = formatter.string(from: NSNumber(value: value)) ?? "0,00"
         return "R$ \(text)"
     }
@@ -129,9 +123,7 @@ struct CurrencyTextField: View {
         let number = NSDecimalNumber(string: value)
         guard number != .notANumber else { return value }
 
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.numberStyle = .decimal
+        let formatter = FormatterPool.brlDecimalIntegerFormatter()
 
         return formatter.string(from: number) ?? value
     }

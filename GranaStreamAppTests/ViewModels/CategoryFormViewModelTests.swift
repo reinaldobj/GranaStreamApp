@@ -31,14 +31,14 @@ final class CategoryFormViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.parentOptions.map(\.id), ["parent-1"])
     }
 
-    func testParentOptions_AcceptsEmptyParentIdAsParentCategory() {
+    func testParentOptions_AcceptsEmptyParentIdAsParentCategory() async {
         let mockAPIClient = MockAPIClient()
         let categoriesViewModel = CategoriesViewModel(apiClient: mockAPIClient)
         let referenceStore = ReferenceDataStore(apiClient: mockAPIClient)
 
         let parentNil = CategoryResponseDto(
             id: "parent-nil",
-            name: "Alimentação",
+            name: "Alimentacao",
             description: "",
             categoryType: .expense,
             parentCategoryId: nil,
@@ -69,7 +69,8 @@ final class CategoryFormViewModelTests: XCTestCase {
             isActive: true,
             subCategories: nil
         )
-        referenceStore.replaceCategories([parentNil, parentEmpty, child])
+        mockAPIClient.mockResponse = [parentNil, parentEmpty, child]
+        await categoriesViewModel.load()
 
         let viewModel = CategoryFormViewModel(
             existing: nil,
@@ -77,6 +78,7 @@ final class CategoryFormViewModelTests: XCTestCase {
             referenceStore: referenceStore
         )
 
-        XCTAssertEqual(Set(viewModel.parentOptions.map(\.id)), Set(["parent-nil", "parent-empty"]))
+        let parentIds = viewModel.parentOptions.map { $0.id }.sorted()
+        XCTAssertEqual(parentIds, ["parent-empty", "parent-nil"])
     }
 }

@@ -250,7 +250,7 @@ final class CategoriesViewModelTests: XCTestCase {
     
     func testSeed_Success_ReloadsCategories() async {
         // Given
-        let seedResponse = SeedCategoriesResponseDto(message: "Seeded", count: 10)
+        let seedResponse = SeedCategoriesResponseDto(categoriesCreated: 10, message: "Seeded")
         mockAPIClient.mockResponse = seedResponse
         
         // When

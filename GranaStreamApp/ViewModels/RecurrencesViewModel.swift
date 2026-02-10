@@ -10,6 +10,7 @@ final class RecurrencesViewModel: ObservableObject {
     @Published var loadingState: LoadingState<[RecurrenceResponseDto]> = .idle
 
     private let apiClient: APIClientProtocol
+    private var latestLoadRequestId = UUID()
     private let taskManager = TaskManager()
     
     init(apiClient: APIClientProtocol? = nil) {
@@ -17,16 +18,35 @@ final class RecurrencesViewModel: ObservableObject {
     }
 
     func load() async {
-        taskManager.execute(id: "load") {
-            self.loadingState = .loading
+        let requestId = UUID()
+        latestLoadRequestId = requestId
+
+        await taskManager.executeAndWait(id: "load") {
+            let previousItems = self.recurrences
+            self.isLoading = true
+            self.loadingState = .loading(previousData: previousItems.isEmpty ? nil : previousItems)
             do {
                 let response: [RecurrenceResponseDto] = try await self.apiClient.request("/api/v1/recurrences")
+                guard self.latestLoadRequestId == requestId else { return }
                 self.recurrences = response
                 self.loadingState = .loaded(response)
+                self.errorMessage = nil
                 self.isLoading = false
             } catch {
-                self.errorMessage = error.userMessage
-                self.loadingState = .error(error.userMessage ?? "Erro desconhecido")
+                guard self.latestLoadRequestId == requestId else { return }
+                if error.isCancellation {
+                    self.isLoading = false
+                    return
+                }
+
+                let message = error.userMessage ?? "Erro desconhecido"
+                self.errorMessage = message
+                if previousItems.isEmpty {
+                    self.loadingState = .error(message)
+                } else {
+                    self.recurrences = previousItems
+                    self.loadingState = .loaded(previousItems)
+                }
                 self.isLoading = false
             }
         }

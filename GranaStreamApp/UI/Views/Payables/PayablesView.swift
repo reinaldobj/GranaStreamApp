@@ -11,6 +11,7 @@ struct PayablesView: View {
     @State private var selectedPayableForAction: PayableListItemDto?
     @State private var hasFinishedInitialLoad = false
     @State private var infoMessage: String?
+    @State private var filteredItemsCache: [PayableListItemDto] = []
 
     private let sectionSpacing = DS.Spacing.item
 
@@ -40,13 +41,30 @@ struct PayablesView: View {
         .task {
             await referenceStore.loadIfNeeded()
             await loadData()
+            rebuildFilteredItems()
             hasFinishedInitialLoad = true
         }
+        .onChange(of: selectedKind) { _, _ in
+            rebuildFilteredItems()
+        }
         .onChange(of: selectedStatus) { _, _ in
-            Task { await loadData() }
+            Task {
+                await loadData()
+                await MainActor.run {
+                    rebuildFilteredItems()
+                }
+            }
         }
         .onChange(of: monthStore.selectedMonth) { _, _ in
-            Task { await loadData() }
+            Task {
+                await loadData()
+                await MainActor.run {
+                    rebuildFilteredItems()
+                }
+            }
+        }
+        .onReceive(viewModel.$loadingState) { _ in
+            rebuildFilteredItems()
         }
         .errorAlert(message: $viewModel.errorMessage)
         .alert(
@@ -138,10 +156,12 @@ struct PayablesView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 24)
             } else {
-                ForEach(Array(filteredItems.enumerated()), id: \.element.id) { index, item in
+                let lastId = filteredItems.last?.id
+
+                ForEach(filteredItems) { item in
                     payableRow(item: item)
 
-                    if index < filteredItems.count - 1 {
+                    if item.id != lastId {
                         Divider()
                             .overlay(DS.Colors.border)
                     }
@@ -250,9 +270,7 @@ struct PayablesView: View {
     }
 
     private var filteredItems: [PayableListItemDto] {
-        viewModel.items.filter { item in
-            item.kind == selectedKind && item.status == selectedStatus.payableStatus
-        }
+        filteredItemsCache
     }
 
     private var emptyMessage: String {
@@ -315,6 +333,12 @@ struct PayablesView: View {
 
     private func loadData() async {
         await viewModel.load(month: monthStore.selectedMonth, statusFilter: selectedStatus)
+    }
+
+    private func rebuildFilteredItems() {
+        filteredItemsCache = viewModel.items.filter { item in
+            item.kind == selectedKind && item.status == selectedStatus.payableStatus
+        }
     }
 
     private func settle(payable: PayableListItemDto, request: SettlePayableRequestDto) async -> Bool {

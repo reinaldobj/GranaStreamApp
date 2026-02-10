@@ -17,6 +17,10 @@ struct TransactionFormView: View {
     @State private var categoryId: String = ""
     @State private var fromAccountId: String = ""
     @State private var toAccountId: String = ""
+    @State private var categorySectionsByType: [TransactionType: [CategorySection]] = [:]
+    @State private var validCategoryIdsByType: [TransactionType: Set<String>] = [:]
+    @State private var accountNamesById: [String: String] = [:]
+    @State private var categoryNamesById: [String: String] = [:]
 
     var body: some View {
         NavigationStack {
@@ -34,18 +38,20 @@ struct TransactionFormView: View {
                 }
             }
             .task(id: existing?.id) { prefill() }
+            .onAppear {
+                rebuildLookupCaches()
+                rebuildCategoryCaches()
+            }
+            .onReceive(referenceStore.$accounts) { _ in
+                rebuildLookupCaches()
+            }
+            .onReceive(referenceStore.$categories) { _ in
+                rebuildLookupCaches()
+                rebuildCategoryCaches()
+                syncSelectedCategoryForCurrentType()
+            }
             .onChange(of: type) { _, newValue in
-                guard newValue != .transfer else {
-                    categoryId = ""
-                    return
-                }
-                let validIds = Set(
-                    groupCategoriesForPicker(referenceStore.categories, transactionType: newValue)
-                        .flatMap { $0.children.map(\.id) }
-                )
-                if !categoryId.isEmpty && !validIds.contains(categoryId) {
-                    categoryId = ""
-                }
+                syncSelectedCategory(for: newValue)
             }
             .errorAlert(message: $viewModel.errorMessage)
         }
@@ -129,7 +135,7 @@ struct TransactionFormView: View {
 
     private var filteredCategorySections: [CategorySection] {
         guard type != .transfer else { return [] }
-        return groupCategoriesForPicker(referenceStore.categories, transactionType: type)
+        return categorySectionsByType[type] ?? []
     }
 
     private var isValid: Bool {
@@ -145,19 +151,19 @@ struct TransactionFormView: View {
     }
 
     private var accountName: String? {
-        referenceStore.accounts.first(where: { $0.id == accountId })?.name
+        accountNamesById[accountId]
     }
 
     private var fromAccountName: String? {
-        referenceStore.accounts.first(where: { $0.id == fromAccountId })?.name
+        accountNamesById[fromAccountId]
     }
 
     private var toAccountName: String? {
-        referenceStore.accounts.first(where: { $0.id == toAccountId })?.name
+        accountNamesById[toAccountId]
     }
 
     private var categoryName: String? {
-        referenceStore.categories.first(where: { $0.id == categoryId })?.name
+        categoryNamesById[categoryId]
     }
 
     @ViewBuilder
@@ -189,6 +195,44 @@ struct TransactionFormView: View {
         categoryId = existing.categoryId ?? ""
         fromAccountId = existing.fromAccountId ?? ""
         toAccountId = existing.toAccountId ?? ""
+        syncSelectedCategoryForCurrentType()
+    }
+
+    private func rebuildLookupCaches() {
+        accountNamesById = Dictionary(uniqueKeysWithValues: referenceStore.accounts.map { ($0.id, $0.name ?? "Conta") })
+        categoryNamesById = Dictionary(uniqueKeysWithValues: referenceStore.categories.map { ($0.id, $0.name ?? "Categoria") })
+    }
+
+    private func rebuildCategoryCaches() {
+        var sections: [TransactionType: [CategorySection]] = [:]
+        var validIds: [TransactionType: Set<String>] = [:]
+
+        for itemType in TransactionType.allCases where itemType != .transfer {
+            let grouped = groupCategoriesForPicker(referenceStore.categories, transactionType: itemType)
+            sections[itemType] = grouped
+            validIds[itemType] = Set(grouped.flatMap { $0.children.map(\.id) })
+        }
+
+        sections[.transfer] = []
+        validIds[.transfer] = []
+        categorySectionsByType = sections
+        validCategoryIdsByType = validIds
+    }
+
+    private func syncSelectedCategoryForCurrentType() {
+        syncSelectedCategory(for: type)
+    }
+
+    private func syncSelectedCategory(for transactionType: TransactionType) {
+        guard transactionType != .transfer else {
+            categoryId = ""
+            return
+        }
+
+        let validIds = validCategoryIdsByType[transactionType] ?? []
+        if !categoryId.isEmpty && !validIds.contains(categoryId) {
+            categoryId = ""
+        }
     }
 
     private func save() async {

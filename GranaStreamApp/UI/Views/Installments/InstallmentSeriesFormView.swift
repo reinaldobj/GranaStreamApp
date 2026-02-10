@@ -57,7 +57,9 @@ struct InstallmentSeriesFormView: View {
                 installments: $installments,
                 description: $description,
                 accounts: referenceStore.accounts,
-                categorySections: categorySections
+                categorySections: categorySections,
+                accountNamesById: accountNamesById,
+                categoryNamesById: categoryNamesById
             )
 
             // Botão salvar
@@ -79,6 +81,14 @@ struct InstallmentSeriesFormView: View {
 
     private var categorySections: [CategorySection] {
         groupCategoriesForPicker(referenceStore.categories, transactionType: .expense)
+    }
+
+    private var accountNamesById: [String: String] {
+        Dictionary(uniqueKeysWithValues: referenceStore.accounts.map { ($0.id, $0.name ?? "Conta") })
+    }
+
+    private var categoryNamesById: [String: String] {
+        Dictionary(uniqueKeysWithValues: referenceStore.categories.map { ($0.id, $0.name ?? "Categoria") })
     }
 
     private var isValid: Bool {

@@ -46,10 +46,7 @@ final class PayablesViewModel: ObservableObject {
     @Published private(set) var undoingIds: Set<String> = []
     
     var items: [PayableListItemDto] {
-        if case .loaded(let data) = loadingState {
-            return data
-        }
-        return []
+        loadingState.data ?? []
     }
     
     var isLoading: Bool {
@@ -60,6 +57,7 @@ final class PayablesViewModel: ObservableObject {
     }
 
     private let apiClient: APIClientProtocol
+    private var latestLoadRequestId = UUID()
     private let taskManager = TaskManager()
     
     init(apiClient: APIClientProtocol? = nil) {
@@ -67,17 +65,31 @@ final class PayablesViewModel: ObservableObject {
     }
 
     func load(month: Date, statusFilter: PayablesStatusFilter) async {
-        taskManager.execute(id: "load") {
-            self.loadingState = .loading
+        let requestId = UUID()
+        latestLoadRequestId = requestId
+
+        await taskManager.executeAndWait(id: "load") {
+            let previousItems = self.items
+            self.loadingState = .loading(previousData: previousItems.isEmpty ? nil : previousItems)
             self.errorMessage = nil
 
             do {
                 let items = try await self.fetchPayables(month: month, statusFilter: statusFilter)
+                guard self.latestLoadRequestId == requestId else { return }
                 self.loadingState = .loaded(items)
             } catch {
+                guard self.latestLoadRequestId == requestId else { return }
+                if error.isCancellation {
+                    return
+                }
+
                 let message = error.userMessage ?? "Erro ao carregar contas a pagar"
                 self.errorMessage = message
-                self.loadingState = .error(message)
+                if previousItems.isEmpty {
+                    self.loadingState = .error(message)
+                } else {
+                    self.loadingState = .loaded(previousItems)
+                }
             }
         }
     }

@@ -9,6 +9,8 @@ struct InstallmentSeriesView: View {
     @State private var searchText = ""
     @State private var activeSearchTerm = ""
     @State private var hasFinishedInitialLoad = false
+    @State private var filteredSeriesCache: [InstallmentSeriesResponseDto] = []
+    @State private var shouldReloadAfterFormDismiss = false
 
     private let sectionSpacing = DS.Spacing.item
 
@@ -46,9 +48,16 @@ struct InstallmentSeriesView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(item: $formMode) { mode in
-            InstallmentSeriesFormView(existing: mode.existing) {
+        .sheet(
+            item: $formMode,
+            onDismiss: {
+                guard shouldReloadAfterFormDismiss else { return }
+                shouldReloadAfterFormDismiss = false
                 Task { await viewModel.load() }
+            }
+        ) { mode in
+            InstallmentSeriesFormView(existing: mode.existing) {
+                shouldReloadAfterFormDismiss = true
             }
             .presentationDetents([.fraction(0.86)])
             .presentationDragIndicator(.visible)
@@ -75,10 +84,14 @@ struct InstallmentSeriesView: View {
         }
         .task {
             await viewModel.load()
+            rebuildFilteredSeries()
             hasFinishedInitialLoad = true
         }
         .onChange(of: searchText) { _, newValue in
             applySearch(term: newValue)
+        }
+        .onReceive(viewModel.$series) { _ in
+            rebuildFilteredSeries()
         }
         .errorAlert(message: $viewModel.errorMessage)
         .tint(DS.Colors.primary)
@@ -158,7 +171,9 @@ struct InstallmentSeriesView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 24)
             } else {
-                ForEach(Array(filteredSeries.enumerated()), id: \.element.id) { index, series in
+                let lastId = filteredSeries.last?.id
+
+                ForEach(filteredSeries) { series in
                     TransactionSwipeRow(
                         onTap: {},
                         onEdit: {
@@ -179,7 +194,7 @@ struct InstallmentSeriesView: View {
                         }
                     }
 
-                    if index < filteredSeries.count - 1 {
+                    if series.id != lastId {
                         Divider()
                             .overlay(DS.Colors.border)
                     }
@@ -211,13 +226,7 @@ struct InstallmentSeriesView: View {
     }
 
     private var filteredSeries: [InstallmentSeriesResponseDto] {
-        let term = activeSearchTerm.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !term.isEmpty else { return viewModel.series }
-
-        return viewModel.series.filter { series in
-            let title = series.description ?? ""
-            return title.localizedCaseInsensitiveContains(term)
-        }
+        filteredSeriesCache
     }
 
     private var shouldShowLoadingState: Bool {
@@ -246,5 +255,19 @@ struct InstallmentSeriesView: View {
 
     private func applySearch(term: String) {
         activeSearchTerm = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        rebuildFilteredSeries()
+    }
+
+    private func rebuildFilteredSeries() {
+        let term = activeSearchTerm.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else {
+            filteredSeriesCache = viewModel.series
+            return
+        }
+
+        filteredSeriesCache = viewModel.series.filter { series in
+            let title = series.description ?? ""
+            return title.localizedCaseInsensitiveContains(term)
+        }
     }
 }

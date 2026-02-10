@@ -20,10 +20,7 @@ final class TransactionsViewModel: ObservableObject {
     @Published private(set) var expenseTotal: Double = 0
     
     var transactions: [TransactionSummaryDto] {
-        if case .loaded(let items) = loadingState {
-            return items
-        }
-        return []
+        loadingState.data ?? []
     }
     
     var isLoading: Bool {
@@ -36,6 +33,9 @@ final class TransactionsViewModel: ObservableObject {
     private var page = 1
     private let size = 20
     private var total = 0
+    private var latestLoadRequestId = UUID()
+    private var latestLoadMoreRequestId = UUID()
+    private var requestedPages: Set<Int> = []
     private let apiClient: APIClientProtocol
     private let taskManager = TaskManager()
 
@@ -57,12 +57,18 @@ final class TransactionsViewModel: ObservableObject {
     }
 
     func load(reset: Bool = false) async {
-        taskManager.execute(id: "load") {
+        let requestId = UUID()
+        latestLoadRequestId = requestId
+
+        await taskManager.executeAndWait(id: "load") {
+            let previousItems = self.transactions
+
             if reset {
                 self.page = 1
                 self.total = 0
+                self.requestedPages.removeAll()
             }
-            self.loadingState = .loading
+            self.loadingState = .loading(previousData: previousItems.isEmpty ? nil : previousItems)
             
             do {
                 let items = self.buildQueryItems(page: self.page)
@@ -70,16 +76,29 @@ final class TransactionsViewModel: ObservableObject {
                     "/api/v1/transactions",
                     queryItems: items
                 )
+
+                guard self.latestLoadRequestId == requestId else { return }
+
                 self.total = response.total
                 let newItems = response.items ?? []
                 let allItems = self.page == 1 ? newItems : (self.transactions + newItems)
+                self.requestedPages = [self.page]
                 self.loadingState = .loaded(allItems)
                 self.recalculateDerivedData()
                 self.errorMessage = nil
             } catch {
+                guard self.latestLoadRequestId == requestId else { return }
+                if error.isCancellation {
+                    return
+                }
+
                 let message = error.userMessage ?? "Erro ao carregar transações"
                 self.errorMessage = message
-                self.loadingState = .error(message)
+                if previousItems.isEmpty {
+                    self.loadingState = .error(message)
+                } else {
+                    self.loadingState = .loaded(previousItems)
+                }
             }
         }
     }
@@ -88,6 +107,15 @@ final class TransactionsViewModel: ObservableObject {
         guard canLoadMore, !isLoadingMore else { return }
         isLoadingMore = true
         let nextPage = page + 1
+        guard !requestedPages.contains(nextPage) else {
+            isLoadingMore = false
+            return
+        }
+        requestedPages.insert(nextPage)
+
+        let requestId = UUID()
+        latestLoadMoreRequestId = requestId
+
         defer { isLoadingMore = false }
 
         do {
@@ -96,12 +124,21 @@ final class TransactionsViewModel: ObservableObject {
                 "/api/v1/transactions",
                 queryItems: items
             )
+
+            guard latestLoadMoreRequestId == requestId else { return }
+
             total = response.total
             page = nextPage
             let allItems = transactions + (response.items ?? [])
             loadingState = .loaded(allItems)
             recalculateDerivedData()
         } catch {
+            guard latestLoadMoreRequestId == requestId else { return }
+            if error.isCancellation {
+                requestedPages.remove(nextPage)
+                return
+            }
+            requestedPages.remove(nextPage)
             errorMessage = error.userMessage
         }
     }
@@ -145,13 +182,22 @@ final class TransactionsViewModel: ObservableObject {
     }
 
     private func recalculateDerivedData() {
-        incomeTotal = transactions
-            .filter { $0.type == .income }
-            .reduce(0) { $0 + $1.amount }
+        var income: Double = 0
+        var expense: Double = 0
 
-        expenseTotal = transactions
-            .filter { $0.type == .expense }
-            .reduce(0) { $0 + $1.amount }
+        for item in transactions {
+            switch item.type {
+            case .income:
+                income += item.amount
+            case .expense:
+                expense += item.amount
+            case .transfer:
+                break
+            }
+        }
+
+        incomeTotal = income
+        expenseTotal = expense
 
         monthSections = buildMonthSections(from: transactions)
     }

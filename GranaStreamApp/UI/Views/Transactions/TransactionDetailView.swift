@@ -47,7 +47,8 @@ struct TransactionDetailView: View {
                 .foregroundColor(DS.Colors.textPrimary)
 
             VStack(spacing: 0) {
-                ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                ForEach(rows.indices, id: \.self) { index in
+                    let row = rows[index]
                     detailRow(label: row.label, value: row.value)
 
                     if index < rows.count - 1 {
