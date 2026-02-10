@@ -8,7 +8,8 @@ struct UpcomingBillsSectionView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.item) {
                 AppSectionHeader(text: "Próximas contas a vencer")
                 VStack(spacing: DS.Spacing.base) {
-                    ForEach(Array(bills.enumerated()), id: \.element.id) { index, bill in
+                    ForEach(bills.indices, id: \.self) { index in
+                        let bill = bills[index]
                         BillRowView(bill: bill)
                         if index < bills.count - 1 {
                             Divider()

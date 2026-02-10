@@ -8,7 +8,8 @@ struct RecentTransactionsSectionView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.item) {
                 AppSectionHeader(text: "Últimas transações")
                 VStack(spacing: DS.Spacing.base) {
-                    ForEach(Array(transactions.enumerated()), id: \.element.id) { index, item in
+                    ForEach(transactions.indices, id: \.self) { index in
+                        let item = transactions[index]
                         RecentTransactionRowView(item: item)
                         if index < transactions.count - 1 {
                             Divider()
