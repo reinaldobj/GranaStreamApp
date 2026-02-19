@@ -1,19 +1,32 @@
 import SwiftUI
 
 struct AccountCardView: View {
-    let account: AccountSummary
+    let account: HomeAccountCardItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.base) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: 8) {
+                Image(systemName: iconName)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(DS.Colors.primary)
+                Text(account.accountType.label)
+                    .font(DS.Typography.caption)
+                    .foregroundColor(DS.Colors.textSecondary)
+                    .lineLimit(1)
+            }
+
             Text(account.name)
                 .font(DS.Typography.body)
                 .foregroundColor(DS.Colors.textPrimary)
-            Text("R$ \(formatAmount(account.balance))")
+
+            Text(CurrencyFormatter.string(from: account.currentBalance))
                 .font(DS.Typography.section)
-                .foregroundColor(account.balance >= 0 ? DS.Colors.success : DS.Colors.error)
+                .foregroundColor(account.currentBalance >= 0 ? DS.Colors.success : DS.Colors.error)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .padding(DS.Spacing.item)
-        .frame(width: 160, alignment: .leading)
+        .frame(width: 180, alignment: .leading)
         .background(DS.Colors.background)
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.field)
@@ -22,8 +35,14 @@ struct AccountCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.field))
     }
 
-    private func formatAmount(_ amount: Double) -> String {
-        let formatted = String(format: "%.2f", amount)
-        return formatted.replacingOccurrences(of: ".", with: ",")
+    private var iconName: String {
+        switch account.accountType {
+        case .carteira:
+            return "wallet.pass"
+        case .contaCorrente:
+            return "building.columns"
+        case .contaPoupanca:
+            return "banknote"
+        }
     }
 }

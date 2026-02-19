@@ -1,16 +1,21 @@
 import SwiftUI
 
 struct AccountsCarouselView: View {
-    let accounts: [AccountSummary]
+    let accounts: [HomeAccountCardItem]
 
     var body: some View {
         AppCard {
             VStack(alignment: .leading, spacing: DS.Spacing.item) {
-                AppSectionHeader(text: "Contas")
+                AppSectionHeader(text: L10n.Home.accountsTitle)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: DS.Spacing.item) {
                         ForEach(accounts) { account in
-                            AccountCardView(account: account)
+                            NavigationLink {
+                                AccountDetailView(account: account)
+                            } label: {
+                                AccountCardView(account: account)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }

@@ -44,6 +44,27 @@ enum L10n {
         static let deleteConfirm = NSLocalizedString("accounts.delete.confirm", value: "Excluir conta?", comment: "Alerta de exclusão")
         static let loading = NSLocalizedString("accounts.loading", value: "Carregando contas...", comment: "Carregamento")
         static let new = NSLocalizedString("accounts.new", value: "Nova conta", comment: "Nova conta")
+
+        enum Detail {
+            static let title = NSLocalizedString("accounts.detail.title", value: "Detalhes da conta", comment: "Título da tela de detalhe")
+            static let currentBalance = NSLocalizedString("accounts.detail.current.balance", value: "Saldo atual", comment: "Label saldo atual")
+            static let adjust = NSLocalizedString("accounts.detail.adjust", value: "Reajustar", comment: "Botão reajustar saldo")
+            static let accountInfo = NSLocalizedString("accounts.detail.account.info", value: "Informações da conta", comment: "Título seção")
+            static let accountType = NSLocalizedString("accounts.detail.account.type", value: "Tipo da conta", comment: "Label tipo")
+            static let initialBalance = NSLocalizedString("accounts.detail.initial.balance", value: "Saldo inicial", comment: "Label saldo inicial")
+            static let monthlyOverview = NSLocalizedString("accounts.detail.monthly.overview", value: "Resumo do mês", comment: "Título seção resumo do mês")
+            static let incomeCount = NSLocalizedString("accounts.detail.income.count", value: "Receitas", comment: "Quantidade de receitas")
+            static let expenseCount = NSLocalizedString("accounts.detail.expense.count", value: "Despesas", comment: "Quantidade de despesas")
+            static let transferCount = NSLocalizedString("accounts.detail.transfer.count", value: "Transferências", comment: "Quantidade de transferências")
+            static let transactionsTitle = NSLocalizedString("accounts.detail.transactions.title", value: "Transações recentes", comment: "Título seção transações")
+            static let transactionsEmpty = NSLocalizedString("accounts.detail.transactions.empty", value: "Sem transações neste mês.", comment: "Lista vazia")
+            static let loading = NSLocalizedString("accounts.detail.loading", value: "Carregando detalhes da conta...", comment: "Carregando detalhe")
+            static let errorDefault = NSLocalizedString("accounts.detail.error.default", value: "Não foi possível carregar os detalhes da conta.", comment: "Erro padrão detalhe")
+            static let adjustSheetTitle = NSLocalizedString("accounts.detail.adjust.sheet.title", value: "Reajustar saldo", comment: "Título modal reajuste")
+            static let adjustAmount = NSLocalizedString("accounts.detail.adjust.amount", value: "Valor do ajuste", comment: "Campo valor reajuste")
+            static let adjustHint = NSLocalizedString("accounts.detail.adjust.hint", value: "A integração do reajuste estará disponível em breve.", comment: "Aviso integração futura")
+            static let adjustConfirm = NSLocalizedString("accounts.detail.adjust.confirm", value: "Confirmar", comment: "Botão confirmar reajuste")
+        }
     }
 
     enum Categories {
@@ -100,6 +121,30 @@ enum L10n {
         static let comingSoon = NSLocalizedString("budget.coming.soon", value: "Em breve", comment: "Status")
         static let success = NSLocalizedString("budget.success", value: "Orçamento", comment: "Alerta título")
         static let notFound = NSLocalizedString("budget.not.found", value: "Orçamento não encontrado para esse usuário", comment: "Erro")
+    }
+
+    enum Home {
+        static let title = NSLocalizedString("home.title", value: "Home", comment: "Título da home")
+        static let welcome = NSLocalizedString("home.welcome", value: "Olá", comment: "Saudação")
+        static let overview = NSLocalizedString("home.overview", value: "Acompanhe suas finanças", comment: "Subtítulo da home")
+        static let accountsTitle = NSLocalizedString("home.accounts.title", value: "Contas", comment: "Título seção de contas")
+        static let totalBalance = NSLocalizedString("home.total.balance", value: "Saldo total", comment: "Saldo total")
+        static let totalExpense = NSLocalizedString("home.total.expense", value: "Despesa total", comment: "Despesa total")
+        static let budgetUsage = NSLocalizedString("home.budget.usage", value: "Uso do orçamento", comment: "Título de uso do orçamento")
+        static let chartTitle = NSLocalizedString("home.chart.title", value: "Evolução do período", comment: "Título do gráfico")
+        static let chartEmpty = NSLocalizedString("home.chart.empty", value: "Sem dados para mostrar no gráfico.", comment: "Gráfico vazio")
+        static let recentTitle = NSLocalizedString("home.recent.title", value: "Lançamentos recentes", comment: "Título da lista recente")
+        static let recentEmpty = NSLocalizedString("home.recent.empty", value: "Sem lançamentos recentes neste período.", comment: "Lista vazia")
+        static let loading = NSLocalizedString("home.loading", value: "Carregando sua home...", comment: "Estado de carregamento")
+        static let retry = NSLocalizedString("home.retry", value: "Tentar novamente", comment: "Ação de tentar novamente")
+        static let errorDefault = NSLocalizedString("home.error.default", value: "Não foi possível carregar a home.", comment: "Erro padrão")
+
+        enum Period {
+            static let daily = NSLocalizedString("home.period.daily", value: "Diário", comment: "Período diário")
+            static let weekly = NSLocalizedString("home.period.weekly", value: "Semanal", comment: "Período semanal")
+            static let monthly = NSLocalizedString("home.period.monthly", value: "Mensal", comment: "Período mensal")
+            static let yearly = NSLocalizedString("home.period.yearly", value: "Anual", comment: "Período anual")
+        }
     }
 
     enum Settings {

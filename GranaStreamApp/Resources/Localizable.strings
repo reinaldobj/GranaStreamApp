@@ -30,6 +30,24 @@
 "accounts.delete.confirm" = "Excluir conta?";
 "accounts.loading" = "Carregando contas...";
 "accounts.new" = "Nova conta";
+"accounts.detail.title" = "Detalhes da conta";
+"accounts.detail.current.balance" = "Saldo atual";
+"accounts.detail.adjust" = "Reajustar";
+"accounts.detail.account.info" = "Informações da conta";
+"accounts.detail.account.type" = "Tipo da conta";
+"accounts.detail.initial.balance" = "Saldo inicial";
+"accounts.detail.monthly.overview" = "Resumo do mês";
+"accounts.detail.income.count" = "Receitas";
+"accounts.detail.expense.count" = "Despesas";
+"accounts.detail.transfer.count" = "Transferências";
+"accounts.detail.transactions.title" = "Transações recentes";
+"accounts.detail.transactions.empty" = "Sem transações neste mês.";
+"accounts.detail.loading" = "Carregando detalhes da conta...";
+"accounts.detail.error.default" = "Não foi possível carregar os detalhes da conta.";
+"accounts.detail.adjust.sheet.title" = "Reajustar saldo";
+"accounts.detail.adjust.amount" = "Valor do ajuste";
+"accounts.detail.adjust.hint" = "A integração do reajuste estará disponível em breve.";
+"accounts.detail.adjust.confirm" = "Confirmar";
 
 /* Categories */
 "categories.title" = "Categorias";
@@ -135,3 +153,23 @@
 "nav.previous" = "Anterior";
 "nav.skip" = "Pular";
 "nav.done" = "Concluído";
+
+/* Home */
+"home.title" = "Home";
+"home.welcome" = "Olá";
+"home.overview" = "Acompanhe suas finanças";
+"home.accounts.title" = "Contas";
+"home.total.balance" = "Saldo total";
+"home.total.expense" = "Despesa total";
+"home.budget.usage" = "Uso do orçamento";
+"home.chart.title" = "Evolução do período";
+"home.chart.empty" = "Sem dados para mostrar no gráfico.";
+"home.recent.title" = "Lançamentos recentes";
+"home.recent.empty" = "Sem lançamentos recentes neste período.";
+"home.loading" = "Carregando sua home...";
+"home.retry" = "Tentar novamente";
+"home.error.default" = "Não foi possível carregar a home.";
+"home.period.daily" = "Diário";
+"home.period.weekly" = "Semanal";
+"home.period.monthly" = "Mensal";
+"home.period.yearly" = "Anual";
